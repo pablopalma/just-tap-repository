@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dd6ukv6xnhd0v"
+path="res://.godot/imported/[curious] Do you feel that [pause] That's anger. [long pause] [softly] It means you still care....mp3-42bc04581ef838e164c662b21da32d11.mp3str"
+
+[deps]
+
+source_file="res://audio/voices/[curious] Do you feel that [pause] That's anger. [long pause] [softly] It means you still care....mp3"
+dest_files=["res://.godot/imported/[curious] Do you feel that [pause] That's anger. [long pause] [softly] It means you still care....mp3-42bc04581ef838e164c662b21da32d11.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

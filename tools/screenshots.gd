@@ -3,7 +3,7 @@ extends Node
 ## godot --path . res://tools/screenshots.tscn
 ## Note: it overwrites user://save.json.
 
-const SHOTS := {30: "01_intro", 200: "02_depth", 522: "03_bird_close", 702: "04_bird_far", 900: "05_tree",
+const SHOTS := {30: "01_intro", 260: "02_depth", 522: "03_bird_close", 702: "04_bird_far", 900: "05_tree",
 	1180: "06_zone_event", 1500: "07_later"}
 
 var _frames := 0

@@ -6,6 +6,8 @@ const INTERVAL := 3.0
 
 var music_on := true
 var voice_on := true
+## Subtitle language: "en" or "es". The voice itself is always English.
+var lang := "es" if OS.get_locale_language() == "es" else "en"
 ## True when a save with progress existed at startup.
 var had_progress := false
 
@@ -37,6 +39,7 @@ func save_game() -> void:
 	var d := GameState.to_dict()
 	d["music_on"] = music_on
 	d["voice_on"] = voice_on
+	d["lang"] = lang
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f == null:
 		push_warning("Could not save: %s" % FileAccess.get_open_error())
@@ -58,6 +61,7 @@ func load_game() -> void:
 	GameState.from_dict(d)
 	music_on = bool(d.get("music_on", true))
 	voice_on = bool(d.get("voice_on", true))
+	lang = str(d.get("lang", lang))
 	had_progress = GameState.stage > 1 or GameState.light > 0.0
 
 

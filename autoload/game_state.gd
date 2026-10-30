@@ -24,6 +24,8 @@ var light := 0.0
 var up := {}
 var rebirths := 0
 var seen := {}
+## Voice lines already said this run (§20.4).
+var said := {}
 var finished := false
 ## False during the intro and the ending: taps and regeneration wait.
 var running := false
@@ -235,7 +237,7 @@ func rebirth() -> void:
 
 func to_dict() -> Dictionary:
 	return {"stage": stage, "hp": hp, "light": light, "up": up, "reb": rebirths, "seen": seen,
-		"finished": finished}
+		"finished": finished, "said": said.keys()}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -251,6 +253,9 @@ func from_dict(d: Dictionary) -> void:
 	for k in u:
 		if Upgrades.DATA.has(k):
 			up[k] = int(u[k])
+	said = {}
+	for id in d.get("said", []):
+		said[str(id)] = true
 	seen = {}
 	var s: Dictionary = d.get("seen", {})
 	for k in s:

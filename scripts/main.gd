@@ -25,6 +25,7 @@ var tree_panel
 var zone_title: Screens.ZoneTitle
 var end_screen: Screens.EndScreen
 var intro: Screens.Intro
+var subtitle: Screens.Subtitle
 var depth: DepthBackground
 var bird: GiantBird
 var flash: ColorRect
@@ -109,6 +110,9 @@ func _build() -> void:
 	ui.add_child(hud)
 	zone_title = Screens.ZoneTitle.new()
 	ui.add_child(zone_title)
+	subtitle = Screens.Subtitle.new()
+	ui.add_child(subtitle)
+	Narrator.line_started.connect(_on_line)
 	end_screen = Screens.EndScreen.new()
 	end_screen.rebirth_pressed.connect(GameState.rebirth)
 	ui.add_child(end_screen)
@@ -152,11 +156,24 @@ func _start() -> void:
 	intro = null
 	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
 	Music.start()
+	# The voice greets once the line has started climbing.
+	get_tree().create_timer(2.5).timeout.connect(_greet.bind(SaveSystem.had_progress))
 	if GameState.finished:
 		_enter_final(true)
 		return
 	mode = Mode.PLAY
 	GameState.running = true
+
+
+func _on_line(_id: String, text: String, duration: float) -> void:
+	subtitle.show_line(text, duration)
+
+
+func _greet(returning: bool) -> void:
+	if returning:
+		Narrator.say("00b", false)
+	else:
+		Narrator.say("00")
 
 
 func _process(delta: float) -> void:

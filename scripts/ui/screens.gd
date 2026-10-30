@@ -87,6 +87,39 @@ class ZoneTitle extends Control:
 		_tween.tween_property(self, "modulate:a", 0.0, 2.0)
 
 
+## The voice's words, in the chosen language, low on the screen so they never cover a zone title.
+class Subtitle extends Control:
+	var _label: Label
+	var _tween: Tween
+
+	func _init() -> void:
+		set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+		mouse_filter = MOUSE_FILTER_IGNORE
+		_label = UIStyle.label("", 26, true, Palette.INK)
+		_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_label.add_theme_constant_override("outline_size", 8)
+		_label.add_theme_color_override("font_outline_color", Color(Palette.PAPER, 0.85))
+		add_child(_label)
+		_label.modulate.a = 0.0
+		resized.connect(_place)
+
+	func _place() -> void:
+		var w := minf(size.x - 80.0, 820.0)
+		_label.size = Vector2(w, 80)
+		_label.position = Vector2((size.x - w) * 0.5, size.y * 0.72)
+
+	func show_line(text: String, duration: float) -> void:
+		_place()
+		_label.text = text
+		if _tween:
+			_tween.kill()
+		_tween = create_tween()
+		_tween.tween_property(_label, "modulate:a", 1.0, 1.2)
+		_tween.tween_interval(maxf(0.5, duration - 2.7))
+		_tween.tween_property(_label, "modulate:a", 0.0, 1.5)
+
+
 ## "you made colour" and the rebirth button, low on the screen over a paper gradient.
 class EndScreen extends Control:
 	signal rebirth_pressed

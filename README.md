@@ -19,6 +19,12 @@ Formas musicales, figuras abstractas por barrera, mandalas, semillas y red, lava
 
 `audio/` sale de `just_tap_sonidos.zip` (versión gris, `seco/` + vientos + coro). Volúmenes según la tabla del `audio/LEEME.md`.
 
+## Voz
+
+- El guion completo (§20.3) está en `data/voice_lines.gd`, en inglés y español. La voz es siempre en inglés; los subtítulos salen en el idioma elegido (botón `es`/`en` del HUD, guardado en la partida).
+- Cada grabación va en `audio/voices/vo_<id>.mp3` (también `.ogg` o `.wav`), con el id de la línea: `vo_00.mp3`, `vo_00b.mp3`, `vo_01.mp3`… `vo_32.mp3`, `vo_rebirth.mp3`, `vo_idle1.mp3`. Una línea sin grabación muestra solo el subtítulo.
+- `autoload/narrator.gd` hace la cola (7 s entre líneas), los disparadores, el ducking de la música (−3 dB) y guarda qué se dijo.
+
 ## Herramientas
 
 - `tools/smoke_test.tscn`: juega en headless y escribe un resumen. `Godot_console.exe --headless --path . res://tools/smoke_test.tscn`

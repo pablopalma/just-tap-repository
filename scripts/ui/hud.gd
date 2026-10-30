@@ -9,6 +9,8 @@ var _light: Label
 var _dmg: Label
 var _hint: Label
 var _music: Button
+var _voice: Button
+var _lang: Button
 var _tree: Button
 var _dot: Label
 var _total_taps := 0
@@ -52,6 +54,12 @@ func _ready() -> void:
 	_music.offset_bottom = -18
 	_music.pressed.connect(_toggle_music)
 	add_child(_music)
+
+	_voice = _bottom_left_button("voz", 78, 138)
+	_voice.pressed.connect(_toggle_voice)
+	_lang = _bottom_left_button("", 144, 194)
+	_lang.pressed.connect(_toggle_lang)
+	_update_lang()
 
 	_tree = UIStyle.button("árbol", 22)
 	_tree.set_anchors_and_offsets_preset(PRESET_BOTTOM_RIGHT)
@@ -109,6 +117,35 @@ func _put_text(l: Label, text: String) -> void:
 	if _cache.get(l) != text:
 		_cache[l] = text
 		l.text = text
+
+
+func _bottom_left_button(text: String, left: float, right: float) -> Button:
+	var b := UIStyle.button(text, 18)
+	b.set_anchors_and_offsets_preset(PRESET_BOTTOM_LEFT)
+	b.offset_left = left
+	b.offset_top = -62
+	b.offset_right = right
+	b.offset_bottom = -18
+	add_child(b)
+	return b
+
+
+func _toggle_voice() -> void:
+	SaveSystem.voice_on = not SaveSystem.voice_on
+	SaveSystem.save_game()
+	_voice.modulate.a = 1.0 if SaveSystem.voice_on else 0.35
+
+
+## Subtitles in English or Spanish; the voice stays English.
+func _toggle_lang() -> void:
+	SaveSystem.lang = "en" if SaveSystem.lang == "es" else "es"
+	SaveSystem.save_game()
+	_update_lang()
+
+
+func _update_lang() -> void:
+	_lang.text = SaveSystem.lang
+	_voice.modulate.a = 1.0 if SaveSystem.voice_on else 0.35
 
 
 ## The light counter swells when light pours in.
