@@ -31,6 +31,8 @@ var bird: GiantBird
 var landscape: Landscape
 var colour_wave: ColourWave
 var flash: ColorRect
+## Only in debug builds (editor, debug exports).
+var dev_menu: DevMenu
 
 var _event_t := 0.0
 var _event_center := Vector2.ZERO
@@ -131,6 +133,10 @@ func _build() -> void:
 	tree_panel.set_script(load("res://scripts/ui/tree_panel.gd"))
 	ui.add_child(tree_panel)
 	hud.tree_pressed.connect(tree_panel.open_panel)
+	if OS.is_debug_build():
+		dev_menu = DevMenu.new()
+		dev_menu.action.connect(_on_dev)
+		ui.add_child(dev_menu)
 	intro = Screens.Intro.new(SaveSystem.had_progress)
 	intro.continue_pressed.connect(_start)
 	intro.new_game_pressed.connect(_new_game)
@@ -152,7 +158,10 @@ func _unhandled_input(e: InputEvent) -> void:
 	elif e is InputEventScreenTouch:
 		# The first finger arrives as an emulated mouse click; extra fingers count on their own.
 		pressed = e.is_pressed() and (e as InputEventScreenTouch).index > 0
-	elif e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_F9:
+	elif dev_menu and e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_F1:
+		dev_menu.toggle()
+		return
+	elif dev_menu and e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_F9:
 		# For recording: replay the colour coming back where the camera is.
 		colour_wave.reveal(camera.position, Palette.chapter_color(randi_range(1, 4)))
 		return
@@ -355,6 +364,68 @@ func _begin_grand() -> void:
 	_flash(0.25, 2.5)
 	# Nothing between the player and what they built.
 	create_tween().tween_property(hud, "modulate:a", 0.0, 2.0)
+
+
+# --- Dev menu (debug builds only) -------------------------------------------
+
+func _on_dev(id: String, arg: int) -> void:
+	match id:
+		"jump":
+			_dev_jump(arg)
+		"edge":
+			# Arrive at the barrier and break it a moment later, so its event plays out.
+			_dev_jump(arg)
+			get_tree().create_timer(1.4).timeout.connect(_dev_break)
+		"grand":
+			_dev_jump(PathData.FINAL)
+			GameState.finished = true
+			GameState.hp = 0.0
+			_enter_final(false)
+			# Just the city: no letter opening on top of it.
+			_letter_shown = true
+			get_tree().create_timer(1.5).timeout.connect(_begin_grand)
+		"letter":
+			_show_letter()
+		"end":
+			_show_end()
+		"break":
+			_dev_break()
+		"damage":
+			GameState.dev_damage = 1.0 if arg == 1 else GameState.dev_damage * arg
+		"light":
+			GameState.add_light(arg)
+		"bird":
+			_summon_bird()
+		"wave":
+			colour_wave.reveal(camera.position, Palette.chapter_color(randi_range(1, 4)))
+		"lang":
+			SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es")
+
+
+func _dev_jump(n: int) -> void:
+	if intro != null:
+		_start()
+	GameState.dev_jump(n)
+	GameState.running = true
+	mode = Mode.PLAY
+	_final_pending = -1.0
+	_grand = false
+	_end_shown = false
+	_letter_shown = false
+	end_screen.visible = false
+	hud.modulate.a = 1.0
+	tip.lit = maxf(0.0, path.gate_len(n) - 260.0)
+	gates.reset()
+	fx.clear()
+	washes.clear()
+	landscape.reset()
+
+
+func _dev_break() -> void:
+	if GameState.finished:
+		return
+	GameState.hp = 0.0
+	GameState.tap("tap")
 
 
 func _show_letter() -> void:

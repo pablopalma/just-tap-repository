@@ -94,6 +94,7 @@ func _ready() -> void:
 	GameState.upgrade_bought.connect(func(_id: String, _l: int) -> void: play_buy())
 	GameState.reborn.connect(_on_reborn)
 	GameState.progress_reset.connect(_on_reborn)
+	GameState.jumped.connect(_on_jumped)
 	set_enabled(SaveSystem.music_on)
 
 
@@ -315,6 +316,11 @@ func _on_zone_completed(_z: int) -> void:
 	_schedule(t, "wind", "zona", tonic(), 0.06)
 	for i in 8:
 		_schedule(t + i * quarter * 0.5, "note", _tap_instrument(), chord_note(i, tonic() + 12), 0.04)
+
+
+func _on_jumped(n: int) -> void:
+	_pending_zone = Zones.of(n)
+	layers = Zones.layers_at(n)
 
 
 func _on_reborn() -> void:

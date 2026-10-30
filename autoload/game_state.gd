@@ -12,6 +12,8 @@ signal game_finished
 signal reborn
 ## Everything erased from the intro's "start over": no rebirth bonus, no story said.
 signal progress_reset
+## Dev menu: the game jumped to another barrier.
+signal jumped(n: int)
 
 const FINAL := 100
 const GAP := 150.0
@@ -30,6 +32,8 @@ var seen := {}
 var said := {}
 ## Every manual tap of the whole game (kept across rebirths): the creator's letter quotes it.
 var total_taps := 0
+## Dev menu only: multiplies damage so any barrier can be tested quickly.
+var dev_damage := 1.0
 var finished := false
 ## False during the intro and the ending: taps and regeneration wait.
 var running := false
@@ -113,7 +117,7 @@ func rebirth_mult() -> float:
 
 func power() -> float:
 	var l := lv("fuerza")
-	return (1 + l) * pow(1.075, l) * rebirth_mult()
+	return (1 + l) * pow(1.075, l) * rebirth_mult() * dev_damage
 
 
 func gain() -> float:
@@ -257,6 +261,25 @@ func new_game() -> void:
 	taps_at_gate = 0
 	light_changed.emit(light)
 	progress_reset.emit()
+
+
+## Dev menu: move to barrier n as if every earlier one were broken. Lines for earlier moments are
+## marked as said so the voice does not replay the whole story at once.
+func dev_jump(n: int) -> void:
+	stage = clampi(n, 1, FINAL)
+	hp = max_hp(stage)
+	finished = false
+	combo = 0.0
+	_echoes.clear()
+	time_at_gate = 0.0
+	taps_at_gate = 0
+	for k in VoiceLines.ON_REACH:
+		if k <= stage:
+			said[VoiceLines.ON_REACH[k]] = true
+	for z in VoiceLines.ON_ZONE:
+		if z * 10 < stage:
+			said[VoiceLines.ON_ZONE[z]] = true
+	jumped.emit(stage)
 
 
 func to_dict() -> Dictionary:
