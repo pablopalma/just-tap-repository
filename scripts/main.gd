@@ -488,6 +488,9 @@ func _dev_jump(n: int) -> void:
 	if intro != null:
 		_start()
 	# Visuals first: the jump itself may start a star or a fork, which must survive.
+	colour_wave.clear()
+	bird.stop()
+	zone_title.hide_now()
 	gates.reset()
 	star.reset()
 	forks.reset()

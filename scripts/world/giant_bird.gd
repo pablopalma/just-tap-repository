@@ -41,6 +41,14 @@ func fly(sad := false) -> void:
 	_events = [0.06, 0.29, 0.3, 0.62, 0.9]
 
 
+## Gone at once (a jump in the dev menu or a cut in the trailer).
+func stop() -> void:
+	active = false
+	visible = false
+	_events.clear()
+	Music.set_bird_active(false)
+
+
 func set_tint(c: Color) -> void:
 	_tint = c
 	_drawer.tint = Color(0.32, 0.31, 0.33) if _sad else c

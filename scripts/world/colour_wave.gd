@@ -28,6 +28,15 @@ func _ready() -> void:
 	_rect.visible = false
 
 
+## Drop every wave and give the colour back at once.
+func clear() -> void:
+	_waves.clear()
+	if _drain_tween:
+		_drain_tween.kill()
+	_drain = 0.0
+	_rect.visible = false
+
+
 ## A ring of pigment passing through: for zone endings, the bird, finished structures.
 func pass_wave(world_pos: Vector2, tint: Color, delay := 0.0) -> void:
 	_add(world_pos, tint, false, delay)

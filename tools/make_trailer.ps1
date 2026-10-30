@@ -26,8 +26,8 @@ try {
     -af "loudnorm=I=-14:TP=-1.5:LRA=11" -ar 48000 -c:a aac -b:a 192k -movflags +faststart `
     (Join-Path $out "just_tap_trailer.mp4")
 
-# The colour coming back (about 20.5–25.5 s), 960 px, 20 fps, its own palette.
-& $ffmpeg -v error -y -ss 20.5 -t 5 -i $avi -vf "fps=20,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192[p];[b][p]paletteuse=dither=sierra2_4a" `
+# The colour coming back (about 15.5–20.5 s), 960 px, 20 fps, its own palette.
+& $ffmpeg -v error -y -ss 15.5 -t 5 -i $avi -vf "fps=20,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192[p];[b][p]paletteuse=dither=sierra2_4a" `
     (Join-Path $out "just_tap_colour.gif")
 
 Get-ChildItem $out -File | Where-Object { $_.Extension -in ".mp4", ".gif" } | Select-Object Name, @{n = "MB"; e = { [math]::Round($_.Length / 1MB, 1) } }

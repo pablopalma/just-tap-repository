@@ -144,6 +144,11 @@ class ZoneTitle extends Control:
 		_title.position.y = size.y * 0.3 - 30
 		_sub.position.y = size.y * 0.3 + 22
 
+	func hide_now() -> void:
+		if _tween:
+			_tween.kill()
+		modulate.a = 0.0
+
 	func show_title(title: String, sub: String, color: Color) -> void:
 		_place()
 		_title.text = title

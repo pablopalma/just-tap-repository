@@ -57,6 +57,8 @@ var _bird_voices: Array[AudioStreamPlayer] = []
 var _bird_i := 0
 var _bird_call_i := 0
 var _bird_active := false
+## Set by a director (the trailer): zone and layers stay put whatever the game does.
+var locked := false
 
 var _time := 0.0
 var _next_step_time := 0.0
@@ -135,6 +137,15 @@ func start() -> void:
 	_step = 0
 	_zone_origin = 0.0
 	zone = _pending_zone
+
+
+## Keep zone z's key and tempo and the given layers until unlock (the trailer's continuous score).
+func lock(z: int, layer_count: int) -> void:
+	locked = true
+	_pending_zone = z
+	if not playing:
+		zone = z
+	layers = layer_count
 
 
 func set_enabled(on: bool) -> void:
@@ -356,8 +367,9 @@ func play_star_step(i: int, n: int) -> void:
 
 func _on_gate_broken(n: int) -> void:
 	var next := mini(n + 1, GameState.FINAL)
-	_pending_zone = Zones.of(next)
-	layers = Zones.layers_at(next)
+	if not locked:
+		_pending_zone = Zones.of(next)
+		layers = Zones.layers_at(next)
 	if not playing:
 		return
 	var eighth := _s16() * 2.0
@@ -378,6 +390,8 @@ func _on_zone_completed(_z: int) -> void:
 
 
 func _on_jumped(n: int) -> void:
+	if locked:
+		return
 	_pending_zone = Zones.of(n)
 	layers = Zones.layers_at(n)
 
