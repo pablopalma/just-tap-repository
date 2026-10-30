@@ -10,6 +10,13 @@ class Intro extends Control:
 	signal continue_pressed
 	signal new_game_pressed
 
+	var _demo_labels: Array = []
+
+	func _relabel_demo() -> void:
+		_demo_labels[0].text = Loc.t("demo_end")
+		_demo_labels[1].text = Loc.t("wishlist")
+		_demo_labels[2].text = Loc.t("new_game")
+
 	const CONFIRM_TIME := 3.0
 
 	var _returning := false
@@ -198,7 +205,11 @@ class Letter extends Control:
 	var _ready_to_leave := false
 	var _music_bus := -1
 
-	func _init(taps: int) -> void:
+	var _voice_id := "letter"
+
+	## demo: the short letter that closes the demo instead of the full one.
+	func _init(taps: int, demo := false) -> void:
+		_voice_id = "demo_letter" if demo else "letter"
 		set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 		mouse_filter = MOUSE_FILTER_STOP
 		var bg := ColorRect.new()
@@ -216,7 +227,7 @@ class Letter extends Control:
 		box.add_theme_constant_override("separation", 10)
 		box.mouse_filter = MOUSE_FILTER_IGNORE
 		add_child(box)
-		for raw in Loc.letter(taps):
+		for raw in Loc.letter(taps, demo):
 			var text: String = raw
 			var key := text.begins_with("*")
 			var signature := text.begins_with("—")
@@ -296,7 +307,7 @@ class Letter extends Control:
 				tw.tween_property(l, "modulate:a", 1.0, 1.6)
 
 	func _voice_stream() -> AudioStream:
-		var path := VoiceLines.audio_path("letter")
+		var path := VoiceLines.audio_path(_voice_id)
 		if path == "" or not SaveSystem.voice_on:
 			return null
 		return load(path)
@@ -342,8 +353,17 @@ class Letter extends Control:
 ## "you made colour" and the rebirth button, low on the screen over a paper gradient.
 class EndScreen extends Control:
 	signal rebirth_pressed
+	signal new_game_pressed
 
-	func _init() -> void:
+	var _demo_labels: Array = []
+
+	func _relabel_demo() -> void:
+		_demo_labels[0].text = Loc.t("demo_end")
+		_demo_labels[1].text = Loc.t("wishlist")
+		_demo_labels[2].text = Loc.t("new_game")
+
+	## demo: "the demo ends here", a wishlist button (when there is a store page) and start over.
+	func _init(demo := false) -> void:
 		set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 		mouse_filter = MOUSE_FILTER_IGNORE
 		visible = false
@@ -369,13 +389,32 @@ class EndScreen extends Control:
 		box.offset_bottom = -40
 		box.alignment = BoxContainer.ALIGNMENT_CENTER
 		add_child(box)
-		var title := UIStyle.label("you made colour", 44)
+		var title := UIStyle.label("just tap" if demo else "you made colour", 44)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(title)
-		var b := UIStyle.button(Loc.t("rebirth"), 22)
-		b.pressed.connect(func() -> void: rebirth_pressed.emit())
-		box.add_child(b)
-		SaveSystem.lang_changed.connect(func() -> void: b.text = Loc.t("rebirth"))
+		if demo:
+			var sub := UIStyle.label(Loc.t("demo_end"), 19, true, Color(Palette.INK, 0.75))
+			sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			box.add_child(sub)
+			var row := HBoxContainer.new()
+			row.alignment = BoxContainer.ALIGNMENT_CENTER
+			row.add_theme_constant_override("separation", 40)
+			box.add_child(row)
+			var wish := UIStyle.button(Loc.t("wishlist"), 22)
+			wish.visible = BuildFlags.STEAM_URL != ""
+			wish.pressed.connect(func() -> void: OS.shell_open(BuildFlags.STEAM_URL))
+			row.add_child(wish)
+			var again := UIStyle.button(Loc.t("new_game"), 18)
+			again.modulate.a = 0.7
+			again.pressed.connect(func() -> void: new_game_pressed.emit())
+			row.add_child(again)
+			_demo_labels = [sub, wish, again]
+			SaveSystem.lang_changed.connect(_relabel_demo)
+		else:
+			var b := UIStyle.button(Loc.t("rebirth"), 22)
+			b.pressed.connect(func() -> void: rebirth_pressed.emit())
+			box.add_child(b)
+			SaveSystem.lang_changed.connect(func() -> void: b.text = Loc.t("rebirth"))
 
 	func show_end() -> void:
 		visible = true

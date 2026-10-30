@@ -9,6 +9,8 @@ signal chapter_unlocked(idx: int)
 signal upgrade_bought(id: String, level: int)
 signal light_changed(value: float)
 signal game_finished
+## The demo's last barrier broke (BuildFlags.DEMO): its own ending instead of the game's.
+signal demo_finished
 signal reborn
 ## Everything erased from the intro's "start over": no rebirth bonus, no story said.
 signal progress_reset
@@ -86,10 +88,20 @@ func lv(id: String) -> int:
 	return int(up.get(id, 0))
 
 
+## Early barriers get extra life so the first zone lasts a couple of minutes instead of seconds;
+## the boost fades out by barrier EARLY_UNTIL. Each chapter can then be scaled on its own
+## (the single curve of the design doc does not hold for 100 barriers).
+const EARLY_BOOST := 5.0
+const EARLY_UNTIL := 18
+## Tuned with tools/sim_time.tscn: grey ×5 and red ×6 make the demo (barriers 1–40) about 30 min.
+## Later chapters are still on the original curve — to balance with the full game.
+var chapter_hp := [5.0, 6.0, 1.0, 1.0, 1.0]
+
+
 func max_hp(n: int) -> float:
-	if n <= 12:
-		return float(n)
-	return roundf(12.0 * pow(1.15, n - 12) + (n - 12) * 3)
+	var base := float(n) if n <= 12 else 12.0 * pow(1.15, n - 12) + (n - 12) * 3
+	var early := lerpf(EARLY_BOOST, 1.0, clampf((n - 1) / float(EARLY_UNTIL - 1), 0.0, 1.0))
+	return roundf(base * early * chapter_hp[clampi(int((n - 1) / 20.0), 0, 4)])
 
 
 ## Fraction of max HP regenerated per second.
@@ -165,6 +177,12 @@ func _break_gate() -> void:
 		zone_completed.emit(z)
 		if z in [2, 4, 6, 8]:
 			chapter_unlocked.emit(int(z / 2.0))
+	# Exactly the last one: the dev menu can still jump past it to test the full game's ending.
+	if BuildFlags.DEMO and n == BuildFlags.DEMO_LAST:
+		finished = true
+		hp = 0.0
+		demo_finished.emit()
+		return
 	if n >= FINAL:
 		finished = true
 		hp = 0.0

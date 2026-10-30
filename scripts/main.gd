@@ -30,6 +30,7 @@ var depth: DepthBackground
 var bird: GiantBird
 var landscape: Landscape
 var colour_wave: ColourWave
+var darkness: Darkness
 var flash: ColorRect
 ## Only in debug builds (editor, debug exports).
 var dev_menu: DevMenu
@@ -43,6 +44,9 @@ var _end_shown := false
 var _letter_shown := false
 ## The ending's grand reveal has started ("You made all of this").
 var _grand := false
+var _grand_t := 0.0
+## The demo ended at its last barrier (BuildFlags.DEMO): its own ending runs instead of the game's.
+var _demo_end := false
 ## Give up waiting for the voice after this long in the ending.
 const LETTER_MAX_WAIT := 60.0
 var _bird_wait := 0.0
@@ -56,6 +60,7 @@ func _ready() -> void:
 	GameState.zone_completed.connect(_on_zone_completed)
 	GameState.chapter_unlocked.connect(_on_chapter_unlocked)
 	GameState.game_finished.connect(_on_finished)
+	GameState.demo_finished.connect(_on_demo_finished)
 	GameState.reborn.connect(_on_reborn)
 	camera.target_pos = Vector2(0, PathData.START_Y - 260)
 	camera.target_zoom = _base_zoom()
@@ -81,6 +86,8 @@ func _build() -> void:
 	add_child(landscape)
 	colour_wave = ColourWave.new()
 	add_child(colour_wave)
+	darkness = Darkness.new()
+	add_child(darkness)
 	bird = GiantBird.new()
 	add_child(bird)
 	bird.passed_close.connect(_on_bird_close)
@@ -126,8 +133,9 @@ func _build() -> void:
 	subtitle = Screens.Subtitle.new()
 	ui.add_child(subtitle)
 	Narrator.line_started.connect(_on_line)
-	end_screen = Screens.EndScreen.new()
+	end_screen = Screens.EndScreen.new(BuildFlags.DEMO)
 	end_screen.rebirth_pressed.connect(GameState.rebirth)
+	end_screen.new_game_pressed.connect(_restart)
 	ui.add_child(end_screen)
 	tree_panel = Control.new()
 	tree_panel.set_script(load("res://scripts/ui/tree_panel.gd"))
@@ -185,6 +193,7 @@ func _start() -> void:
 	colour_wave.pass_wave(tip.position, Palette.GOLD, 0.3)
 	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
 	Music.start()
+	_demo_end = BuildFlags.DEMO and GameState.finished and GameState.stage >= BuildFlags.DEMO_LAST
 	# The voice greets once the line has started climbing.
 	get_tree().create_timer(2.5).timeout.connect(_greet.bind(SaveSystem.had_progress))
 	if GameState.finished:
@@ -240,16 +249,25 @@ func _process(delta: float) -> void:
 			if _grand:
 				# Pull all the way back, slowly: the tower and the city built around it.
 				camera.k = 0.35
-				camera.target_pos = Vector2(0, -PathData.FINAL * PathData.GAP * 0.5 + 500.0)
-				camera.target_zoom = minf(vs.y / (PathData.FINAL * PathData.GAP + 3000.0), vs.x / 9000.0)
+				# The whole city (≈16 400 world units, from the first arch to the lighthouse) fits in the
+				# upper part of the screen, so the end screen's text never covers it.
+				var z := minf((vs.y - 220.0) / 17600.0, vs.x / 9000.0)
+				camera.target_zoom = z
+				camera.target_pos = Vector2(0, -7600.0 + 110.0 / z)
 			else:
 				# Until then, stay with the top of the tower.
 				camera.k = 1.0
-				camera.target_pos = path.gate_pos(PathData.FINAL) + Vector2(0, 120)
+				camera.target_pos = path.gate_pos(BuildFlags.last_barrier() if _demo_end else PathData.FINAL) + Vector2(0, 120)
 				camera.target_zoom = _base_zoom() * 0.75
 			_final_t += delta
+			if _demo_end:
+				# The dark, the voice, then the sketched city, then the short letter.
+				if not _grand and _final_t >= END_DELAY and (Narrator.is_idle() or _final_t > LETTER_MAX_WAIT):
+					_begin_grand()
+				elif _grand and not _letter_shown and _final_t - _grand_t > 11.0:
+					_show_letter()
 			# The voice says its last lines, then the creator's letter, then "you made colour".
-			if not _letter_shown and _final_t >= END_DELAY and (Narrator.is_idle() or _final_t > LETTER_MAX_WAIT):
+			elif not _letter_shown and _final_t >= END_DELAY and (Narrator.is_idle() or _final_t > LETTER_MAX_WAIT):
 				_show_letter()
 	if _final_pending >= 0.0:
 		_final_pending -= delta
@@ -354,6 +372,15 @@ func _begin_grand() -> void:
 	if _grand:
 		return
 	_grand = true
+	_grand_t = _final_t
+	if _demo_end:
+		# The dark lifts on a city that is mostly still a sketch.
+		darkness.to(0.0, 4.0)
+		landscape.set_grand(true, 7.0, true)
+		colour_wave.pass_wave(path.gate_pos(BuildFlags.DEMO_LAST), Palette.GOLD, 1.0)
+		Music.choir_swell()
+		create_tween().tween_property(hud, "modulate:a", 0.0, 2.0)
+		return
 	landscape.set_grand(true)
 	colour_wave.pass_wave(path.gate_pos(PathData.FINAL), Palette.GOLD)
 	colour_wave.pass_wave(path.gate_pos(50), Palette.GOLD, 1.5)
@@ -430,7 +457,7 @@ func _dev_break() -> void:
 
 func _show_letter() -> void:
 	_letter_shown = true
-	var letter := Screens.Letter.new(GameState.total_taps)
+	var letter := Screens.Letter.new(GameState.total_taps, _demo_end)
 	letter.finished.connect(_show_end)
 	hud.get_parent().add_child(letter)
 
@@ -451,10 +478,43 @@ func _enter_final(immediate: bool) -> void:
 	_grand = false
 	if immediate:
 		_show_end()
+	elif _demo_end:
+		_demo_darken()
 	GameState.running = false
 
 
+## The demo's last barrier broke. First the colour returns as always (the zone/chapter events
+## already fired), then, after that moment, the dark comes in.
+func _on_demo_finished() -> void:
+	_demo_end = true
+	_final_pending = EVENT_TIME
+
+
+## The dark creeps in from the edges, the line cracks under the tip and the bird passes, hurt.
+func _demo_darken() -> void:
+	darkness.to(0.85, 7.0)
+	var top := path.gate_pos(BuildFlags.DEMO_LAST)
+	fx.crack(top + Vector2(0, 10), 320.0, 5.0)
+	fx.crack(path.gate_pos(BuildFlags.DEMO_LAST - 2), 260.0, 6.0)
+	fx.crack(path.gate_pos(BuildFlags.DEMO_LAST - 5), 220.0, 7.0)
+	get_tree().create_timer(2.5).timeout.connect(bird.fly.bind(true))
+
+
+## "Start over" from the demo's end screen.
+func _restart() -> void:
+	GameState.new_game()
+	SaveSystem.had_progress = false
+	SaveSystem.save_game()
+	_demo_end = false
+	_grand = false
+	darkness.amount = 0.0
+	_on_reborn()
+	tip.lit = 0.0
+	_greet(false)
+
+
 func _on_reborn() -> void:
+	darkness.amount = 0.0
 	tip.lit = 0.0
 	gates.reset()
 	fx.clear()

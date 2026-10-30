@@ -236,6 +236,19 @@ func bird_whoosh(vol: float) -> void:
 	_schedule(_grid_time(_s16() * 4.0), "note", "bass", tonic() - 12, vol * 0.8, true)
 
 
+## The bird in the dark: a falling phrase in the tonic's minor, slower, that never resolves.
+func bird_call_minor(vol: float) -> void:
+	if not playing:
+		return
+	var quarter := _s16() * 4.0
+	var t := _grid_time(quarter)
+	var base := tonic() + 24
+	var phrase := [7, 3, 2, 0, 2]
+	for i in phrase.size():
+		_schedule(t + i * quarter * 0.75, "note", "flute", base + phrase[i], vol, true)
+	_schedule(t, "note", "bass", tonic() - 12, vol * 0.8, true)
+
+
 ## A piece of the distant landscape draws itself (j = 0..9): a soft swish as the pen lands, then
 ## a bright arpeggio of glass and celesta that climbs with the pen for as long as it draws, and a
 ## held harp note when the stroke ends. Degrees are resolved when each note plays, so the

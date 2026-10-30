@@ -32,6 +32,10 @@ const LINES := {
 		"es": "Dejá que cada parte de vos… vaya a su ritmo."},
 	# §22.2: when the branches join again (convergence cinematic, not in the game yet).
 	"converge": {"en": "And all of it… is still you.", "es": "Y todo eso… sigue siendo vos."},
+	# The demo's ending (barrier 40): the dark comes in, then the short letter.
+	"demo_1": {"en": "Not everything comes back so easily.", "es": "No todo vuelve tan fácil."},
+	"demo_2": {"en": "But you're not alone in this.", "es": "Pero no estás solo en esto."},
+	"demo_letter": {"en": "Thank you for playing this far.", "es": "Gracias por jugar hasta acá."},
 	# The creator's letter at the very end (shown by Screens.Letter, not queued by the Narrator).
 	# The text on screen is Loc.LETTER, with the player's real tap count; the voice says it without
 	# the number.
@@ -86,6 +90,7 @@ const ON_ZONE := {1: "03", 2: "06", 3: "09", 4: "12", 5: "15", 6: "18", 7: "21",
 ## First time stuck in each chapter (0 grey .. 4 yellow).
 const ON_STUCK := ["05", "11", "17", "23", "29"]
 
+const DEMO_ENDING := ["demo_1", "demo_2"]
 const ENDING := ["30", "31", "made", "32"]
 const IDLE := ["idle1", "idle2", "idle3"]
 

@@ -10,12 +10,15 @@ var font: Font
 var _floats: Array[Dictionary] = []
 var _rings: Array[Dictionary] = []
 var _drops: Array[Dictionary] = []
+var _cracks: Array[Dictionary] = []
 
 
 func clear() -> void:
 	_floats.clear()
 	_rings.clear()
 	_drops.clear()
+	_cracks.clear()
+	queue_redraw()
 
 
 func float_text(pos: Vector2, text: String, color: Color, size := 15, life := 1.1) -> void:
@@ -38,12 +41,44 @@ func aura(pos: Vector2, color: Color) -> void:
 			"r": randf_range(1.2, 2.6)})
 
 
+## Ink cracks spreading from pos: a few jagged branches that grow over `grow` seconds and stay
+## until clear(). Used when the demo ends and the line starts to break.
+func crack(pos: Vector2, length := 260.0, grow := 4.0) -> void:
+	for b in 5:
+		var pts := PackedVector2Array([pos])
+		var dir := Vector2.DOWN.rotated(randf_range(-1.3, 1.3))
+		var p := pos
+		var steps := int(length / 14.0)
+		for i in steps:
+			dir = dir.rotated(randf_range(-0.55, 0.55))
+			p += dir * randf_range(9.0, 18.0)
+			pts.append(p)
+		_cracks.append({"pts": pts, "t": -b * 0.35, "grow": grow, "w": randf_range(1.2, 2.2)})
+		# a thinner side branch
+		var k := randi_range(2, pts.size() - 2)
+		var side := PackedVector2Array([pts[k]])
+		var sp := pts[k]
+		var sd := dir.rotated(randf_range(0.8, 1.4) * (1.0 if randf() < 0.5 else -1.0))
+		for i in int(steps * 0.5):
+			sd = sd.rotated(randf_range(-0.5, 0.5))
+			sp += sd * randf_range(7.0, 13.0)
+			side.append(sp)
+		_cracks.append({"pts": side, "t": -b * 0.35 - 1.0, "grow": grow, "w": 1.0})
+
+
 func ring(pos: Vector2, color: Color, r1 := 90.0, life := 1.6) -> void:
 	_rings.append({"pos": pos, "t": 0.0, "life": life, "r0": 10.0, "r1": r1, "color": color})
 
 
 func _process(delta: float) -> void:
+	var growing := false
+	for c in _cracks:
+		if c.t < c.grow:
+			c.t += delta
+			growing = true
 	if _floats.is_empty() and _rings.is_empty() and _drops.is_empty():
+		if growing:
+			queue_redraw()
 		return
 	for i in range(_floats.size() - 1, -1, -1):
 		var f: Dictionary = _floats[i]
@@ -68,6 +103,13 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	for c in _cracks:
+		if c.t <= 0.0:
+			continue
+		var pts: PackedVector2Array = c.pts
+		var k: float = clampf(c.t / c.grow, 0.0, 1.0)
+		var count := maxi(2, int(ceil(pts.size() * k)))
+		draw_polyline(pts.slice(0, count), Color(0.1, 0.09, 0.09, 0.9), c.w, true)
 	for r in _rings:
 		if r.t < 0.0:
 			continue

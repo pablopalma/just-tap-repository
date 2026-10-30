@@ -16,6 +16,7 @@ var _drawer: Drawer
 var _events: Array[float] = []
 var _prev_x := 0.0
 var _tint := Color.WHITE
+var _sad := false
 
 
 func _ready() -> void:
@@ -25,9 +26,11 @@ func _ready() -> void:
 	visible = false
 
 
-func fly() -> void:
+## sad: the demo's ending — a darker bird whose call falls in minor.
+func fly(sad := false) -> void:
 	if active:
 		return
+	_sad = sad
 	active = true
 	visible = true
 	Music.set_bird_active(true)
@@ -40,7 +43,7 @@ func fly() -> void:
 
 func set_tint(c: Color) -> void:
 	_tint = c
-	_drawer.tint = c
+	_drawer.tint = Color(0.32, 0.31, 0.33) if _sad else c
 
 
 func _process(delta: float) -> void:
@@ -74,7 +77,10 @@ func _process(delta: float) -> void:
 			Music.bird_whoosh(0.07)
 			passed_close.emit()
 		else:
-			Music.bird_call(lerpf(0.02, 0.06, depth))
+			if _sad:
+				Music.bird_call_minor(lerpf(0.03, 0.06, depth))
+			else:
+				Music.bird_call(lerpf(0.02, 0.06, depth))
 
 
 class Drawer extends Node2D:

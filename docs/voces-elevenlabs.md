@@ -63,6 +63,26 @@ Las etiquetas que ya usás y suenan bien: `[softly]`, `[warmly]`, `[whispers]`, 
 [softly] Look... [long pause] [in awe] You made all of this.
 `
 
+## Final de la demo (barrera 40)
+
+### vo_demo_1.mp3 · entra la oscuridad
+`
+[softly] Not everything... [pause] comes back so easily.
+`
+
+### vo_demo_2.mp3 · el ave pasa, herida
+`
+[long pause] [warmly] But you're not alone in this.
+`
+
+### vo_demo_letter.mp3 · la carta corta de la demo
+Misma voz. El texto en pantalla dice además cuántas veces tocó el jugador.
+`
+[softly] Thank you for playing this far.
+[long pause] You kept tapping... [short pause] all the way here.
+[long pause] [warmly] The rest of the way... [pause] is still waiting to be drawn.
+`
+
 ## La carta del creador (cuarta pared) · vo_letter.mp3
 
 Un solo archivo, en inglés como el resto. El texto en pantalla sigue al audio: cada línea aparece en el momento que le toca según el largo de la grabación, y la firma sale cuando la voz termina. La voz **no dice el número de taps** (no puede saberlo); en pantalla sí aparece el número real del jugador.

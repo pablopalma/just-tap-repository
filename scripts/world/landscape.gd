@@ -42,14 +42,18 @@ func build_piece(n: int) -> void:
 	Music.build_piece((n - 1) % 10, _drawer.side(z), DRAW_TIME)
 
 
-## The grand reveal of the ending (or back to normal on rebirth).
-func set_grand(on: bool, time := 7.0) -> void:
+## The grand reveal of the ending (or back to normal on rebirth). ghost: also sketch, in dashed
+## faint ink, every piece not built yet — the demo's "still waiting to be drawn".
+func set_grand(on: bool, time := 7.0, ghost := false) -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "grand", 1.0 if on else 0.0, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if ghost:
+		tw.parallel().tween_property(_drawer, "ghost", 1.0, time * 1.4)
 
 
 func reset() -> void:
 	grand = 0.0
+	_drawer.ghost = 0.0
 	_drawer.anim.clear()
 	_drawer.queue_redraw()
 
@@ -71,6 +75,7 @@ class Drawer extends Node2D:
 	var anim := {}       # n -> time its drawing starts
 	var now := 0.0
 	var grand := 0.0
+	var ghost := 0.0
 	## Keeps strokes readable when the layer is zoomed far out.
 	var width_mul := 1.0
 	var _cache := {}     # z -> Array[Dictionary] pieces
@@ -121,12 +126,17 @@ class Drawer extends Node2D:
 			draw_set_transform(f, 0.0, Vector2.ONE * Landscape.STRUCT_SCALE)
 			if grand > 0.0:
 				var halo := Vector2(0, -Landscape.HEIGHT * 0.55 / Landscape.STRUCT_SCALE)
+				# Structures still waiting to be built glow much less.
+				var waiting := (z - 1) * 10 + 1 > built
+				var glow_a := 0.045 * grand * (0.25 if waiting else 1.0)
 				for k in 4:
-					draw_circle(halo, 520.0 - k * 110.0, Color(col, 0.045 * grand))
+					draw_circle(halo, 520.0 - k * 110.0, Color(col, glow_a))
 			for j in ps.size():
 				var n := (z - 1) * 10 + j + 1
 				if n > built:
-					break
+					if ghost > 0.0:
+						_ghost_piece(ps[j], col)
+					continue
 				var p := 1.0
 				var glow := 0.0
 				if anim.has(n):
@@ -151,6 +161,29 @@ class Drawer extends Node2D:
 			if p < 1.0:
 				draw_circle(tip, 3.0 / Landscape.STRUCT_SCALE, Color(Palette.INK, 0.8))
 				draw_circle(tip, 9.0 / Landscape.STRUCT_SCALE, Color(col, 0.18))
+
+	## A piece not built yet: a faint dashed sketch.
+	func _ghost_piece(piece: Dictionary, col: Color) -> void:
+		var ink := Color(Palette.INK.lerp(col, 0.3), 0.22 * ghost)
+		var w := 1.2 * width_mul / Landscape.STRUCT_SCALE
+		var dash := 16.0 * width_mul
+		for line in piece.lines:
+			var on := true
+			var left := dash
+			for i in range(1, line.size()):
+				var a: Vector2 = line[i - 1]
+				var b: Vector2 = line[i]
+				var seg := a.distance_to(b)
+				var pos := 0.0
+				while pos < seg:
+					var step := minf(left, seg - pos)
+					if on:
+						draw_line(a.lerp(b, pos / seg), a.lerp(b, (pos + step) / seg), ink, w, true)
+					pos += step
+					left -= step
+					if left <= 0.0:
+						on = not on
+						left = dash if on else dash * 0.7
 
 	## Draws the first fraction p of a polyline and returns where the pen is.
 	func _partial(line: PackedVector2Array, f: Vector2, p: float, col: Color, w: float) -> Vector2:

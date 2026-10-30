@@ -40,6 +40,7 @@ func _ready() -> void:
 	GameState.gate_broken.connect(_on_gate_broken)
 	GameState.zone_completed.connect(_on_zone_completed)
 	GameState.game_finished.connect(_on_finished)
+	GameState.demo_finished.connect(_on_demo_finished)
 	GameState.reborn.connect(_on_reborn)
 	GameState.progress_reset.connect(func() -> void: _queue.clear())
 	GameState.hit.connect(_on_hit)
@@ -122,6 +123,11 @@ func _on_hit(_damage: float, _crit: bool, source: String) -> void:
 ## The ending: three lines, 7 s apart by the queue's own spacing.
 func _on_finished() -> void:
 	for id in VoiceLines.ENDING:
+		say(id)
+
+
+func _on_demo_finished() -> void:
+	for id in VoiceLines.DEMO_ENDING:
 		say(id)
 
 

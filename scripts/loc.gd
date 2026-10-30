@@ -21,6 +21,8 @@ const S := {
 	"needs": {"es": "%s · necesita %s %d", "en": "%s · needs %s %d"},
 	"level_line": {"es": "%s — %s · nivel %d: %s", "en": "%s — %s · level %d: %s"},
 	"max": {"es": "máximo", "en": "max"},
+	"demo_end": {"es": "La demo termina acá. El resto del día te espera.", "en": "The demo ends here. The rest of the day is waiting."},
+	"wishlist": {"es": "agregar a deseados en Steam", "en": "wishlist on Steam"},
 	"continue_tap": {"es": "tocá para seguir", "en": "tap to continue"},
 }
 
@@ -49,6 +51,22 @@ const LETTER := {
 		"And I want you to know:",
 		"You made all of this.",
 		"*I'm proud of you.",
+		"— Pablo",
+	],
+}
+
+## The demo's short letter: a promise, not the ending. The full letter stays for the full game.
+const DEMO_LETTER := {
+	"es": [
+		"Gracias por jugar hasta acá.",
+		"Tocaste {taps} veces.",
+		"*El resto del camino todavía está por dibujarse.",
+		"— Pablo",
+	],
+	"en": [
+		"Thank you for playing this far.",
+		"You tapped {taps} times.",
+		"*The rest of the way is still waiting to be drawn.",
 		"— Pablo",
 	],
 }
@@ -84,10 +102,10 @@ const EFFECTS := {
 }
 
 
-static func letter(taps: int) -> Array:
+static func letter(taps: int, demo := false) -> Array:
 	var sep := "." if lang() == "es" else ","
 	var out := []
-	for line in LETTER[lang()]:
+	for line in (DEMO_LETTER if demo else LETTER)[lang()]:
 		out.append(String(line).replace("{taps}", Fmt.grouped(taps, sep)))
 	return out
 

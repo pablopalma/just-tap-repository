@@ -53,6 +53,8 @@ func _init() -> void:
 	_button(box, "El color vuelve · amarillo (b.80)", "edge", 80)
 
 	_title(box, "Final")
+	if BuildFlags.DEMO:
+		_button(box, "Final de la demo (b.40)", "edge", BuildFlags.DEMO_LAST)
 	_button(box, "Romper la barrera 100 (final entero)", "edge", 100)
 	_button(box, "Ciudad: \"You made all of this\"", "grand", 0)
 	_button(box, "Solo la carta", "letter", 0)
