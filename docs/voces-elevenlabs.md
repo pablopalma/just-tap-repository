@@ -77,7 +77,8 @@ Con la **misma voz del narrador**, para que el locutor no cambie: la carta es el
 [pause] One tap at a time. [short pause] That's not nothing.
 [long pause] [warmly] Whatever it is... [pause] there's a way through. [short pause] There always is.
 [long pause] [softly] And I want you to know...
-[long pause] [warmly] I'm proud of you.
+[pause] [warmly] You made all of this.
+[long pause] I'm proud of you.
 ```
 
 Ajustes: Stability más alta que el narrador (60–70 %) para que suene sereno y sin actuación, Style casi en 0.
