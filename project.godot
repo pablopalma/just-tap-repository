@@ -40,3 +40,9 @@ project/assembly_name="Just Tap"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.921569, 0.901961, 0.870588, 1)
+
+[audio]
+
+; The game builds its buses at runtime and uses reverb, filters and panning: on the web it needs the full mixer,
+; not the simplified sample playback that single-threaded web builds use by default.
+general/default_playback_type.web=0
