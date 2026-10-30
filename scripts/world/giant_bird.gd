@@ -30,6 +30,7 @@ func fly() -> void:
 		return
 	active = true
 	visible = true
+	Music.set_bird_active(true)
 	_t = 0.0
 	_dir = -1.0 if randf() < 0.5 else 1.0
 	# Moments in the flight (0..1): a call as it enters, call and rush of air when closest,
@@ -50,6 +51,7 @@ func _process(delta: float) -> void:
 	if p >= 1.0:
 		active = false
 		visible = false
+		Music.set_bird_active(false)
 		return
 	var vp := get_viewport().get_visible_rect().size
 	var unit := vp.y / 720.0

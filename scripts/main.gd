@@ -28,6 +28,7 @@ var intro: Screens.Intro
 var subtitle: Screens.Subtitle
 var depth: DepthBackground
 var bird: GiantBird
+var landscape: Landscape
 var flash: ColorRect
 
 var _event_t := 0.0
@@ -68,6 +69,8 @@ func _build() -> void:
 
 	depth = DepthBackground.new()
 	add_child(depth)
+	landscape = Landscape.new()
+	add_child(landscape)
 	bird = GiantBird.new()
 	add_child(bird)
 	bird.passed_close.connect(_on_bird_close)
@@ -152,6 +155,8 @@ func _unhandled_input(e: InputEvent) -> void:
 
 ## The intro fades in 3 s, the HUD appears in 2 s and the line climbs from below to the first barrier.
 func _start() -> void:
+	if intro == null:
+		return
 	intro.dismiss()
 	intro = null
 	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
@@ -206,6 +211,7 @@ func _process(delta: float) -> void:
 
 	var tint := Palette.chapter_color(Palette.chapter_of(GameState.stage))
 	depth.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
+	landscape.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	bird.set_tint(tint)
 	if GameState.running and not GameState.finished:
 		_bird_wait -= delta
@@ -238,6 +244,7 @@ func _on_gate_broken(n: int) -> void:
 	fx.float_text(p + Vector2(0, -30), "+◆ " + Fmt.num(GameState.reward(n)),
 		Palette.chapter_color(Palette.chapter_of(n)).darkened(0.2), 20, 1.8)
 	hud.pulse()
+	landscape.build_piece(n)
 
 
 ## The camera pulls back to take in the zone's ten barriers.
@@ -301,6 +308,7 @@ func _on_reborn() -> void:
 	gates.reset()
 	fx.clear()
 	washes.clear()
+	landscape.reset()
 	end_screen.visible = false
 	_final_pending = -1.0
 	mode = Mode.PLAY

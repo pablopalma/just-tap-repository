@@ -50,6 +50,7 @@ var _bird_panner: AudioEffectPanner
 var _bird_voices: Array[AudioStreamPlayer] = []
 var _bird_i := 0
 var _bird_call_i := 0
+var _bird_active := false
 
 var _time := 0.0
 var _next_step_time := 0.0
@@ -228,6 +229,29 @@ func bird_whoosh(vol: float) -> void:
 		return
 	_schedule(_grid_time(_s16() * 4.0), "wind", "zona", tonic(), vol, true)
 	_schedule(_grid_time(_s16() * 4.0), "note", "bass", tonic() - 12, vol * 0.8, true)
+
+
+## A piece of the distant landscape starts drawing: a soft swish as the pen lands, then two glassy
+## notes of the chord that climb with the piece (j = 0..9). Panned to the structure's side.
+func build_piece(j: int, side: float) -> void:
+	if not playing:
+		return
+	var t := _grid_time(_s16() * 2.0) + _s16() * 2.0
+	var div := _tap_div()
+	_schedule(t, "wind", "auto", chord_note(j, tonic() + 12), 0.035, true)
+	_schedule(t + div * 2.0, "note", "glass", chord_note(j % 5 + 3, tonic() + 12), 0.03, true)
+	_schedule(t + div * 4.0, "note", "celesta", chord_note(j % 5 + 5, tonic() + 12), 0.016, true)
+	if not _bird_active:
+		set_bird_pan(side * 0.6)
+	if j == 9:
+		# the structure is complete: a slow glass shimmer climbing the chord
+		for i in 6:
+			_schedule(t + div * (6.0 + i * 2.0), "note", "glass", chord_note(i + 2, tonic() + 12), 0.025, true)
+
+
+## The bird owns the pan of its bus while it flies.
+func set_bird_active(on: bool) -> void:
+	_bird_active = on
 
 
 ## -1 left .. 1 right.

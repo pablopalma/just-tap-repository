@@ -8,7 +8,7 @@ extends Node
 const CELL := 700.0
 const SPECS := [
 	{"f": 0.05, "scale": 0.5, "kind": "mist", "ink": 0.10, "layer": -9},
-	{"f": 0.14, "scale": 0.66, "kind": "ruins", "ink": 0.20, "layer": -8},
+	{"f": 0.14, "scale": 0.66, "kind": "ruins", "ink": 0.12, "layer": -8},
 	{"f": 0.3, "scale": 0.82, "kind": "lines", "ink": 0.30, "layer": -7},
 ]
 

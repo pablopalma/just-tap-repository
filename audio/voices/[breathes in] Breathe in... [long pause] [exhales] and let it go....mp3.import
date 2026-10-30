@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bfmvf6n485qr7"
+path="res://.godot/imported/[breathes in] Breathe in... [long pause] [exhales] and let it go....mp3-889f682f898e5ca61275e71452c1765a.mp3str"
+
+[deps]
+
+source_file="res://audio/voices/[breathes in] Breathe in... [long pause] [exhales] and let it go....mp3"
+dest_files=["res://.godot/imported/[breathes in] Breathe in... [long pause] [exhales] and let it go....mp3-889f682f898e5ca61275e71452c1765a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
