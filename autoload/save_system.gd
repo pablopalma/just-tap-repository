@@ -8,8 +8,9 @@ const INTERVAL := 3.0
 
 var music_on := true
 var voice_on := true
-## Subtitle language: "en" or "es". The voice itself is always English.
-var lang := "es" if OS.get_locale_language() == "es" else "en"
+## Game language: "en" or "es". English by default; a player who switches keeps the choice in the save.
+## The voice itself is always English.
+var lang := "en"
 ## True when a save with progress existed at startup.
 var had_progress := false
 ## Off while recording the trailer or running tests that must not touch the player's save.

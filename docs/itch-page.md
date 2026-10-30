@@ -15,7 +15,7 @@ Todo lo que va en la página, listo para copiar. Las imágenes están en `Builds
 | **Kind of project** | HTML |
 | **Release status** | In development |
 | **Pricing** | No payments (o "Donate" con mínimo 0) |
-| **Uploads** | `Builds/just_tap_web.zip` → marcar **This file will be played in the browser** |
+| **Uploads** | `Builds/just_tap_web.zip` → marcar **This file will be played in the browser**. Y `Builds/just_tap_windows.zip` → plataforma **Windows**, nombre visible: *Download for Windows — smoother audio and visuals* |
 | **Genre** | Simulation (alternativa: Other) |
 | **Tags** | `clicker`, `incremental`, `relaxing`, `cozy`, `atmospheric`, `emotional`, `watercolor`, `music`, `short`, `godot` |
 | **AI generation disclosure** | Marcar lo que corresponda: las voces se hicieron con ElevenLabs |
@@ -31,7 +31,7 @@ Todo lo que va en la página, listo para copiar. Las imágenes están en `Builds
 | Automatically start on page load | No (que el jugador haga clic: así el audio arranca bien) |
 | Fullscreen button | Sí |
 | Enable scrollbars | No |
-| SharedArrayBuffer support | **No hace falta** (la exportación es sin hilos) |
+| SharedArrayBuffer support | **Sí** (el build web usa hilos para que el audio no se trabe) |
 
 ---
 
