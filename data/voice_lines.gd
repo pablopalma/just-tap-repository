@@ -32,6 +32,11 @@ const LINES := {
 		"es": "Dejá que cada parte de vos… vaya a su ritmo."},
 	# §22.2: when the branches join again (convergence cinematic, not in the game yet).
 	"converge": {"en": "And all of it… is still you.", "es": "Y todo eso… sigue siendo vos."},
+	# §22.3, star circuits: when the lights first spread, and when they become one again.
+	# (Not in the game yet.)
+	"small_lights": {"en": "Small lights. One shape. That's you, too.",
+		"es": "Lucecitas. Una sola forma. Eso también sos vos."},
+	"whole": {"en": "See? It was whole all along.", "es": "¿Ves? Siempre estuvo entero."},
 	"14": {"en": "Look behind you. You've been building something.", "es": "Mirá atrás. Estuviste construyendo algo."},
 	"15": {"en": "Things grow slowly. So do you.", "es": "Las cosas crecen despacio. Vos también."},
 	"16": {"en": "Resting is part of it too.", "es": "Descansar también es parte."},
