@@ -46,6 +46,7 @@ try {
     $maxBytes = 3MB - 64KB
     $gifs = [ordered]@{
         "gif_colour" = @(15.5, 5.0)   # the colour comes back
+        "gif_tree"   = @(11.5, 2.7)   # the upgrade tree opens, node by node
         "gif_star"   = @(26.0, 4.6)   # a star circuit fills, spins up and bursts
         "gif_bird"   = @(31.6, 2.6)   # the giant bird passes close
         "gif_forks"  = @(34.4, 5.4)   # the line splits in two, then three
