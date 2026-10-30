@@ -19,6 +19,8 @@ var _idle_i := 0
 var _idle_cool := 0.0
 var _last_tap := 0.0
 var _duck_tween: Tween
+## Off while a director (the trailer) decides exactly when each line is said.
+var auto := true
 
 
 func _ready() -> void:
@@ -53,7 +55,7 @@ func is_idle() -> bool:
 
 ## Queue a line. Story lines play once per run; pass once = false for idle, return and rebirth.
 func say(id: String, once := true) -> void:
-	if not VoiceLines.LINES.has(id):
+	if not auto or not VoiceLines.LINES.has(id):
 		return
 	if once:
 		if GameState.said.has(id) or _queue.has(id):
@@ -68,6 +70,12 @@ func _process(delta: float) -> void:
 	if not _queue.is_empty() and _cooldown <= 0.0 and not _player.playing:
 		_speak(_queue.pop_front())
 	_check_stuck_and_idle()
+
+
+## Say a line right now, skipping the queue and its spacing (the trailer's director).
+func say_now(id: String) -> void:
+	_player.stop()
+	_speak(id)
 
 
 func _speak(id: String) -> void:

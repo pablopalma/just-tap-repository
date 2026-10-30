@@ -18,6 +18,8 @@ var washes
 var path_view
 var gates
 var tip
+var star
+var forks
 var fx
 var camera
 var hud
@@ -99,6 +101,14 @@ func _build() -> void:
 	gates = _node("Gates", "res://scripts/world/gates.gd")
 	gates.path = path
 	gates.font = font
+	forks = _node("Forks", "res://scripts/world/forks.gd")
+	forks.path = path
+	forks.font = font
+	forks.split_burst.connect(_on_split_burst)
+	forks.join_burst.connect(_on_join_burst)
+	star = _node("Star", "res://scripts/world/star_circuit.gd")
+	star.path = path
+	star.burst.connect(_on_star_burst)
 	tip = _node("Tip", "res://scripts/world/tip.gd")
 	tip.path = path
 	fx = _node("FX", "res://scripts/world/fx.gd")
@@ -235,8 +245,17 @@ func _process(delta: float) -> void:
 	match mode:
 		Mode.INTRO, Mode.PLAY:
 			camera.k = 2.2
-			camera.target_pos = Vector2(tip.position.x * 0.5, tip.position.y - 70.0)
-			camera.target_zoom = _base_zoom()
+			if star.is_active():
+				# The whole star in view.
+				camera.target_pos = star.center() + Vector2(0, -20)
+				camera.target_zoom = _base_zoom() * 0.72
+			elif forks.is_active():
+				var f: Vector2 = forks.focus()
+				camera.target_pos = Vector2(f.x * 0.5, f.y - 70.0)
+				camera.target_zoom = _base_zoom() * 0.92
+			else:
+				camera.target_pos = Vector2(tip.position.x * 0.5, tip.position.y - 70.0)
+				camera.target_zoom = _base_zoom()
 		Mode.EVENT:
 			camera.k = 1.1
 			camera.target_pos = _event_center
@@ -343,6 +362,42 @@ func _on_chapter_unlocked(idx: int) -> void:
 	_flash(0.45, 2.0)
 
 
+## The star is complete: the lights meet at the centre and burst; one light goes on.
+func _on_star_burst(pos: Vector2) -> void:
+	for i in 3:
+		fx.ring(pos, Palette.GOLD if i != 1 else Palette.chapter_color(maxi(1, Palette.chapter_of(GameState.stage))), 160.0 + i * 70.0, 1.8 + i * 0.3)
+	fx.aura(pos, Palette.GOLD)
+	washes.aura(pos, Palette.GOLD)
+	colour_wave.pass_wave(pos, Palette.GOLD)
+	Music.choir_swell()
+	Music.build_piece(9, 0.0, 1.5)
+	camera.add_trauma(0.6)
+	camera.punch(0.06)
+	_flash(0.4, 1.6)
+
+
+## The line splits: golden rings closing in, a flash, and the branches shoot out.
+func _on_split_burst(pos: Vector2, _count: int) -> void:
+	for i in 3:
+		fx.ring(pos, Palette.GOLD, 120.0 + i * 60.0, 1.4 + i * 0.3)
+	washes.aura(pos, Palette.GOLD)
+	colour_wave.pass_wave(pos, Palette.GOLD)
+	Music.choir_swell()
+	Music.build_piece(4, 0.0, 1.2)
+	camera.add_trauma(0.5)
+	camera.punch(0.05)
+	_flash(0.35, 1.3)
+
+
+## The last join: every branch back into one line.
+func _on_join_burst(pos: Vector2) -> void:
+	for i in 3:
+		fx.ring(pos, Palette.GOLD, 100.0 + i * 50.0, 1.6)
+	colour_wave.pass_wave(pos, Palette.GOLD)
+	Music.build_piece(9, 0.0, 1.5)
+	_flash(0.25, 1.4)
+
+
 func _summon_bird() -> void:
 	_bird_wait = randf_range(BIRD_EVERY.x, BIRD_EVERY.y)
 	bird.fly()
@@ -432,6 +487,13 @@ func _on_dev(id: String, arg: int) -> void:
 func _dev_jump(n: int) -> void:
 	if intro != null:
 		_start()
+	# Visuals first: the jump itself may start a star or a fork, which must survive.
+	gates.reset()
+	star.reset()
+	forks.reset()
+	fx.clear()
+	washes.clear()
+	landscape.reset()
 	GameState.dev_jump(n)
 	GameState.running = true
 	mode = Mode.PLAY
@@ -442,10 +504,6 @@ func _dev_jump(n: int) -> void:
 	end_screen.visible = false
 	hud.modulate.a = 1.0
 	tip.lit = maxf(0.0, path.gate_len(n) - 260.0)
-	gates.reset()
-	fx.clear()
-	washes.clear()
-	landscape.reset()
 
 
 func _dev_break() -> void:
@@ -517,6 +575,8 @@ func _on_reborn() -> void:
 	darkness.amount = 0.0
 	tip.lit = 0.0
 	gates.reset()
+	star.reset()
+	forks.reset()
 	fx.clear()
 	washes.clear()
 	landscape.reset()

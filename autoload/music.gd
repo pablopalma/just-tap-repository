@@ -28,6 +28,9 @@ const GROUP_DB := {
 ## Highest note for chord-degree sparkles before they fold an octave down.
 const BRIGHT_CEILING := 93
 
+## Each branch of a fork plays its own instrument.
+const BRANCH_INSTRUMENTS := ["piano", "harp", "celesta"]
+
 const ARP_PATTERN := [0, 1, 2, 3, 4, 3, 2, 1]
 const COUNTER_PATTERN := [2, 1, 3, 2, 4, 3, 1, 2]
 
@@ -304,8 +307,51 @@ func set_bird_pan(pan: float) -> void:
 func _on_hit(_damage: float, crit: bool, source: String) -> void:
 	if source == "auto":
 		play_auto()
+	elif not GameState.branches.is_empty():
+		play_trio(crit)
 	else:
 		play_tap(GameState.progress(), crit)
+
+
+## Forked: each branch is an instrument (piano, harp, celesta) and plays its own note, higher the
+## more broken its barrier — three branches moving out of step sound like a trio.
+func play_trio(crit: bool) -> void:
+	if not playing:
+		return
+	var k := _next_slot()
+	var used: int = _slot_use.get(k, 0)
+	if used >= 2:
+		return
+	_slot_use[k] = used + 1
+	var t := _slot_time(k)
+	var n := chord().size()
+	for i in GameState.branches.size():
+		var b: Dictionary = GameState.branches[i]
+		if b.done:
+			continue
+		var deg := roundi(GameState.branch_progress(b) * (n * 2 - 1)) + i
+		_schedule_deg(t, BRANCH_INSTRUMENTS[i % BRANCH_INSTRUMENTS.size()], deg + used, 12, 0.035)
+	if crit:
+		_schedule(t, "note", "glass", chord_note(4, tonic() + 24), 0.04)
+
+
+## A branch reached its barrier's end: two notes of its own instrument.
+func play_branch_done(i: int) -> void:
+	if not playing:
+		return
+	var t := _slot_time(_next_slot())
+	var inst: String = BRANCH_INSTRUMENTS[i % BRANCH_INSTRUMENTS.size()]
+	_schedule_deg(t, inst, 2 + i, 12, 0.045)
+	_schedule_deg(t + _tap_div() * 2.0, inst, 4 + i, 12, 0.04)
+
+
+## A light of a star crossed one of its small barriers: a glass note, one step higher per light.
+func play_star_step(i: int, n: int) -> void:
+	if not playing:
+		return
+	var t := _slot_time(_next_slot())
+	_schedule_deg(t, "glass", 2 + (i * 7) % (n + 3), 12, 0.04)
+	_schedule_deg(t, "celesta", 4 + i, 24, 0.018)
 
 
 func _on_gate_broken(n: int) -> void:

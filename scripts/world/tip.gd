@@ -39,6 +39,9 @@ func kick(amount: float) -> void:
 
 
 func _draw() -> void:
+	# While a star or a fork runs, the tip is its lights; it comes back as one when they rejoin.
+	if not GameState.star.is_empty() or not GameState.branches.is_empty():
+		return
 	var c := Palette.line_col(GameState.stage)
 	if _flash > 0.0:
 		var e := 1.0 - _flash

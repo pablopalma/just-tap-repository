@@ -12,6 +12,8 @@ var voice_on := true
 var lang := "es" if OS.get_locale_language() == "es" else "en"
 ## True when a save with progress existed at startup.
 var had_progress := false
+## Off while recording the trailer or running tests that must not touch the player's save.
+var enabled := true
 
 var _t := 0.0
 
@@ -44,6 +46,8 @@ func set_lang(l: String) -> void:
 
 
 func save_game() -> void:
+	if not enabled:
+		return
 	var d := GameState.to_dict()
 	d["music_on"] = music_on
 	d["voice_on"] = voice_on

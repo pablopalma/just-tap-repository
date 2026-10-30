@@ -52,6 +52,13 @@ func _init() -> void:
 	_button(box, "El color vuelve · azul (b.60)", "edge", 60)
 	_button(box, "El color vuelve · amarillo (b.80)", "edge", 80)
 
+	_title(box, "Estrellas y ramas")
+	_button(box, "Estrella · 4 luces (b.16)", "jump", 16)
+	_button(box, "Estrella · 6 luces (b.37)", "jump", 37)
+	_button(box, "Bifurcación en 2 (b.41)", "jump", 41)
+	_button(box, "Bifurcación en 3 (b.51)", "jump", 51)
+	_button(box, "Unión de las ramas (b.60)", "edge", 60)
+
 	_title(box, "Final")
 	if BuildFlags.DEMO:
 		_button(box, "Final de la demo (b.40)", "edge", BuildFlags.DEMO_LAST)

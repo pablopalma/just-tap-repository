@@ -16,7 +16,23 @@ signal reborn
 signal progress_reset
 ## Dev menu: the game jumped to another barrier.
 signal jumped(n: int)
+## A star circuit or a fork started or ended at the current barrier (see star and ranches).
+signal special_changed
+signal star_light_broke(i: int, seg: int)
+signal star_completed(n: int)
+signal branch_broke(i: int)
 
+## Star circuits (§22.3): barrier -> [points n, skip k]. The tip becomes n lights running a star.
+const STAR_BARRIERS := {16: [4, 2], 27: [5, 2], 37: [6, 2], 67: [7, 3], 77: [5, 2], 87: [6, 2], 96: [7, 2]}
+## Each light crosses six small barriers: two on its chord, two on its arc, two on its ray.
+const STAR_SEGMENTS := 6
+## Life of each small barrier against a normal one. Six in a row, so a star weighs about two
+## barriers (tuned to keep the demo's length).
+const STAR_HP := 0.35
+## Forks (§19.4): two branches from FORK_FROM, three from FORK_THREE, joined again after FORK_TO.
+const FORK_FROM := 41
+const FORK_THREE := 51
+const FORK_TO := 60
 const FINAL := 100
 const GAP := 150.0
 const COMBO_MAX := 30.0
@@ -50,9 +66,15 @@ var _combo_timer := 0.0
 var _auto_acc := 0.0
 var _echoes: Array[float] = []
 
+## While the current barrier is a star: {"n": points, "k": skip, "lights": [{seg, hp, max}]}.
+var star := {}
+## While the current barrier is forked: one {hp, max, done} per branch.
+var branches: Array[Dictionary] = []
+
 
 func _ready() -> void:
 	hp = max_hp(stage)
+	_enter_stage()
 
 
 func _process(delta: float) -> void:
@@ -67,6 +89,7 @@ func _process(delta: float) -> void:
 		combo = maxf(0.0, combo - COMBO_DECAY * delta)
 
 	hp = minf(max_hp(stage), hp + regen(stage) * delta)
+	_regen_special(delta)
 
 	var rate := 0.6 * lv("pulso")
 	if rate > 0.0:
@@ -136,9 +159,30 @@ func gain() -> float:
 	return pow(1.15, lv("ganancia")) * rebirth_mult()
 
 
-## 0..1, how broken the current barrier is.
+## 0..1, how broken the current barrier is (for a star: how much of the circuit is done; for a
+## fork: the average of its branches).
 func progress() -> float:
+	if not star.is_empty():
+		var done := 0.0
+		for l in star.lights:
+			done += l.seg + (0.0 if l.seg >= STAR_SEGMENTS else 1.0 - l.hp / l.max)
+		return clampf(done / (STAR_SEGMENTS * star.lights.size()), 0.0, 1.0)
+	if not branches.is_empty():
+		var sum := 0.0
+		for b in branches:
+			sum += branch_progress(b)
+		return sum / branches.size()
 	return clampf(1.0 - hp / max_hp(stage), 0.0, 1.0)
+
+
+func branch_progress(b: Dictionary) -> float:
+	return 1.0 if b.done else clampf(1.0 - b.hp / b.max, 0.0, 1.0)
+
+
+func fork_count(n: int) -> int:
+	if n < FORK_FROM or n > FORK_TO:
+		return 0
+	return 2 if n < FORK_THREE else 3
 
 
 # --- Tapping ---------------------------------------------------------------
@@ -162,10 +206,87 @@ func tap(source := "tap") -> void:
 			_echoes.append(ECHO_DELAY)
 	last_hit_time = clock
 	add_light(light_per_tap(stage) * (0.5 if source == "auto" else 1.0))
+	if not star.is_empty():
+		hit.emit(d, crit, source)
+		_hit_star(d)
+		return
+	if not branches.is_empty():
+		hit.emit(d, crit, source)
+		_hit_branches(d)
+		return
 	hp -= d
 	hit.emit(d, crit, source)
 	if hp <= 0.0:
 		_break_gate()
+
+
+## One tap hits every light at once; a light that breaks its small barrier moves on to the next.
+func _hit_star(d: float) -> void:
+	var all_done := true
+	for i in star.lights.size():
+		var l: Dictionary = star.lights[i]
+		if l.seg >= STAR_SEGMENTS:
+			continue
+		l.hp -= d
+		if l.hp <= 0.0:
+			l.seg += 1
+			l.hp = l.max
+			add_light(reward(stage) * 0.06)
+			star_light_broke.emit(i, l.seg)
+		if l.seg < STAR_SEGMENTS:
+			all_done = false
+	if all_done:
+		var n := stage
+		add_light(reward(n) * 0.5)
+		star_completed.emit(n)
+		_break_gate()
+
+
+## One tap hits every branch with its full damage; the barrier passes when all have arrived.
+func _hit_branches(d: float) -> void:
+	var all_done := true
+	for i in branches.size():
+		var b: Dictionary = branches[i]
+		if b.done:
+			continue
+		b.hp -= d
+		if b.hp <= 0.0:
+			b.done = true
+			branch_broke.emit(i)
+		else:
+			all_done = false
+	if all_done:
+		_break_gate()
+
+
+func _regen_special(delta: float) -> void:
+	var f := regen_frac(stage) * pow(0.9, lv("corrosion")) * delta
+	if f <= 0.0:
+		return
+	for l in star.get("lights", []):
+		if l.seg < STAR_SEGMENTS:
+			l.hp = minf(l.max, l.hp + l.max * f)
+	for b in branches:
+		if not b.done:
+			b.hp = minf(b.max, b.hp + b.max * f)
+
+
+## Sets up the star or the fork of the current barrier, if it has one.
+func _enter_stage() -> void:
+	star = {}
+	branches = []
+	if STAR_BARRIERS.has(stage) and not finished:
+		var spec: Array = STAR_BARRIERS[stage]
+		var lights: Array[Dictionary] = []
+		for i in int(spec[0]):
+			var m := max_hp(stage) * STAR_HP * (1.0 + 0.15 * sin(i * 1.9 + stage))
+			lights.append({"seg": 0, "hp": m, "max": m})
+		star = {"n": int(spec[0]), "k": int(spec[1]), "lights": lights}
+	elif fork_count(stage) > 0 and not finished:
+		for i in fork_count(stage):
+			var m := max_hp(stage) * (1.0 + 0.18 * sin(i * 2.3 + stage * 1.7))
+			branches.append({"hp": m, "max": m, "done": false})
+	special_changed.emit()
 
 
 func _break_gate() -> void:
@@ -192,6 +313,7 @@ func _break_gate() -> void:
 	hp = max_hp(stage)
 	time_at_gate = 0.0
 	taps_at_gate = 0
+	_enter_stage()
 
 
 func add_light(v: float) -> void:
@@ -259,6 +381,7 @@ func rebirth() -> void:
 	time_at_gate = 0.0
 	taps_at_gate = 0
 	light_changed.emit(light)
+	_enter_stage()
 	reborn.emit()
 
 
@@ -278,6 +401,7 @@ func new_game() -> void:
 	time_at_gate = 0.0
 	taps_at_gate = 0
 	light_changed.emit(light)
+	_enter_stage()
 	progress_reset.emit()
 
 
@@ -297,6 +421,7 @@ func dev_jump(n: int) -> void:
 	for z in VoiceLines.ON_ZONE:
 		if z * 10 < stage:
 			said[VoiceLines.ON_ZONE[z]] = true
+	_enter_stage()
 	jumped.emit(stage)
 
 
@@ -326,3 +451,4 @@ func from_dict(d: Dictionary) -> void:
 	var s: Dictionary = d.get("seen", {})
 	for k in s:
 		seen[k] = int(s[k])
+	_enter_stage()

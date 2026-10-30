@@ -42,7 +42,8 @@ func _draw() -> void:
 		if n < s or GameState.finished:
 			_draw_broken(p, n)
 		elif n == s:
-			_draw_current(p)
+			if GameState.star.is_empty() and GameState.branches.is_empty():
+				_draw_current(p)
 		else:
 			_draw_future(p, n)
 
