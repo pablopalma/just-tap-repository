@@ -22,6 +22,9 @@ var _drawer: Drawer
 var _t := 0.0
 ## 0 = distant parallax layer, 1 = aligned with the tower and in full colour.
 var grand := 0.0
+## A partial grand view for a few seconds (the panoramas during play): 0 distant .. 1 aligned.
+var glimpse := 0.0
+var _glimpse_tween: Tween
 
 
 func _ready() -> void:
@@ -51,8 +54,17 @@ func set_grand(on: bool, time := 7.0, ghost := false) -> void:
 		tw.parallel().tween_property(_drawer, "ghost", 1.0, time * 1.4)
 
 
+## Ease the landscape toward (or away from) the tower for a panorama.
+func glimpse_to(target: float, time: float) -> void:
+	if _glimpse_tween:
+		_glimpse_tween.kill()
+	_glimpse_tween = create_tween()
+	_glimpse_tween.tween_property(self, "glimpse", target, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
 func reset() -> void:
 	grand = 0.0
+	glimpse = 0.0
 	_drawer.ghost = 0.0
 	_drawer.anim.clear()
 	_drawer.queue_redraw()
@@ -62,9 +74,10 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 	var zn := SCALE * (1.0 + (cam_zoom - 1.0) * F) * vp.y / 720.0
 	# Aligned: layer point F·w lands on screen exactly where world point w does.
 	var za := cam_zoom / F
-	var z := exp(lerpf(log(zn), log(za), grand))
+	var g := maxf(grand, glimpse)
+	var z := exp(lerpf(log(zn), log(za), g))
 	var center := (cam_pos + cam_offset) * F
-	_drawer.grand = grand
+	_drawer.grand = g
 	_drawer.width_mul = maxf(1.0, zn / z)
 	scale = Vector2(z, z)
 	offset = vp * 0.5 - center * z

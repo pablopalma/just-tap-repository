@@ -4,6 +4,8 @@ extends Node
 ## Visual feedback is immediate; only the sound is quantised.
 
 signal note_played(midi: int, instrument: String)
+## A note worth seeing (§7.4): taps and the accompaniment. bright = a high glassy one (a circle).
+signal shape_note(midi: int, bright: bool)
 
 const VOICES := 24
 const REF_VOL := 0.05
@@ -190,6 +192,7 @@ func play_tap(progress: float, crit: bool) -> void:
 	var deg := roundi(progress * (n * 2 - 1)) + used
 	var midi := chord_note(deg, tonic() + 12)
 	var t := _slot_time(k)
+	shape_note.emit(midi, false)
 	_schedule(t, "note", _tap_instrument(), midi, 0.05)
 	_schedule(t, "wind", "tap", midi, 0.04)
 	if crit:
@@ -429,9 +432,13 @@ func _accompany(s: int) -> void:
 		if fast or s % 2 == 0:
 			var deg: int = ARP_PATTERN[_arp_i % ARP_PATTERN.size()]
 			_arp_i += 1
-			_play(_arp_instrument(), chord_note(deg, tonic() + 12), 0.018 + tension * 0.04)
+			var arp := chord_note(deg, tonic() + 12)
+			_play(_arp_instrument(), arp, 0.018 + tension * 0.04)
+			shape_note.emit(arp, false)
 	if layers >= 4 and s % 8 == 4:
-		_play("glass", chord_note(randi_range(0, c.size() - 1), tonic() + 24), 0.02)
+		var shine := chord_note(randi_range(0, c.size() - 1), tonic() + 24)
+		_play("glass", shine, 0.02)
+		shape_note.emit(shine, true)
 	if layers >= 5 and bar == 0:
 		var b := int(s / 16.0)
 		_play("flute", chord_note(COUNTER_PATTERN[b % COUNTER_PATTERN.size()], tonic() + 12), 0.03)

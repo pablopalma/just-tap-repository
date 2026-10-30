@@ -52,6 +52,12 @@ var said := {}
 var total_taps := 0
 ## Dev menu only: multiplies damage so any barrier can be tested quickly.
 var dev_damage := 1.0
+## Story moments already played as a cinematic this run (barrier -> true); saved.
+var cinemas := {}
+## While a cinematic plays the tip taps on its own and the barrier does not heal.
+var cinematic := false
+## Cinematic hits break a barrier in about this many beats.
+const CINE_HITS := 7.0
 var finished := false
 ## False during the intro and the ending: taps and regeneration wait.
 var running := false
@@ -88,8 +94,9 @@ func _process(delta: float) -> void:
 	else:
 		combo = maxf(0.0, combo - COMBO_DECAY * delta)
 
-	hp = minf(max_hp(stage), hp + regen(stage) * delta)
-	_regen_special(delta)
+	if not cinematic:
+		hp = minf(max_hp(stage), hp + regen(stage) * delta)
+		_regen_special(delta)
 
 	var rate := 0.6 * lv("pulso")
 	if rate > 0.0:
@@ -116,26 +123,44 @@ func lv(id: String) -> int:
 ## (the single curve of the design doc does not hold for 100 barriers).
 const EARLY_BOOST := 5.0
 const EARLY_UNTIL := 18
-## Tuned with tools/sim_time.tscn: grey ×5 and red ×6 make the demo (barriers 1–40) about 30 min.
-## Later chapters are still on the original curve — to balance with the full game.
-var chapter_hp := [5.0, 6.0, 1.0, 1.0, 1.0]
+const INTRO_START := 0.2
+const INTRO_UNTIL := 7
+## Tuned with tools/sim_time.tscn (with the gentler regeneration and fatigue): grey ×8 and red ×10 make the
+## demo (barriers 1–40) about 19 min for an efficient player and 31 for a casual one, and nobody spends
+## more than ~1.5 min on one barrier. Later chapters are still on the original curve.
+var chapter_hp := [8.0, 10.0, 1.0, 1.0, 1.0]
 
 
 func max_hp(n: int) -> float:
 	var base := float(n) if n <= 12 else 12.0 * pow(1.15, n - 12) + (n - 12) * 3
 	var early := lerpf(EARLY_BOOST, 1.0, clampf((n - 1) / float(EARLY_UNTIL - 1), 0.0, 1.0))
-	return roundf(base * early * chapter_hp[clampi(int((n - 1) / 20.0), 0, 4)])
+	# The very first barriers fall in a handful of taps (§2): the first impression is reward.
+	var intro := lerpf(INTRO_START, 1.0, clampf((n - 1) / float(INTRO_UNTIL - 1), 0.0, 1.0))
+	return maxf(1.0, roundf(base * early * intro * chapter_hp[clampi(int((n - 1) / 20.0), 0, 4)]))
 
 
-## Fraction of max HP regenerated per second.
+## Fraction of max HP regenerated per second. Gentler than the design doc's 0.025·(n−7): the demo's
+## chapters multiply life ×5–×6 and regeneration grows with it, which made walls no tapping could beat.
+const REGEN_STEP := 0.012
+const REGEN_MAX := 0.3
+## The longer you stay on one barrier, the more it tires: regeneration halves after FATIGUE seconds,
+## to a third after twice that… Nothing here is an absolute wall (design pillar: "relaxation").
+const FATIGUE := 20.0
+
+
 func regen_frac(n: int) -> float:
 	if n < 8:
 		return 0.0
-	return minf(0.5, 0.025 * (n - 7))
+	return minf(REGEN_MAX, REGEN_STEP * (n - 7))
 
 
 func regen(n: int) -> float:
-	return max_hp(n) * regen_frac(n) * pow(0.9, lv("corrosion"))
+	return max_hp(n) * regen_frac(n) * pow(0.9, lv("corrosion")) * fatigue()
+
+
+## 1 when you arrive at a barrier, falling as you keep at it.
+func fatigue() -> float:
+	return 1.0 / (1.0 + time_at_gate / FATIGUE)
 
 
 func reward(n: int) -> float:
@@ -191,10 +216,13 @@ func tap(source := "tap") -> void:
 	if not running or finished:
 		return
 	var d := power()
+	if source == "cine":
+		# The tip taps on its own, on the beat: about CINE_HITS hits per barrier, whatever your build.
+		d = maxf(d, max_hp(stage) * 1.25 / CINE_HITS)
 	if source == "auto":
 		d *= 0.6
 	d *= 1.0 + combo * 0.015 * lv("resonancia")
-	var crit := randf() < 0.03 * lv("destello")
+	var crit := source != "cine" and randf() < 0.03 * lv("destello")
 	if crit:
 		d *= 4.0
 	if source == "tap":
@@ -260,7 +288,7 @@ func _hit_branches(d: float) -> void:
 
 
 func _regen_special(delta: float) -> void:
-	var f := regen_frac(stage) * pow(0.9, lv("corrosion")) * delta
+	var f := regen_frac(stage) * pow(0.9, lv("corrosion")) * fatigue() * delta
 	if f <= 0.0:
 		return
 	for l in star.get("lights", []):
@@ -374,6 +402,8 @@ func rebirth() -> void:
 	light = 0.0
 	up = {}
 	seen = {}
+	cinemas = {}
+	cinematic = false
 	finished = false
 	combo = 0.0
 	_echoes.clear()
@@ -394,6 +424,8 @@ func new_game() -> void:
 	seen = {}
 	said = {}
 	total_taps = 0
+	cinemas = {}
+	cinematic = false
 	finished = false
 	combo = 0.0
 	_echoes.clear()
@@ -427,7 +459,7 @@ func dev_jump(n: int) -> void:
 
 func to_dict() -> Dictionary:
 	return {"stage": stage, "hp": hp, "light": light, "up": up, "reb": rebirths, "seen": seen,
-		"finished": finished, "said": said.keys(), "taps": total_taps}
+		"finished": finished, "said": said.keys(), "taps": total_taps, "cine": cinemas.keys()}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -439,6 +471,9 @@ func from_dict(d: Dictionary) -> void:
 	light = float(d.get("light", 0.0))
 	rebirths = int(d.get("reb", 0))
 	total_taps = int(d.get("taps", 0))
+	cinemas = {}
+	for k in d.get("cine", []):
+		cinemas[int(k)] = true
 	up = {}
 	var u: Dictionary = d.get("up", {})
 	for k in u:

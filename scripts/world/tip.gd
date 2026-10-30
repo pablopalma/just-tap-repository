@@ -9,6 +9,10 @@ var jolt := 0.0
 
 var _squash := 0.0
 var _flash := 0.0
+## In a cinematic the tip leaves a trail of its last positions (world space), fading.
+var trail := false
+var _trail: Array[Vector2] = []
+const TRAIL_LEN := 22
 
 
 func _process(delta: float) -> void:
@@ -28,6 +32,12 @@ func _process(delta: float) -> void:
 	_squash *= exp(-11.0 * delta)
 	_flash = maxf(0.0, _flash - delta * 3.0)
 	position = path.pos_at(lit + jolt)
+	if trail:
+		_trail.push_front(position)
+		if _trail.size() > TRAIL_LEN:
+			_trail.pop_back()
+	elif not _trail.is_empty():
+		_trail.pop_back()
 	queue_redraw()
 
 
@@ -43,6 +53,9 @@ func _draw() -> void:
 	if not GameState.star.is_empty() or not GameState.branches.is_empty():
 		return
 	var c := Palette.line_col(GameState.stage)
+	for i in range(1, _trail.size()):
+		var k := 1.0 - float(i) / TRAIL_LEN
+		draw_circle(_trail[i] - position, 3.5 * k, Color(c, 0.35 * k))
 	if _flash > 0.0:
 		var e := 1.0 - _flash
 		draw_arc(Vector2.ZERO, lerpf(10.0, 30.0, e), 0.0, TAU, 40, Color(c, 0.55 * _flash), 1.4, true)

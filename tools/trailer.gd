@@ -32,6 +32,7 @@ func _ready() -> void:
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 	_main.fx.font = null
+	_main.cinematics_enabled = false  # the director decides every shot
 	_build_veil()
 	_plan()
 

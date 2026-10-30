@@ -18,6 +18,8 @@ var washes
 var path_view
 var gates
 var tip
+var figure
+var shapes
 var star
 var forks
 var fx
@@ -28,6 +30,23 @@ var zone_title: Screens.ZoneTitle
 var end_screen: Screens.EndScreen
 var intro: Screens.Intro
 var subtitle: Screens.Subtitle
+var cinema: Screens.Cinema
+## Story cinematics (§22.1). A director (the trailer) turns them off.
+var cinematics_enabled := true
+const CINE_DELAY := 0.6
+const CINE_TAIL := 2.6
+const CINE_MAX := 16.0
+var _cine := false
+## Panoramas (a few seconds of pulled-back camera over the city being built).
+const PANO_TIME := 6.0
+## How far a panorama pulls back, against the normal zoom: far enough that the distant landscape and the
+## tower line up (the landscape's parallax factor), so each structure stands beside its own zone.
+const PANO_ZOOM := 0.13
+var _pano := 0.0
+var _cine_t := 0.0
+var _cine_tail := -1.0
+var _cine_gate := 0
+var _cine_beat := 0.0
 var depth: DepthBackground
 var bird: GiantBird
 var landscape: Landscape
@@ -96,6 +115,9 @@ func _build() -> void:
 
 	var font := UIStyle.font()
 	washes = _node("Washes", "res://scripts/world/washes.gd")
+	shapes = _node("MusicShapes", "res://scripts/world/music_shapes.gd")
+	figure = _node("BarrierFigure", "res://scripts/world/barrier_figure.gd")
+	figure.path = path
 	path_view = _node("Path", "res://scripts/world/path_view.gd")
 	path_view.setup(path)
 	gates = _node("Gates", "res://scripts/world/gates.gd")
@@ -140,6 +162,8 @@ func _build() -> void:
 	ui.add_child(hud)
 	zone_title = Screens.ZoneTitle.new()
 	ui.add_child(zone_title)
+	cinema = Screens.Cinema.new()
+	ui.add_child(cinema)
 	subtitle = Screens.Subtitle.new()
 	ui.add_child(subtitle)
 	Narrator.line_started.connect(_on_line)
@@ -188,6 +212,8 @@ func _unhandled_input(e: InputEvent) -> void:
 	if not pressed:
 		return
 	get_viewport().set_input_as_handled()
+	if _cine:
+		return  # in a cinematic the tip plays on its own
 	if mode == Mode.INTRO:
 		_start()
 	else:
@@ -232,6 +258,81 @@ func _new_game() -> void:
 	_start()
 
 
+# --- Panoramas ----------------------------------------------------------------
+
+## The camera pulls back for a few seconds and the distant landscape comes closer and takes some
+## colour: the city being built, seen whole for a moment. Taps keep working all along.
+func _panorama() -> void:
+	if not cinematics_enabled or mode != Mode.PLAY or _cine or star.is_active() or GameState.finished:
+		return
+	_pano = PANO_TIME
+
+
+# --- Story cinematics (§22.1) -------------------------------------------------
+
+## Reaching a barrier the voice talks about plays it as a cinematic, once per run.
+func _maybe_cinematic(n: int) -> void:
+	if not cinematics_enabled or not VoiceLines.ON_REACH.has(n) or GameState.cinemas.has(n):
+		return
+	if GameState.finished or mode != Mode.PLAY:
+		return
+	GameState.cinemas[n] = true
+	get_tree().create_timer(CINE_DELAY).timeout.connect(_begin_cinematic.bind(n))
+
+
+## Bars in, HUD out, subtitles into the bottom bar; the tip taps on its own on every beat.
+func _begin_cinematic(n: int) -> void:
+	if GameState.stage != n or GameState.finished or _cine:
+		return
+	_cine = true
+	_cine_t = 0.0
+	_cine_tail = -1.0
+	_cine_gate = n
+	_cine_beat = Music.beat_phase()
+	GameState.cinematic = true
+	cinema.show_bars(true)
+	subtitle.cinema = true
+	tip.trail = true
+	create_tween().tween_property(hud, "modulate:a", 0.0, 1.0)
+
+
+func _process_cinematic(delta: float) -> void:
+	_cine_t += delta
+	if _cine_tail >= 0.0:
+		_cine_tail -= delta
+		if _cine_tail < 0.0:
+			_stop_cinematic(false)
+		return
+	if GameState.stage != _cine_gate or GameState.finished:
+		_cine_tail = CINE_TAIL
+		return
+	# One hit on every beat, once the bars are in: the ball plays a little melody.
+	var phase := Music.beat_phase()
+	if phase < _cine_beat and _cine_t > 1.0:
+		GameState.tap("cine")
+		fx.ring(tip.position, Palette.line_col(GameState.stage), 46.0, 0.9)
+	_cine_beat = phase
+	if _cine_t > CINE_MAX:
+		GameState.hp = 0.0
+		GameState.tap("cine")
+
+
+func _stop_cinematic(instant: bool) -> void:
+	if not _cine and not instant:
+		return
+	_cine = false
+	GameState.cinematic = false
+	subtitle.cinema = false
+	tip.trail = false
+	if instant:
+		cinema.amount = 0.0
+		return
+	if mode != Mode.EVENT:
+		cinema.show_bars(false, 1.2)
+	if mode == Mode.PLAY:
+		create_tween().tween_property(hud, "modulate:a", 1.0, 1.2)
+
+
 func _greet(returning: bool) -> void:
 	if returning:
 		Narrator.say("00b", false)
@@ -240,7 +341,10 @@ func _greet(returning: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	if _cine:
+		_process_cinematic(delta)
 	path_view.lit = tip.lit
+	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
 	match mode:
 		Mode.INTRO, Mode.PLAY:
@@ -253,6 +357,16 @@ func _process(delta: float) -> void:
 				var f: Vector2 = forks.focus()
 				camera.target_pos = Vector2(f.x * 0.5, f.y - 70.0)
 				camera.target_zoom = _base_zoom() * 0.92
+			elif _pano > 0.0:
+				_pano -= delta
+				camera.k = 0.8
+				# Look down at what has been built, with the tip near the top of the view.
+				camera.target_pos = Vector2(0.0, tip.position.y + 1100.0)
+				camera.target_zoom = _base_zoom() * PANO_ZOOM
+			elif _cine:
+				camera.k = 1.4
+				camera.target_pos = Vector2(tip.position.x * 0.6, tip.position.y - 50.0)
+				camera.target_zoom = _base_zoom() * 1.18
 			else:
 				camera.target_pos = Vector2(tip.position.x * 0.5, tip.position.y - 70.0)
 				camera.target_zoom = _base_zoom()
@@ -263,6 +377,8 @@ func _process(delta: float) -> void:
 			_event_t -= delta
 			if _event_t <= 0.0:
 				mode = Mode.PLAY
+				if not _cine:
+					cinema.show_bars(false, 1.2)
 		Mode.FINAL:
 			var vs := get_viewport_rect().size
 			if _grand:
@@ -294,7 +410,11 @@ func _process(delta: float) -> void:
 			_enter_final(false)
 
 	var tint := Palette.chapter_color(Palette.chapter_of(GameState.stage))
-	depth.focus = landscape.grand
+	# The landscape lines up with the tower as far as the camera has pulled back.
+	if mode == Mode.PLAY or mode == Mode.EVENT:
+		var zb := _base_zoom()
+		landscape.glimpse = clampf(log(zb / camera.zoom.x) / log(1.0 / PANO_ZOOM), 0.0, 1.0)
+	depth.focus = maxf(landscape.grand, landscape.glimpse * 0.6)
 	depth.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	landscape.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	colour_wave.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size)
@@ -323,6 +443,10 @@ func _on_hit(damage: float, crit: bool, source: String) -> void:
 
 
 func _on_gate_broken(n: int) -> void:
+	_maybe_cinematic(n + 1)
+	# Halfway through every zone, step back and look at what is being built.
+	if n % 10 == 5:
+		get_tree().create_timer(1.2).timeout.connect(_panorama)
 	var p := path.gate_pos(n)
 	var col := Palette.paint_col(Zones.of(n), n)
 	washes.aura(p, col)
@@ -335,11 +459,13 @@ func _on_gate_broken(n: int) -> void:
 
 ## The camera pulls back to take in the zone's ten barriers.
 func _on_zone_completed(z: int) -> void:
+	cinema.show_bars(true)
 	var first := path.gate_pos((z - 1) * 10 + 1)
 	var last := path.gate_pos(z * 10)
 	_event_center = (first + last) * 0.5
 	var vs := get_viewport_rect().size
-	_event_zoom = minf(vs.y / (absf(last.y - first.y) + 500.0), vs.x / 800.0)
+	# Pull back far enough to see the city growing around the zone (see PANO_ZOOM).
+	_event_zoom = _base_zoom() * PANO_ZOOM * 1.3
 	_event_t = EVENT_TIME
 	mode = Mode.EVENT
 	fx.ring(last, Palette.INK, 220.0, 2.4)
@@ -487,6 +613,8 @@ func _on_dev(id: String, arg: int) -> void:
 func _dev_jump(n: int) -> void:
 	if intro != null:
 		_start()
+	_stop_cinematic(true)
+	_pano = 0.0
 	# Visuals first: the jump itself may start a star or a fork, which must survive.
 	colour_wave.clear()
 	bird.stop()
@@ -494,6 +622,8 @@ func _dev_jump(n: int) -> void:
 	gates.reset()
 	star.reset()
 	forks.reset()
+	figure.reset()
+	shapes.clear()
 	fx.clear()
 	washes.clear()
 	landscape.reset()
@@ -575,11 +705,14 @@ func _restart() -> void:
 
 
 func _on_reborn() -> void:
+	_stop_cinematic(true)
 	darkness.amount = 0.0
 	tip.lit = 0.0
 	gates.reset()
 	star.reset()
 	forks.reset()
+	figure.reset()
+	shapes.clear()
 	fx.clear()
 	washes.clear()
 	landscape.reset()

@@ -162,6 +162,45 @@ class ZoneTitle extends Control:
 		_tween.tween_property(self, "modulate:a", 0.0, 2.0)
 
 
+## Cinema bars (§22.1): 12 % of the screen at the top and the bottom, in dark paper, sliding in.
+class Cinema extends Control:
+	const SHARE := 0.12
+	const COLOR := Color(0.16, 0.15, 0.14, 0.94)
+
+	var amount := 0.0:
+		set(v):
+			amount = v
+			_place()
+
+	var _top: ColorRect
+	var _bottom: ColorRect
+	var _tween: Tween
+
+	func _init() -> void:
+		set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+		mouse_filter = MOUSE_FILTER_IGNORE
+		_top = ColorRect.new()
+		_bottom = ColorRect.new()
+		for b in [_top, _bottom]:
+			b.color = COLOR
+			b.mouse_filter = MOUSE_FILTER_IGNORE
+			add_child(b)
+		resized.connect(_place)
+
+	func show_bars(on: bool, time := 1.6) -> void:
+		if _tween:
+			_tween.kill()
+		_tween = create_tween()
+		_tween.tween_property(self, "amount", 1.0 if on else 0.0, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	func _place() -> void:
+		var h := size.y * SHARE * amount
+		_top.position = Vector2.ZERO
+		_top.size = Vector2(size.x, h)
+		_bottom.position = Vector2(0, size.y - h)
+		_bottom.size = Vector2(size.x, h)
+
+
 ## The voice's words, in the chosen language, low on the screen so they never cover a zone title.
 class Subtitle extends Control:
 	var _label: Label
@@ -179,10 +218,18 @@ class Subtitle extends Control:
 		_label.modulate.a = 0.0
 		resized.connect(_place)
 
+	## In a cinematic the subtitles move down into the bottom bar, in paper colour.
+	var cinema := false:
+		set(v):
+			cinema = v
+			_label.add_theme_color_override("font_color", Palette.PAPER if v else Palette.INK)
+			_label.add_theme_color_override("font_outline_color", Color(0.16, 0.15, 0.14, 0.0) if v else Color(Palette.PAPER, 0.85))
+			_place()
+
 	func _place() -> void:
 		var w := minf(size.x - 80.0, 820.0)
 		_label.size = Vector2(w, 80)
-		_label.position = Vector2((size.x - w) * 0.5, size.y * 0.72)
+		_label.position = Vector2((size.x - w) * 0.5, size.y * (0.905 if cinema else 0.72))
 
 	func show_line(text: String, duration: float) -> void:
 		_place()
