@@ -63,15 +63,11 @@ Las etiquetas que ya usás y suenan bien: `[softly]`, `[warmly]`, `[whispers]`, 
 [softly] Look... [long pause] [in awe] You made all of this.
 `
 
-## Pendiente de decidir
-
-- **Línea 24** ("It was about not stopping"): hay dos tomas, `vo_24.mp3` y `[warmly] It was about... [pause] not stopping....mp3`. La que no se use se borra.
-
 ## La carta del creador (cuarta pared) · vo_letter.mp3
 
 Un solo archivo, en inglés como el resto. El texto en pantalla sigue al audio: cada línea aparece en el momento que le toca según el largo de la grabación, y la firma sale cuando la voz termina. La voz **no dice el número de taps** (no puede saberlo); en pantalla sí aparece el número real del jugador.
 
-Conviene una voz distinta del narrador, más humana y cercana, como alguien hablándote en voz baja en una habitación tranquila. O la tuya.
+Con la **misma voz del narrador**, para que el locutor no cambie: la carta es el último momento de la misma presencia que acompañó todo el juego. Mismos ajustes que el resto de las líneas.
 
 ```
 [softly] Hi. [pause] We've never met.
