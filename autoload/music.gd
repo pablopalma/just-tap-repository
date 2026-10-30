@@ -25,6 +25,9 @@ const GROUP_DB := {
 	"wind": -34.6, "zone": -32.6, "choir": -32.8,
 }
 
+## Highest note for chord-degree sparkles before they fold an octave down.
+const BRIGHT_CEILING := 93
+
 const ARP_PATTERN := [0, 1, 2, 3, 4, 3, 2, 1]
 const COUNTER_PATTERN := [2, 1, 3, 2, 4, 3, 1, 2]
 
@@ -231,23 +234,44 @@ func bird_whoosh(vol: float) -> void:
 	_schedule(_grid_time(_s16() * 4.0), "note", "bass", tonic() - 12, vol * 0.8, true)
 
 
-## A piece of the distant landscape starts drawing: a soft swish as the pen lands, then two glassy
-## notes of the chord that climb with the piece (j = 0..9). Panned to the structure's side.
-func build_piece(j: int, side: float) -> void:
+## A piece of the distant landscape draws itself (j = 0..9): a soft swish as the pen lands, then
+## a bright arpeggio of glass and celesta that climbs with the pen for as long as it draws, and a
+## held harp note when the stroke ends. Degrees are resolved when each note plays, so the
+## arpeggio follows the chord even if it changes mid-stroke. Panned to the structure's side.
+func build_piece(j: int, side: float, draw_time := 2.6) -> void:
 	if not playing:
 		return
-	var t := _grid_time(_s16() * 2.0) + _s16() * 2.0
-	var div := _tap_div()
-	_schedule(t, "wind", "auto", chord_note(j, tonic() + 12), 0.035, true)
-	_schedule(t + div * 2.0, "note", "glass", chord_note(j % 5 + 3, tonic() + 12), 0.03, true)
-	_schedule(t + div * 4.0, "note", "celesta", chord_note(j % 5 + 5, tonic() + 12), 0.016, true)
 	if not _bird_active:
 		set_bird_pan(side * 0.6)
+	var div := _tap_div()
+	var t := _grid_time(div * 2.0) + div * 2.0
+	_schedule(t, "wind", "auto", chord_note(j, tonic() + 12), 0.05, true)
+	var start := j % 3 + 2
+	var steps := maxi(4, floori(draw_time / (div * 2.0)))
+	for i in steps:
+		var at := t + div * 2.0 * i
+		_schedule_deg(at, "glass", start + i, 12, 0.045 + 0.01 * i / steps)
+		if i % 2 == 1:
+			_schedule_deg(at, "celesta", start + i, 24, 0.02)
+	var end := t + div * 2.0 * steps
+	_schedule_deg(end, "harp", start + steps, 12, 0.05)
+	_schedule_deg(end, "glass", start + steps + 2, 12, 0.03)
 	if j == 9:
-		# the structure is complete: a slow glass shimmer climbing the chord
-		for i in 6:
-			_schedule(t + div * (6.0 + i * 2.0), "note", "glass", chord_note(i + 2, tonic() + 12), 0.025, true)
+		# The structure is complete: a cascade falling through the chord over a low harp chord.
+		var c0 := end + div * 4.0
+		for i in 10:
+			_schedule_deg(c0 + div * i, "glass", 12 - i, 12, 0.04)
+			if i % 3 == 0:
+				_schedule_deg(c0 + div * i, "celesta", 12 - i, 24, 0.02)
+		_schedule_deg(c0, "harp", 0, 0, 0.06)
+		_schedule_deg(c0 + div, "harp", 2, 0, 0.05)
+		_schedule(c0, "wind", "zona", tonic(), 0.05, true)
 
+
+## A note given as a chord degree; the pitch is picked when it plays (see _fire).
+func _schedule_deg(t: float, inst: String, deg: int, octave_offset: int, vol: float) -> void:
+	_queue.append({"t": t, "kind": "deg", "what": inst, "deg": deg, "base": octave_offset, "vol": vol,
+		"bird": true})
 
 ## The bird owns the pan of its bus while it flies.
 func set_bird_active(on: bool) -> void:
@@ -392,7 +416,12 @@ func _schedule(t: float, kind: String, what: String, midi: int, vol: float, bird
 
 
 func _fire(q: Dictionary) -> void:
-	if q.kind == "wind":
+	if q.kind == "deg":
+		var midi := chord_note(q.deg, tonic() + q.base)
+		while midi > BRIGHT_CEILING:
+			midi -= 12  # fold down: bright, never shrill
+		_play(q.what, midi, q.vol, q.bird)
+	elif q.kind == "wind":
 		_play_wind(q.what, q.midi, q.vol, q.bird)
 	else:
 		_play(q.what, q.midi, q.vol, q.bird)

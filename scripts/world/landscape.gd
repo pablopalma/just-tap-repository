@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 func build_piece(n: int) -> void:
 	_drawer.anim[n] = _t + START_DELAY
 	var z := Zones.of(n)
-	Music.build_piece((n - 1) % 10, _drawer.side(z))
+	Music.build_piece((n - 1) % 10, _drawer.side(z), DRAW_TIME)
 
 
 func reset() -> void:
