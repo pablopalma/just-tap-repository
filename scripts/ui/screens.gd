@@ -231,6 +231,7 @@ class Letter extends Control:
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			l.modulate.a = 0.0
 			l.set_meta("key", key)
+			l.set_meta("signature", signature)
 			box.add_child(l)
 			_lines.append(l)
 		_prompt = UIStyle.label(Loc.t("continue_tap"), 16, true, Color(Palette.INK, 0.5))
@@ -250,6 +251,17 @@ class Letter extends Control:
 		var tw := create_tween()
 		tw.tween_property(self, "modulate:a", 1.0, 2.5)
 		tw.tween_interval(1.2)
+		var voice := _voice_stream()
+		if voice:
+			_spoken(tw, voice)
+		else:
+			_written(tw)
+		tw.tween_interval(1.5)
+		tw.tween_callback(_allow_leave)
+		tw.tween_property(_prompt, "modulate:a", 1.0, 1.5)
+
+	## Without a recording: each line at its own pace, a longer silence before the key line.
+	func _written(tw: Tween) -> void:
 		for l in _lines:
 			if l.get_meta("key"):
 				tw.tween_interval(BEFORE_KEY)
@@ -259,9 +271,42 @@ class Letter extends Control:
 			else:
 				tw.tween_property(l, "modulate:a", 1.0, 1.6)
 				tw.tween_interval(LINE_GAP - 1.6)
-		tw.tween_interval(1.5)
-		tw.tween_callback(_allow_leave)
-		tw.tween_property(_prompt, "modulate:a", 1.0, 1.5)
+
+	## With audio/voices/vo_letter: the lines follow the recording, each one given a share of its
+	## length proportional to its text; the signature comes after the voice ends.
+	func _spoken(tw: Tween, voice: AudioStream) -> void:
+		tw.tween_callback(_play.bind(voice))
+		var total := 0.0
+		for l in _lines:
+			if not l.get_meta("signature"):
+				total += l.text.length()
+		var length := voice.get_length()
+		for l in _lines:
+			if l.get_meta("signature"):
+				continue
+			var share := length * l.text.length() / maxf(1.0, total)
+			var fade := minf(1.2, share)
+			if l.get_meta("key"):
+				tw.tween_callback(Music.choir_swell)
+			tw.tween_property(l, "modulate:a", 1.0, fade)
+			tw.tween_interval(maxf(0.0, share - fade))
+		for l in _lines:
+			if l.get_meta("signature"):
+				tw.tween_interval(1.5)
+				tw.tween_property(l, "modulate:a", 1.0, 1.6)
+
+	func _voice_stream() -> AudioStream:
+		var path := VoiceLines.audio_path("letter")
+		if path == "" or not SaveSystem.voice_on:
+			return null
+		return load(path)
+
+	func _play(voice: AudioStream) -> void:
+		var p := AudioStreamPlayer.new()
+		p.bus = Narrator.VOICE_BUS
+		p.stream = voice
+		add_child(p)
+		p.play()
 
 	func _allow_leave() -> void:
 		_ready_to_leave = true

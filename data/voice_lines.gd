@@ -32,6 +32,11 @@ const LINES := {
 		"es": "Dejá que cada parte de vos… vaya a su ritmo."},
 	# §22.2: when the branches join again (convergence cinematic, not in the game yet).
 	"converge": {"en": "And all of it… is still you.", "es": "Y todo eso… sigue siendo vos."},
+	# The creator's letter at the very end (shown by Screens.Letter, not queued by the Narrator).
+	# The text on screen is Loc.LETTER, with the player's real tap count; the voice says it without
+	# the number.
+	"letter": {"en": "Hi. We've never met. I'm the one who made this game.",
+		"es": "Hola. No nos conocemos. Soy quien hizo este juego."},
 	# §22.3, star circuits: when the lights first spread, and when they become one again.
 	# (Not in the game yet.)
 	"small_lights": {"en": "Small lights. One shape. That's you, too.",
