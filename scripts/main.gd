@@ -39,6 +39,8 @@ var _final_pending := -1.0
 var _final_t := 0.0
 var _end_shown := false
 var _letter_shown := false
+## The ending's grand reveal has started ("You made all of this").
+var _grand := false
 ## Give up waiting for the voice after this long in the ending.
 const LETTER_MAX_WAIT := 60.0
 var _bird_wait := 0.0
@@ -183,8 +185,10 @@ func _start() -> void:
 	GameState.running = true
 
 
-func _on_line(_id: String, text: String, duration: float) -> void:
+func _on_line(id: String, text: String, duration: float) -> void:
 	subtitle.show_line(text, duration)
+	if id == "made":
+		_begin_grand()
 
 
 ## Start over from the intro: erase the save, rebuild the world from barrier 1 and begin.
@@ -209,6 +213,7 @@ func _greet(returning: bool) -> void:
 
 func _process(delta: float) -> void:
 	path_view.lit = tip.lit
+	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
 	match mode:
 		Mode.INTRO, Mode.PLAY:
 			camera.k = 2.2
@@ -222,10 +227,17 @@ func _process(delta: float) -> void:
 			if _event_t <= 0.0:
 				mode = Mode.PLAY
 		Mode.FINAL:
-			camera.k = 1.0
-			camera.target_pos = Vector2(0, -PathData.FINAL * PathData.GAP * 0.5)
 			var vs := get_viewport_rect().size
-			camera.target_zoom = minf(vs.y / (PathData.FINAL * PathData.GAP + 900.0), vs.x / 900.0)
+			if _grand:
+				# Pull all the way back, slowly: the tower and the city built around it.
+				camera.k = 0.35
+				camera.target_pos = Vector2(0, -PathData.FINAL * PathData.GAP * 0.5 + 500.0)
+				camera.target_zoom = minf(vs.y / (PathData.FINAL * PathData.GAP + 3000.0), vs.x / 9000.0)
+			else:
+				# Until then, stay with the top of the tower.
+				camera.k = 1.0
+				camera.target_pos = path.gate_pos(PathData.FINAL) + Vector2(0, 120)
+				camera.target_zoom = _base_zoom() * 0.75
 			_final_t += delta
 			# The voice says its last lines, then the creator's letter, then "you made colour".
 			if not _letter_shown and _final_t >= END_DELAY and (Narrator.is_idle() or _final_t > LETTER_MAX_WAIT):
@@ -236,6 +248,7 @@ func _process(delta: float) -> void:
 			_enter_final(false)
 
 	var tint := Palette.chapter_color(Palette.chapter_of(GameState.stage))
+	depth.focus = landscape.grand
 	depth.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	landscape.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	colour_wave.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size)
@@ -327,6 +340,23 @@ func _on_finished() -> void:
 	_final_pending = FINAL_DELAY
 
 
+## "You made all of this": everything built comes into view, in colour.
+func _begin_grand() -> void:
+	if _grand:
+		return
+	_grand = true
+	landscape.set_grand(true)
+	colour_wave.pass_wave(path.gate_pos(PathData.FINAL), Palette.GOLD)
+	colour_wave.pass_wave(path.gate_pos(50), Palette.GOLD, 1.5)
+	colour_wave.pass_wave(path.gate_pos(1), Palette.GOLD, 3.0)
+	Music.choir_swell()
+	Music.build_piece(9, 0.0, 6.0)
+	bird.fly()
+	_flash(0.25, 2.5)
+	# Nothing between the player and what they built.
+	create_tween().tween_property(hud, "modulate:a", 0.0, 2.0)
+
+
 func _show_letter() -> void:
 	_letter_shown = true
 	var letter := Screens.Letter.new(GameState.total_taps)
@@ -347,6 +377,7 @@ func _enter_final(immediate: bool) -> void:
 	_end_shown = false
 	# A finished game loaded from a save goes straight to the end: the letter was already read.
 	_letter_shown = immediate
+	_grand = false
 	if immediate:
 		_show_end()
 	GameState.running = false
@@ -359,6 +390,7 @@ func _on_reborn() -> void:
 	washes.clear()
 	landscape.reset()
 	end_screen.visible = false
+	hud.modulate.a = 1.0
 	_final_pending = -1.0
 	mode = Mode.PLAY
 	GameState.running = true

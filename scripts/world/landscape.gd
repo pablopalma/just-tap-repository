@@ -4,6 +4,8 @@ extends CanvasLayer
 ## structure in the distance, stroke by stroke, with a pen point at the tip, a brighter ink that
 ## settles and a wash that fills in. Pieces already built (from a save) appear without animation.
 ## Structures alternate sides and sit at the depth between the ruins and the floating lines.
+## At the very end (set_grand) the layer stops being distant: it lines up with the tower so every
+## structure stands beside its own zone, and they all fill with colour — a whole city, built.
 
 const F := 0.22
 const SCALE := 0.74
@@ -18,6 +20,8 @@ const HEIGHT := 900.0 * STRUCT_SCALE  # tallest structure, for culling
 
 var _drawer: Drawer
 var _t := 0.0
+## 0 = distant parallax layer, 1 = aligned with the tower and in full colour.
+var grand := 0.0
 
 
 func _ready() -> void:
@@ -38,14 +42,26 @@ func build_piece(n: int) -> void:
 	Music.build_piece((n - 1) % 10, _drawer.side(z), DRAW_TIME)
 
 
+## The grand reveal of the ending (or back to normal on rebirth).
+func set_grand(on: bool, time := 7.0) -> void:
+	var tw := create_tween()
+	tw.tween_property(self, "grand", 1.0 if on else 0.0, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
 func reset() -> void:
+	grand = 0.0
 	_drawer.anim.clear()
 	_drawer.queue_redraw()
 
 
 func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vector2, _tint: Color) -> void:
-	var z := SCALE * (1.0 + (cam_zoom - 1.0) * F) * vp.y / 720.0
+	var zn := SCALE * (1.0 + (cam_zoom - 1.0) * F) * vp.y / 720.0
+	# Aligned: layer point F·w lands on screen exactly where world point w does.
+	var za := cam_zoom / F
+	var z := exp(lerpf(log(zn), log(za), grand))
 	var center := (cam_pos + cam_offset) * F
+	_drawer.grand = grand
+	_drawer.width_mul = maxf(1.0, zn / z)
 	scale = Vector2(z, z)
 	offset = vp * 0.5 - center * z
 	_drawer.set_view(center, vp * 0.5 / z)
@@ -54,6 +70,9 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 class Drawer extends Node2D:
 	var anim := {}       # n -> time its drawing starts
 	var now := 0.0
+	var grand := 0.0
+	## Keeps strokes readable when the layer is zoomed far out.
+	var width_mul := 1.0
 	var _cache := {}     # z -> Array[Dictionary] pieces
 	var _zones := Vector2i(1, 0)
 
@@ -89,7 +108,7 @@ class Drawer extends Node2D:
 				busy = true
 			else:
 				anim.erase(n)
-		if busy:
+		if busy or grand > 0.0:
 			queue_redraw()
 
 	func _draw() -> void:
@@ -97,8 +116,13 @@ class Drawer extends Node2D:
 		for z in range(_zones.x, _zones.y + 1):
 			var ps := pieces(z)
 			var f := foot(z)
-			var col := Palette.paint_col(z, 0)
+			# In the grand reveal every structure takes a colour of its own: red, green, blue, gold…
+			var col := Palette.paint_col(z, 0).lerp(Palette.chapter_color(1 + (z - 1) % 4), grand)
 			draw_set_transform(f, 0.0, Vector2.ONE * Landscape.STRUCT_SCALE)
+			if grand > 0.0:
+				var halo := Vector2(0, -Landscape.HEIGHT * 0.55 / Landscape.STRUCT_SCALE)
+				for k in 4:
+					draw_circle(halo, 520.0 - k * 110.0, Color(col, 0.045 * grand))
 			for j in ps.size():
 				var n := (z - 1) * 10 + j + 1
 				if n > built:
@@ -118,10 +142,10 @@ class Drawer extends Node2D:
 	func _piece(piece: Dictionary, f: Vector2, p: float, glow: float, col: Color) -> void:
 		var fill: PackedVector2Array = piece.fill
 		if fill.size() >= 3 and p > 0.6:
-			var a := smoothstep(0.6, 1.0, p) * 0.09
+			var a := smoothstep(0.6, 1.0, p) * lerpf(0.09, 0.42, grand)
 			_fan(fill, f, Color(col, a))
-		var ink := Color(Palette.INK, 0.42 + 0.4 * glow)
-		var w := (1.6 + 0.8 * glow) / Landscape.STRUCT_SCALE
+		var ink := Color(Palette.INK.lerp(col.darkened(0.4), grand * 0.6), 0.42 + 0.4 * glow + 0.3 * grand)
+		var w := (1.6 + 0.8 * glow + 0.6 * grand) * width_mul / Landscape.STRUCT_SCALE
 		for line in piece.lines:
 			var tip := _partial(line, f, p, ink, w)
 			if p < 1.0:

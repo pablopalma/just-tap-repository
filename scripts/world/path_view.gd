@@ -4,6 +4,12 @@ extends Node2D
 const LINE_W := 2.2
 
 var path: PathData
+## Thicker line when the camera is far out, so the tower still reads at the ending.
+var width_scale := 1.0:
+	set(v):
+		if not is_equal_approx(v, width_scale):
+			width_scale = v
+			queue_redraw()
 var lit := 0.0:
 	set(v):
 		if not is_equal_approx(v, lit):
@@ -35,7 +41,7 @@ func _draw() -> void:
 				pts.append(path.pos_at(lit))
 				break
 		if pts.size() >= 2:
-			draw_polyline(pts, Palette.line_col(n), LINE_W, true)
+			draw_polyline(pts, Palette.line_col(n), LINE_W * width_scale, true)
 
 	# Branches of the barriers already passed light up in their colour.
 	var reached := GameState.stage - (0 if GameState.finished else 1)

@@ -58,6 +58,11 @@ Las etiquetas que ya usás y suenan bien: `[softly]`, `[warmly]`, `[whispers]`, 
 [whispers] Still here.
 ```
 
+### vo_made.mp3 · el final, mientras la cámara muestra todo lo construido
+`
+[softly] Look... [long pause] [in awe] You made all of this.
+`
+
 ## Pendiente de decidir
 
 - **Línea 24** ("It was about not stopping"): hay dos tomas, `vo_24.mp3` y `[warmly] It was about... [pause] not stopping....mp3`. La que no se use se borra.

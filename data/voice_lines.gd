@@ -66,6 +66,8 @@ const LINES := {
 	# ending
 	"30": {"en": "I'm the part of you that keeps going.", "es": "Soy la parte de vos que sigue adelante."},
 	"31": {"en": "You found me again.", "es": "Me volviste a encontrar."},
+	# The grand reveal: as it is said, the camera pulls back over everything the player built.
+	"made": {"en": "You made all of this.", "es": "Creaste todo esto."},
 	"32": {"en": "Tomorrow, if it's grey again… you know what to do.",
 		"es": "Mañana, si vuelve a estar gris… ya sabés qué hacer."},
 	"rebirth": {"en": "Again? Of course. I'm always here.", "es": "¿Otra vez? Claro. Siempre estoy acá."},
@@ -84,7 +86,7 @@ const ON_ZONE := {1: "03", 2: "06", 3: "09", 4: "12", 5: "15", 6: "18", 7: "21",
 ## First time stuck in each chapter (0 grey .. 4 yellow).
 const ON_STUCK := ["05", "11", "17", "23", "29"]
 
-const ENDING := ["30", "31", "32"]
+const ENDING := ["30", "31", "made", "32"]
 const IDLE := ["idle1", "idle2", "idle3"]
 
 # Lines 08, 13, 19 and 25 belong to chapter mechanics that are not in the game yet (§19).

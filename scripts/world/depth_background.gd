@@ -41,6 +41,11 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 		cl.offset = vp * 0.5 - center * z
 		d.set_view(center, vp * 0.5 / z)
 		d.set_tint(tint)
+		d.modulate.a = 1.0 - 0.7 * focus
+
+
+## 0..1: how much the far layers step back so something closer can be seen (the ending).
+var focus := 0.0
 
 
 ## White disc whose alpha falls off smoothly to the edge: tinted by modulate when drawn.
