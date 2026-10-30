@@ -21,6 +21,34 @@ const S := {
 	"needs": {"es": "%s · necesita %s %d", "en": "%s · needs %s %d"},
 	"level_line": {"es": "%s — %s · nivel %d: %s", "en": "%s — %s · level %d: %s"},
 	"max": {"es": "máximo", "en": "max"},
+	"continue_tap": {"es": "tocá para seguir", "en": "tap to continue"},
+}
+
+## The creator's letter (end of the game). {taps} is the player's own count of taps.
+## The line marked with "*" is the one that lands: larger, in gold, with a longer pause.
+const LETTER := {
+	"es": [
+		"Hola. No nos conocemos.",
+		"Soy quien hizo este juego.",
+		"No sé qué día tuviste hoy, ni por lo que estás pasando.",
+		"Pero tocaste {taps} veces para llegar hasta acá.",
+		"Un toque a la vez. Eso no es poco.",
+		"Sea lo que sea, tiene salida. Siempre la hay.",
+		"Y quiero que lo sepas:",
+		"*estoy orgulloso de vos.",
+		"— Pablo",
+	],
+	"en": [
+		"Hi. We've never met.",
+		"I'm the one who made this game.",
+		"I don't know what kind of day you had, or what you're going through.",
+		"But you tapped {taps} times to get here.",
+		"One tap at a time. That's not nothing.",
+		"Whatever it is, there's a way through. There always is.",
+		"And I want you to know:",
+		"*I'm proud of you.",
+		"— Pablo",
+	],
 }
 
 const ZONES := {
@@ -52,6 +80,14 @@ const EFFECTS := {
 	"eco": {"es": "%s %% de repetir", "en": "%s %% chance to repeat"},
 	"destello": {"es": "%s %% de crítico", "en": "%s %% critical chance"},
 }
+
+
+static func letter(taps: int) -> Array:
+	var sep := "." if lang() == "es" else ","
+	var out := []
+	for line in LETTER[lang()]:
+		out.append(String(line).replace("{taps}", Fmt.grouped(taps, sep)))
+	return out
 
 
 static func lang() -> String:

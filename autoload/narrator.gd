@@ -45,6 +45,11 @@ func _ready() -> void:
 	GameState.hit.connect(_on_hit)
 
 
+## Nothing queued, nothing speaking and the gap after the last line is over.
+func is_idle() -> bool:
+	return _queue.is_empty() and not _player.playing and _cooldown <= 0.0
+
+
 ## Queue a line. Story lines play once per run; pass once = false for idle, return and rebirth.
 func say(id: String, once := true) -> void:
 	if not VoiceLines.LINES.has(id):

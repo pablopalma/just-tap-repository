@@ -22,6 +22,16 @@ static func num(v: float) -> String:
 	return ("%." + str(decimals) + "f%s") % [v, SUFFIXES[i]]
 
 
+## Whole number with thousands grouped: 18.304 in Spanish, 18,304 in English.
+static func grouped(n: int, sep: String) -> String:
+	var s := str(absi(n))
+	var out := ""
+	while s.length() > 3:
+		out = sep + s.right(3) + out
+		s = s.left(s.length() - 3)
+	return ("-" if n < 0 else "") + s + out
+
+
 ## "021"
 static func pad3(n: int) -> String:
 	return "%03d" % n

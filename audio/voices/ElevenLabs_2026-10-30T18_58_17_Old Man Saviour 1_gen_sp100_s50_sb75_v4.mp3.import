@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cq42b2kcrieon"
+path="res://.godot/imported/ElevenLabs_2026-10-30T18_58_17_Old Man Saviour 1_gen_sp100_s50_sb75_v4.mp3-957efbbbaa8a14344d4535d1453e0d6a.mp3str"
+
+[deps]
+
+source_file="res://audio/voices/ElevenLabs_2026-10-30T18_58_17_Old Man Saviour 1_gen_sp100_s50_sb75_v4.mp3"
+dest_files=["res://.godot/imported/ElevenLabs_2026-10-30T18_58_17_Old Man Saviour 1_gen_sp100_s50_sb75_v4.mp3-957efbbbaa8a14344d4535d1453e0d6a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -29,6 +29,7 @@ var subtitle: Screens.Subtitle
 var depth: DepthBackground
 var bird: GiantBird
 var landscape: Landscape
+var colour_wave: ColourWave
 var flash: ColorRect
 
 var _event_t := 0.0
@@ -37,6 +38,9 @@ var _event_zoom := 1.0
 var _final_pending := -1.0
 var _final_t := 0.0
 var _end_shown := false
+var _letter_shown := false
+## Give up waiting for the voice after this long in the ending.
+const LETTER_MAX_WAIT := 60.0
 var _bird_wait := 0.0
 var _flash_tween: Tween
 
@@ -71,6 +75,8 @@ func _build() -> void:
 	add_child(depth)
 	landscape = Landscape.new()
 	add_child(landscape)
+	colour_wave = ColourWave.new()
+	add_child(colour_wave)
 	bird = GiantBird.new()
 	add_child(bird)
 	bird.passed_close.connect(_on_bird_close)
@@ -144,6 +150,10 @@ func _unhandled_input(e: InputEvent) -> void:
 	elif e is InputEventScreenTouch:
 		# The first finger arrives as an emulated mouse click; extra fingers count on their own.
 		pressed = e.is_pressed() and (e as InputEventScreenTouch).index > 0
+	elif e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_F9:
+		# For recording: replay the colour coming back where the camera is.
+		colour_wave.reveal(camera.position, Palette.chapter_color(randi_range(1, 4)))
+		return
 	elif e is InputEventKey:
 		pressed = e.is_pressed() and not e.is_echo() and (e as InputEventKey).keycode == KEY_SPACE
 	if not pressed:
@@ -161,6 +171,7 @@ func _start() -> void:
 		return
 	intro.dismiss()
 	intro = null
+	colour_wave.pass_wave(tip.position, Palette.GOLD, 0.3)
 	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
 	Music.start()
 	# The voice greets once the line has started climbing.
@@ -216,9 +227,9 @@ func _process(delta: float) -> void:
 			var vs := get_viewport_rect().size
 			camera.target_zoom = minf(vs.y / (PathData.FINAL * PathData.GAP + 900.0), vs.x / 900.0)
 			_final_t += delta
-			if _final_t >= END_DELAY and not _end_shown:
-				_end_shown = true
-				end_screen.show_end()
+			# The voice says its last lines, then the creator's letter, then "you made colour".
+			if not _letter_shown and _final_t >= END_DELAY and (Narrator.is_idle() or _final_t > LETTER_MAX_WAIT):
+				_show_letter()
 	if _final_pending >= 0.0:
 		_final_pending -= delta
 		if _final_pending < 0.0:
@@ -227,6 +238,7 @@ func _process(delta: float) -> void:
 	var tint := Palette.chapter_color(Palette.chapter_of(GameState.stage))
 	depth.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	landscape.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
+	colour_wave.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size)
 	bird.set_tint(tint)
 	if GameState.running and not GameState.finished:
 		_bird_wait -= delta
@@ -278,6 +290,7 @@ func _on_zone_completed(z: int) -> void:
 	_flash(0.3, 1.2)
 	_summon_bird()
 	if not z in [2, 4, 6, 8]:
+		colour_wave.pass_wave(last, Palette.chapter_color(maxi(1, Palette.chapter_of(z * 10))))
 		zone_title.show_title(Loc.t("zone_done") % Zones.ROMAN[z - 1], Loc.zone_name(z), Palette.INK)
 
 
@@ -285,6 +298,7 @@ func _on_chapter_unlocked(idx: int) -> void:
 	var col := Palette.chapter_color(idx)
 	zone_title.show_title(Loc.t("colour_back"), Loc.chapter_name(idx), col.darkened(0.1))
 	washes.bloom(_event_center, col, 1400.0)
+	colour_wave.reveal(_event_center, col)
 	camera.add_trauma(1.0)
 	_flash(0.45, 2.0)
 
@@ -295,6 +309,7 @@ func _summon_bird() -> void:
 
 
 func _on_bird_close() -> void:
+	colour_wave.pass_wave(camera.position, Palette.chapter_color(maxi(1, Palette.chapter_of(GameState.stage))))
 	camera.add_trauma(0.35)
 	_flash(0.15, 1.0)
 
@@ -308,13 +323,32 @@ func _flash(alpha: float, duration: float) -> void:
 	_flash_tween.tween_property(flash, "color:a", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _on_finished() -> void:
+	colour_wave.reveal(path.gate_pos(PathData.FINAL), Palette.GOLD)
 	_final_pending = FINAL_DELAY
+
+
+func _show_letter() -> void:
+	_letter_shown = true
+	var letter := Screens.Letter.new(GameState.total_taps)
+	letter.finished.connect(_show_end)
+	hud.get_parent().add_child(letter)
+
+
+func _show_end() -> void:
+	if _end_shown:
+		return
+	_end_shown = true
+	end_screen.show_end()
 
 
 func _enter_final(immediate: bool) -> void:
 	mode = Mode.FINAL
 	_final_t = END_DELAY if immediate else 0.0
 	_end_shown = false
+	# A finished game loaded from a save goes straight to the end: the letter was already read.
+	_letter_shown = immediate
+	if immediate:
+		_show_end()
 	GameState.running = false
 
 

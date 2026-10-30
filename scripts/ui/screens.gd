@@ -183,6 +183,117 @@ class Subtitle extends Control:
 		_tween.tween_property(_label, "modulate:a", 0.0, 1.5)
 
 
+## The creator's letter, near the very end: the game stops being a game for a moment. Paper covers
+## the world, the music falls back, and the lines arrive one by one as if being written. The line
+## marked "*" in Loc.LETTER lands larger, in gold, after a longer silence. Then "tap to continue".
+class Letter extends Control:
+	signal finished
+
+	const LINE_GAP := 2.8
+	const BEFORE_KEY := 2.2
+	const MUSIC_DB := -10.0
+
+	var _lines: Array[Label] = []
+	var _prompt: Label
+	var _ready_to_leave := false
+	var _music_bus := -1
+
+	func _init(taps: int) -> void:
+		set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+		mouse_filter = MOUSE_FILTER_STOP
+		var bg := ColorRect.new()
+		bg.color = Palette.PAPER
+		bg.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+		bg.mouse_filter = MOUSE_FILTER_IGNORE
+		add_child(bg)
+		var box := VBoxContainer.new()
+		box.set_anchors_and_offsets_preset(PRESET_CENTER)
+		box.offset_left = -380
+		box.offset_right = 380
+		box.offset_top = -250
+		box.offset_bottom = 250
+		box.alignment = BoxContainer.ALIGNMENT_CENTER
+		box.add_theme_constant_override("separation", 10)
+		box.mouse_filter = MOUSE_FILTER_IGNORE
+		add_child(box)
+		for raw in Loc.letter(taps):
+			var text: String = raw
+			var key := text.begins_with("*")
+			var signature := text.begins_with("—")
+			var l: Label
+			if key:
+				l = UIStyle.label(text.substr(1), 40, false, Palette.GOLD.darkened(0.25))
+			elif signature:
+				l = UIStyle.label(text, 22, true, Color(Palette.INK, 0.75))
+			else:
+				l = UIStyle.label(text, 23, true, Palette.INK)
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if signature else HORIZONTAL_ALIGNMENT_CENTER
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			l.modulate.a = 0.0
+			l.set_meta("key", key)
+			box.add_child(l)
+			_lines.append(l)
+		_prompt = UIStyle.label(Loc.t("continue_tap"), 16, true, Color(Palette.INK, 0.5))
+		_prompt.set_anchors_and_offsets_preset(PRESET_CENTER_BOTTOM)
+		_prompt.offset_left = -200
+		_prompt.offset_right = 200
+		_prompt.offset_top = -70
+		_prompt.offset_bottom = -40
+		_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_prompt.modulate.a = 0.0
+		add_child(_prompt)
+		modulate.a = 0.0
+
+	func _ready() -> void:
+		_music_bus = AudioServer.get_bus_index(Music.MUSIC_BUS)
+		_fade_music(MUSIC_DB, 3.0)
+		var tw := create_tween()
+		tw.tween_property(self, "modulate:a", 1.0, 2.5)
+		tw.tween_interval(1.2)
+		for l in _lines:
+			if l.get_meta("key"):
+				tw.tween_interval(BEFORE_KEY)
+				tw.tween_callback(Music.choir_swell)
+				tw.tween_property(l, "modulate:a", 1.0, 3.0)
+				tw.tween_interval(2.5)
+			else:
+				tw.tween_property(l, "modulate:a", 1.0, 1.6)
+				tw.tween_interval(LINE_GAP - 1.6)
+		tw.tween_interval(1.5)
+		tw.tween_callback(_allow_leave)
+		tw.tween_property(_prompt, "modulate:a", 1.0, 1.5)
+
+	func _allow_leave() -> void:
+		_ready_to_leave = true
+
+	func _gui_input(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.is_pressed():
+			_leave()
+			accept_event()
+
+	func _unhandled_input(e: InputEvent) -> void:
+		if e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_SPACE:
+			_leave()
+			get_viewport().set_input_as_handled()
+
+	func _leave() -> void:
+		if not _ready_to_leave:
+			return
+		_ready_to_leave = false
+		_fade_music(0.0, 3.0)
+		var tw := create_tween()
+		tw.tween_property(self, "modulate:a", 0.0, 2.0)
+		tw.tween_callback(finished.emit)
+		tw.tween_callback(queue_free)
+
+	func _fade_music(db: float, time: float) -> void:
+		if _music_bus == -1:
+			return
+		var bus := _music_bus
+		create_tween().tween_method(func(v: float) -> void: AudioServer.set_bus_volume_db(bus, v),
+			AudioServer.get_bus_volume_db(bus), db, time)
+
+
 ## "you made colour" and the rebirth button, low on the screen over a paper gradient.
 class EndScreen extends Control:
 	signal rebirth_pressed

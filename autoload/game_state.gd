@@ -28,6 +28,8 @@ var rebirths := 0
 var seen := {}
 ## Voice lines already said this run (§20.4).
 var said := {}
+## Every manual tap of the whole game (kept across rebirths): the creator's letter quotes it.
+var total_taps := 0
 var finished := false
 ## False during the intro and the ending: taps and regeneration wait.
 var running := false
@@ -139,6 +141,7 @@ func tap(source := "tap") -> void:
 		combo = minf(COMBO_MAX, combo + 1.0)
 		_combo_timer = COMBO_WINDOW
 		taps_at_gate += 1
+		total_taps += 1
 		if randf() < 0.06 * lv("eco"):
 			_echoes.append(ECHO_DELAY)
 	last_hit_time = clock
@@ -245,6 +248,7 @@ func new_game() -> void:
 	up = {}
 	seen = {}
 	said = {}
+	total_taps = 0
 	finished = false
 	combo = 0.0
 	_echoes.clear()
@@ -257,7 +261,7 @@ func new_game() -> void:
 
 func to_dict() -> Dictionary:
 	return {"stage": stage, "hp": hp, "light": light, "up": up, "reb": rebirths, "seen": seen,
-		"finished": finished, "said": said.keys()}
+		"finished": finished, "said": said.keys(), "taps": total_taps}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -268,6 +272,7 @@ func from_dict(d: Dictionary) -> void:
 		hp = max_hp(stage)
 	light = float(d.get("light", 0.0))
 	rebirths = int(d.get("reb", 0))
+	total_taps = int(d.get("taps", 0))
 	up = {}
 	var u: Dictionary = d.get("up", {})
 	for k in u:
