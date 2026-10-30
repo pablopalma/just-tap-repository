@@ -25,11 +25,11 @@ const DATA := {
 ## What level l does, in words.
 static func effect_text(id: String, l: int) -> String:
 	match id:
-		"fuerza": return "daño ×%s" % Fmt.num((1 + l) * pow(1.075, l))
-		"ganancia": return "luz ×%s" % Fmt.num(pow(1.15, l))
-		"pulso": return "%s taps/s" % Fmt.num(0.6 * l)
-		"resonancia": return "+%s %% por combo" % Fmt.num(1.5 * l)
-		"corrosion": return "regeneración ×%s" % Fmt.num(pow(0.9, l))
-		"eco": return "%d %% de repetir" % (6 * l)
-		"destello": return "%d %% de crítico" % (3 * l)
+		"fuerza": return Loc.effect(id, Fmt.num((1 + l) * pow(1.075, l)))
+		"ganancia": return Loc.effect(id, Fmt.num(pow(1.15, l)))
+		"pulso": return Loc.effect(id, Fmt.num(0.6 * l))
+		"resonancia": return Loc.effect(id, Fmt.num(1.5 * l))
+		"corrosion": return Loc.effect(id, Fmt.num(pow(0.9, l)))
+		"eco": return Loc.effect(id, str(6 * l))
+		"destello": return Loc.effect(id, str(3 * l))
 	return ""

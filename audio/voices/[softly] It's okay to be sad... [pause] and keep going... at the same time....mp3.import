@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bh0u33u48dqti"
+path="res://.godot/imported/[softly] It's okay to be sad... [pause] and keep going... at the same time....mp3-b0746306ffbf5ecd17308baa1c91a690.mp3str"
+
+[deps]
+
+source_file="res://audio/voices/[softly] It's okay to be sad... [pause] and keep going... at the same time....mp3"
+dest_files=["res://.godot/imported/[softly] It's okay to be sad... [pause] and keep going... at the same time....mp3-b0746306ffbf5ecd17308baa1c91a690.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -55,13 +55,13 @@ func _ready() -> void:
 	_music.pressed.connect(_toggle_music)
 	add_child(_music)
 
-	_voice = _bottom_left_button("voz", 78, 138)
+	_voice = _bottom_left_button(Loc.t("voice"), 78, 148)
 	_voice.pressed.connect(_toggle_voice)
-	_lang = _bottom_left_button("", 144, 194)
+	_lang = _bottom_left_button("", 154, 204)
 	_lang.pressed.connect(_toggle_lang)
 	_update_lang()
 
-	_tree = UIStyle.button("árbol", 22)
+	_tree = UIStyle.button(Loc.t("tree"), 22)
 	_tree.set_anchors_and_offsets_preset(PRESET_BOTTOM_RIGHT)
 	_tree.offset_left = -120
 	_tree.offset_top = -64
@@ -85,6 +85,7 @@ func _ready() -> void:
 
 	GameState.hit.connect(_on_hit)
 	_update_music_icon()
+	SaveSystem.lang_changed.connect(_update_lang)
 
 
 func _on_hit(_damage: float, _crit: bool, source: String) -> void:
@@ -99,7 +100,7 @@ func _process(_delta: float) -> void:
 	_put_text(_zone, Zones.label(Zones.of(g.stage)))
 	_put_text(_light, "◆ %s" % Fmt.num(g.light))
 	_light.add_theme_color_override("font_color", col.darkened(0.15))
-	_put_text(_dmg, "%s por tap" % Fmt.num(g.power()))
+	_put_text(_dmg, Loc.t("per_tap") % Fmt.num(g.power()))
 	var buyable := g.any_buyable()
 	_dot.visible = buyable
 	_dot.add_theme_color_override("font_color", col)
@@ -107,9 +108,9 @@ func _process(_delta: float) -> void:
 	var hint := ""
 	if g.running and not g.finished:
 		if _total_taps < 3 and g.stage == 1:
-			hint = "tap"
+			hint = Loc.t("hint_tap")
 		elif g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
-			hint = "mejorá el árbol"
+			hint = Loc.t("hint_tree")
 	_put_text(_hint, hint)
 
 
@@ -138,13 +139,14 @@ func _toggle_voice() -> void:
 
 ## Subtitles in English or Spanish; the voice stays English.
 func _toggle_lang() -> void:
-	SaveSystem.lang = "en" if SaveSystem.lang == "es" else "es"
-	SaveSystem.save_game()
-	_update_lang()
+	SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es")
 
 
 func _update_lang() -> void:
 	_lang.text = SaveSystem.lang
+	_voice.text = Loc.t("voice")
+	if _tree:  # built after the voice and language buttons
+		_tree.text = Loc.t("tree")
 	_voice.modulate.a = 1.0 if SaveSystem.voice_on else 0.35
 
 

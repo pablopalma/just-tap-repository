@@ -41,6 +41,7 @@ func _ready() -> void:
 	GameState.zone_completed.connect(_on_zone_completed)
 	GameState.game_finished.connect(_on_finished)
 	GameState.reborn.connect(_on_reborn)
+	GameState.progress_reset.connect(func() -> void: _queue.clear())
 	GameState.hit.connect(_on_hit)
 
 

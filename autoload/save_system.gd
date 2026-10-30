@@ -1,6 +1,8 @@
 extends Node
 ## Saves to user://save.json every 3 s, on each broken barrier, on each purchase and when the app pauses.
 
+signal lang_changed
+
 const PATH := "user://save.json"
 const INTERVAL := 3.0
 
@@ -33,6 +35,12 @@ func _process(delta: float) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
 		save_game()
+
+
+func set_lang(l: String) -> void:
+	lang = l
+	save_game()
+	lang_changed.emit()
 
 
 func save_game() -> void:

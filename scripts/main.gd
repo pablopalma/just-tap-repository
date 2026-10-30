@@ -124,6 +124,8 @@ func _build() -> void:
 	ui.add_child(tree_panel)
 	hud.tree_pressed.connect(tree_panel.open_panel)
 	intro = Screens.Intro.new(SaveSystem.had_progress)
+	intro.continue_pressed.connect(_start)
+	intro.new_game_pressed.connect(_new_game)
 	ui.add_child(intro)
 
 
@@ -172,6 +174,19 @@ func _start() -> void:
 
 func _on_line(_id: String, text: String, duration: float) -> void:
 	subtitle.show_line(text, duration)
+
+
+## Start over from the intro: erase the save, rebuild the world from barrier 1 and begin.
+func _new_game() -> void:
+	GameState.new_game()
+	SaveSystem.had_progress = false
+	SaveSystem.save_game()
+	tip.lit = 0.0
+	gates.reset()
+	landscape.reset()
+	fx.clear()
+	washes.clear()
+	_start()
 
 
 func _greet(returning: bool) -> void:
@@ -263,12 +278,12 @@ func _on_zone_completed(z: int) -> void:
 	_flash(0.3, 1.2)
 	_summon_bird()
 	if not z in [2, 4, 6, 8]:
-		zone_title.show_title("zona %s completa" % Zones.ROMAN[z - 1], Zones.NAMES[z - 1], Palette.INK)
+		zone_title.show_title(Loc.t("zone_done") % Zones.ROMAN[z - 1], Loc.zone_name(z), Palette.INK)
 
 
 func _on_chapter_unlocked(idx: int) -> void:
 	var col := Palette.chapter_color(idx)
-	zone_title.show_title("el color vuelve", Palette.chapter_name(idx), col.darkened(0.1))
+	zone_title.show_title(Loc.t("colour_back"), Loc.chapter_name(idx), col.darkened(0.1))
 	washes.bloom(_event_center, col, 1400.0)
 	camera.add_trauma(1.0)
 	_flash(0.45, 2.0)

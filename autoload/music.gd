@@ -93,6 +93,7 @@ func _ready() -> void:
 	GameState.chapter_unlocked.connect(func(_i: int) -> void: choir_swell())
 	GameState.upgrade_bought.connect(func(_id: String, _l: int) -> void: play_buy())
 	GameState.reborn.connect(_on_reborn)
+	GameState.progress_reset.connect(_on_reborn)
 	set_enabled(SaveSystem.music_on)
 
 

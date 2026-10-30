@@ -84,7 +84,7 @@ func _draw() -> void:
 			if i % 2 == 0:
 				var a0 := TAU * i / segs
 				draw_arc(c, R, a0, a0 + TAU / segs, 4, Color(Palette.INK, 0.45), 1.2, true)
-		draw_string(font, Vector2(0, c.y + R + 22), d.name, HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 15,
+		draw_string(font, Vector2(0, c.y + R + 22), Loc.upgrade_name(id), HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 15,
 			Color(Palette.INK, 0.45))
 		return
 
@@ -96,7 +96,7 @@ func _draw() -> void:
 	var lv_text := str(GameState.lv(id))
 	draw_string(font, Vector2(c.x - R, c.y + 8), lv_text, HORIZONTAL_ALIGNMENT_CENTER, R * 2, 22,
 		Palette.PAPER if maxed else Palette.INK)
-	draw_string(font, Vector2(0, c.y + R + 22), d.name, HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 15, Palette.INK)
-	var price := "máximo" if maxed else "◆ " + Fmt.num(GameState.cost(id))
+	draw_string(font, Vector2(0, c.y + R + 22), Loc.upgrade_name(id), HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 15, Palette.INK)
+	var price := Loc.t("max") if maxed else "◆ " + Fmt.num(GameState.cost(id))
 	draw_string(font, Vector2(0, c.y + R + 40), price, HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 13,
 		col.darkened(0.15) if buyable else Color(Palette.INK, 0.5))

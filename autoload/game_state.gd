@@ -10,6 +10,8 @@ signal upgrade_bought(id: String, level: int)
 signal light_changed(value: float)
 signal game_finished
 signal reborn
+## Everything erased from the intro's "start over": no rebirth bonus, no story said.
+signal progress_reset
 
 const FINAL := 100
 const GAP := 150.0
@@ -233,6 +235,24 @@ func rebirth() -> void:
 	taps_at_gate = 0
 	light_changed.emit(light)
 	reborn.emit()
+
+
+func new_game() -> void:
+	rebirths = 0
+	stage = 1
+	hp = max_hp(1)
+	light = 0.0
+	up = {}
+	seen = {}
+	said = {}
+	finished = false
+	combo = 0.0
+	_echoes.clear()
+	_auto_acc = 0.0
+	time_at_gate = 0.0
+	taps_at_gate = 0
+	light_changed.emit(light)
+	progress_reset.emit()
 
 
 func to_dict() -> Dictionary:

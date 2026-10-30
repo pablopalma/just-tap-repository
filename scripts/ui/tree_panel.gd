@@ -10,6 +10,8 @@ var _link := {}      # id -> 0..1 drawn progress of the link to its parent
 var _area: Control
 var _info: Label
 var _light: Label
+var _title: Label
+var _info_id := "fuerza"
 
 
 func _ready() -> void:
@@ -23,7 +25,8 @@ func _ready() -> void:
 	bg.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	var title := UIStyle.label("árbol", 34)
+	_title = UIStyle.label(Loc.t("tree"), 34)
+	var title := _title
 	title.position = Vector2(28, 18)
 	add_child(title)
 
@@ -70,7 +73,14 @@ func _ready() -> void:
 	resized.connect(_layout)
 	GameState.upgrade_bought.connect(_on_bought)
 	GameState.reborn.connect(_reset)
+	GameState.progress_reset.connect(_reset)
+	SaveSystem.lang_changed.connect(_on_lang)
 	_layout()
+
+
+func _on_lang() -> void:
+	_title.text = Loc.t("tree")
+	_show_info(_info_id)
 
 
 func _on_bought(_id: String, _level: int) -> void:
@@ -192,14 +202,15 @@ func _buy(id: String) -> void:
 
 
 func _show_info(id: String) -> void:
+	_info_id = id
 	var d: Dictionary = Upgrades.DATA[id]
 	var l := GameState.lv(id)
 	var st := GameState.state_of(id)
 	if st < 2:
-		_info.text = "%s · necesita %s %d" % [d.name, Upgrades.DATA[d.req].name, d.req_lv]
+		_info.text = Loc.t("needs") % [Loc.upgrade_name(id), Loc.upgrade_name(d.req), d.req_lv]
 		return
 	var now := Upgrades.effect_text(id, l)
-	var text := "%s — %s · nivel %d: %s" % [d.name, d.desc, l, now]
+	var text := Loc.t("level_line") % [Loc.upgrade_name(id), Loc.upgrade_desc(id), l, now]
 	if not GameState.is_maxed(id):
 		text += "  →  %s" % Upgrades.effect_text(id, l + 1)
 	_info.text = text

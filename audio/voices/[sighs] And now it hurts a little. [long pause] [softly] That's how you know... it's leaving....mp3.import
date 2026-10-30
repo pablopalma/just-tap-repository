@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://t6m8xfiino2d"
+path="res://.godot/imported/[sighs] And now it hurts a little. [long pause] [softly] That's how you know... it's leaving....mp3-943e7fd6c99192222fff98913767ad58.mp3str"
+
+[deps]
+
+source_file="res://audio/voices/[sighs] And now it hurts a little. [long pause] [softly] That's how you know... it's leaving....mp3"
+dest_files=["res://.godot/imported/[sighs] And now it hurts a little. [long pause] [softly] That's how you know... it's leaving....mp3-943e7fd6c99192222fff98913767ad58.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

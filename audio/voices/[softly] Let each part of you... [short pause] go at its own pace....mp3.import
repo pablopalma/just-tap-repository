@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://buwrrnfj0d7uu"
+path="res://.godot/imported/[softly] Let each part of you... [short pause] go at its own pace....mp3-780ba53905fce7f6d84ebd11af388bcc.mp3str"
+
+[deps]
+
+source_file="res://audio/voices/[softly] Let each part of you... [short pause] go at its own pace....mp3"
+dest_files=["res://.godot/imported/[softly] Let each part of you... [short pause] go at its own pace....mp3-780ba53905fce7f6d84ebd11af388bcc.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

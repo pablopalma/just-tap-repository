@@ -32,9 +32,9 @@ static func of(n: int) -> int:
 	return clampi(int((n - 1) / 10.0) + 1, 1, COUNT)
 
 
-## "zona iii · tallo"
+## "zona iii · tallo" / "zone iii · stem"
 static func label(z: int) -> String:
-	return "zona %s · %s" % [ROMAN[z - 1], NAMES[z - 1]]
+	return Loc.t("zone_label") % [ROMAN[z - 1], Loc.zone_name(z)]
 
 
 ## Active accompaniment layers: the zone's base plus one more from barrier 6 of 10.
