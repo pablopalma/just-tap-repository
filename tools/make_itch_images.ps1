@@ -42,6 +42,23 @@ try {
     & $ffmpeg -v error -y -f lavfi -i "color=c=0xebe6de:s=256x256,noise=alls=7:allf=u" -frames:v 1 "$out/paper_tile.png"
 
     Copy-Item "Builds/trailer/just_tap_colour.gif" $out -Force
+
+    # GIFs for the description, one per mechanic: 640 px, own palette each, about 3–4 MB each.
+    $gifs = [ordered]@{
+        "gif_colour" = @(15.5, 5.0, 12)   # the colour comes back
+        "gif_star"   = @(26.0, 4.6, 15)   # a star circuit fills, spins up and bursts
+        "gif_bird"   = @(31.6, 2.6, 15)   # the giant bird passes close
+        "gif_forks"  = @(34.4, 5.4, 10)   # the line splits in two, then three
+        "gif_dark"   = @(40.1, 5.0, 15)   # the dark comes in, the line cracks
+        "gif_city"   = @(47.5, 5.6, 8)   # everything you built
+    }
+    foreach ($name in $gifs.Keys) {
+        $start, $len, $fps = $gifs[$name]
+        & $ffmpeg -v error -y -ss $start -t $len -i $video -vf (
+            "fps=$fps,scale=640:-1:flags=lanczos,split[a][b];" +
+            "[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
+        ) "$out/$name.gif"
+    }
     Get-ChildItem $out | Select-Object Name, @{ n = "KB"; e = { [math]::Round($_.Length / 1KB) } }
 } finally {
     Pop-Location
