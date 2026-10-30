@@ -15,12 +15,21 @@ var _appear := {}  # n -> time it first came into view
 var _t := 0.0
 
 
+var _wobble := 0.0
+
+
 func reset() -> void:
 	_appear.clear()
 
 
+## The current barrier trembles where it was hit.
+func hit(strength: float) -> void:
+	_wobble = minf(1.6, _wobble + strength)
+
+
 func _process(delta: float) -> void:
 	_t += delta
+	_wobble *= exp(-7.0 * delta)
 	queue_redraw()
 
 
@@ -39,9 +48,11 @@ func _draw() -> void:
 
 
 func _draw_current(p: Vector2) -> void:
-	var hole := 3.0 + GameState.progress() * 26.0
-	_bar(p + Vector2(-HALF, 0), p + Vector2(-hole, 0), Palette.INK)
-	_bar(p + Vector2(hole, 0), p + Vector2(HALF, 0), Palette.INK)
+	var hole := 3.0 + GameState.progress() * 26.0 + _wobble * 3.0
+	# Each half vibrates on its own: inner ends move most, like a struck string.
+	var wv := sin(_t * 58.0) * 3.2 * _wobble
+	_bar(p + Vector2(-HALF, wv * 0.3), p + Vector2(-hole, -wv), Palette.INK)
+	_bar(p + Vector2(hole, -wv), p + Vector2(HALF, wv * 0.3), Palette.INK)
 	if font:
 		var dim := Color(Palette.INK, 0.65)
 		draw_string(font, p + Vector2(HALF + 12, 5), Fmt.num(maxf(0.0, GameState.hp)),

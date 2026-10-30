@@ -7,6 +7,8 @@ enum Mode { INTRO, PLAY, EVENT, FINAL }
 const EVENT_TIME := 6.0
 const FINAL_DELAY := 6.4
 const END_DELAY := 5.0
+## The bird also shows up on its own every few minutes of play.
+const BIRD_EVERY := Vector2(150.0, 240.0)
 
 var path := PathData.new()
 var mode := Mode.INTRO
@@ -23,6 +25,9 @@ var tree_panel
 var zone_title: Screens.ZoneTitle
 var end_screen: Screens.EndScreen
 var intro: Screens.Intro
+var depth: DepthBackground
+var bird: GiantBird
+var flash: ColorRect
 
 var _event_t := 0.0
 var _event_center := Vector2.ZERO
@@ -30,6 +35,8 @@ var _event_zoom := 1.0
 var _final_pending := -1.0
 var _final_t := 0.0
 var _end_shown := false
+var _bird_wait := 0.0
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -43,6 +50,7 @@ func _ready() -> void:
 	camera.target_pos = Vector2(0, PathData.START_Y - 260)
 	camera.target_zoom = _base_zoom()
 	camera.snap()
+	_bird_wait = randf_range(BIRD_EVERY.x, BIRD_EVERY.y)
 
 
 func _build() -> void:
@@ -56,6 +64,12 @@ func _build() -> void:
 	mat.shader = load("res://shaders/paper.gdshader")
 	paper.material = mat
 	paper_layer.add_child(paper)
+
+	depth = DepthBackground.new()
+	add_child(depth)
+	bird = GiantBird.new()
+	add_child(bird)
+	bird.passed_close.connect(_on_bird_close)
 
 	var font := UIStyle.font()
 	washes = _node("Washes", "res://scripts/world/washes.gd")
@@ -82,6 +96,12 @@ func _build() -> void:
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.theme = UIStyle.theme()
 	ui_layer.add_child(ui)
+
+	flash = ColorRect.new()
+	flash.color = Color(1.0, 0.985, 0.95, 0.0)
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(flash)
 
 	hud = Control.new()
 	hud.set_script(load("res://scripts/ui/hud.gd"))
@@ -167,6 +187,14 @@ func _process(delta: float) -> void:
 		if _final_pending < 0.0:
 			_enter_final(false)
 
+	var tint := Palette.chapter_color(Palette.chapter_of(GameState.stage))
+	depth.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
+	bird.set_tint(tint)
+	if GameState.running and not GameState.finished:
+		_bird_wait -= delta
+		if _bird_wait <= 0.0:
+			_summon_bird()
+
 
 func _base_zoom() -> float:
 	var vs := get_viewport_rect().size
@@ -177,6 +205,7 @@ func _base_zoom() -> float:
 
 func _on_hit(damage: float, crit: bool, source: String) -> void:
 	tip.kick(6.0 if source == "auto" else 12.0)
+	gates.hit(0.25 if source == "auto" else 0.6)
 	var p := path.gate_pos(GameState.stage) + Vector2(randf_range(-55, 55), randf_range(-26, -6))
 	if crit:
 		fx.float_text(p, Fmt.num(damage), Palette.chapter_color(maxi(1, Palette.chapter_of(GameState.stage))), 24)
@@ -191,7 +220,7 @@ func _on_gate_broken(n: int) -> void:
 	fx.aura(p, col)
 	fx.float_text(p + Vector2(0, -30), "+◆ " + Fmt.num(GameState.reward(n)),
 		Palette.chapter_color(Palette.chapter_of(n)).darkened(0.2), 20, 1.8)
-	camera.shake()
+	hud.pulse()
 
 
 ## The camera pulls back to take in the zone's ten barriers.
@@ -204,6 +233,11 @@ func _on_zone_completed(z: int) -> void:
 	_event_t = EVENT_TIME
 	mode = Mode.EVENT
 	fx.ring(last, Palette.INK, 220.0, 2.4)
+	# Screen shake is kept for the big moments only: a zone, a colour, the bird passing close.
+	camera.add_trauma(0.8)
+	camera.punch(0.06)
+	_flash(0.3, 1.2)
+	_summon_bird()
 	if not z in [2, 4, 6, 8]:
 		zone_title.show_title("zona %s completa" % Zones.ROMAN[z - 1], Zones.NAMES[z - 1], Palette.INK)
 
@@ -212,7 +246,27 @@ func _on_chapter_unlocked(idx: int) -> void:
 	var col := Palette.chapter_color(idx)
 	zone_title.show_title("el color vuelve", Palette.chapter_name(idx), col.darkened(0.1))
 	washes.bloom(_event_center, col, 1400.0)
+	camera.add_trauma(1.0)
+	_flash(0.45, 2.0)
 
+
+func _summon_bird() -> void:
+	_bird_wait = randf_range(BIRD_EVERY.x, BIRD_EVERY.y)
+	bird.fly()
+
+
+func _on_bird_close() -> void:
+	camera.add_trauma(0.35)
+	_flash(0.15, 1.0)
+
+
+## Brief cream flash over the whole screen.
+func _flash(alpha: float, duration: float) -> void:
+	if _flash_tween:
+		_flash_tween.kill()
+	flash.color.a = maxf(flash.color.a, alpha)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(flash, "color:a", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _on_finished() -> void:
 	_final_pending = FINAL_DELAY

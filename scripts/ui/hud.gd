@@ -111,6 +111,14 @@ func _put_text(l: Label, text: String) -> void:
 		l.text = text
 
 
+## The light counter swells when light pours in.
+func pulse() -> void:
+	_light.pivot_offset = Vector2(_light.size.x, _light.size.y * 0.5)
+	var tw := create_tween()
+	tw.tween_property(_light, "scale", Vector2.ONE * 1.3, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_light, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_SINE)
+
+
 func _toggle_music() -> void:
 	Music.set_enabled(not Music.is_enabled())
 	SaveSystem.save_game()

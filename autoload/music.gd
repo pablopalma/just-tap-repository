@@ -11,6 +11,10 @@ const CHOIR_FADE := 1.5
 const STEPS_PER_CHORD := 32
 const MUSIC_BUS := &"Music"
 const CHOIR_BUS := &"Choir"
+const BIRD_BUS := &"Bird"
+const BIRD_VOICES := 8
+## The bird's calls: chord degrees, a short phrase that falls and lifts like a cry.
+const BIRD_CALLS := [[7, 5, 6], [8, 6, 4], [6, 7, 5, 4], [9, 7, 8]]
 const NOTE_NAMES := ["C", "Cs", "D", "Ds", "E", "F", "Fs", "G", "Gs", "A", "As", "B"]
 const INSTRUMENTS := ["piano", "harp", "celesta", "flute", "bass", "glass"]
 const WIND_KINDS := {"tap": 60, "auto": 60, "romper": 43, "zona": 43}  # kind -> lowest MIDI of its 12 files
@@ -41,6 +45,11 @@ var _choir_filter: AudioEffectLowPassFilter
 var _choir_swell := 0.0
 var _choir_bus := -1
 var _music_bus := -1
+var _bird_bus := -1
+var _bird_panner: AudioEffectPanner
+var _bird_voices: Array[AudioStreamPlayer] = []
+var _bird_i := 0
+var _bird_call_i := 0
 
 var _time := 0.0
 var _next_step_time := 0.0
@@ -61,6 +70,11 @@ func _ready() -> void:
 		p.bus = MUSIC_BUS
 		add_child(p)
 		_voices.append(p)
+	for i in BIRD_VOICES:
+		var p := AudioStreamPlayer.new()
+		p.bus = BIRD_BUS
+		add_child(p)
+		_bird_voices.append(p)
 	for i in 2:
 		var p := AudioStreamPlayer.new()
 		p.bus = CHOIR_BUS
@@ -192,6 +206,36 @@ func choir_swell() -> void:
 	tw.tween_property(self, "_choir_swell", 0.0, 2.5)
 
 
+## The giant bird sings: a short phrase of chord notes in the flute, doubled softly by the glass
+## an octave up, on the grid like everything else.
+func bird_call(vol: float) -> void:
+	if not playing:
+		return
+	var phrase: Array = BIRD_CALLS[_bird_call_i % BIRD_CALLS.size()]
+	_bird_call_i += 1
+	var eighth := _s16() * 2.0
+	var t := _grid_time(eighth)
+	for i in phrase.size():
+		var at := t + i * eighth
+		var midi := chord_note(int(phrase[i]), tonic() + 12)
+		_schedule(at, "note", "flute", midi, vol, true)
+		_schedule(at, "note", "glass", midi + 12, vol * 0.35, true)
+
+
+## Rush of air from the wings as it passes close.
+func bird_whoosh(vol: float) -> void:
+	if not playing:
+		return
+	_schedule(_grid_time(_s16() * 4.0), "wind", "zona", tonic(), vol, true)
+	_schedule(_grid_time(_s16() * 4.0), "note", "bass", tonic() - 12, vol * 0.8, true)
+
+
+## -1 left .. 1 right.
+func set_bird_pan(pan: float) -> void:
+	if _bird_panner:
+		_bird_panner.pan = pan
+
+
 # --- Events -----------------------------------------------------------------
 
 func _on_hit(_damage: float, crit: bool, source: String) -> void:
@@ -319,20 +363,20 @@ func _grid_time(div: float) -> float:
 	return _zone_origin + ceilf((_time - _zone_origin) / div) * div
 
 
-func _schedule(t: float, kind: String, what: String, midi: int, vol: float) -> void:
-	_queue.append({"t": t, "kind": kind, "what": what, "midi": midi, "vol": vol})
+func _schedule(t: float, kind: String, what: String, midi: int, vol: float, bird := false) -> void:
+	_queue.append({"t": t, "kind": kind, "what": what, "midi": midi, "vol": vol, "bird": bird})
 
 
 func _fire(q: Dictionary) -> void:
 	if q.kind == "wind":
-		_play_wind(q.what, q.midi, q.vol)
+		_play_wind(q.what, q.midi, q.vol, q.bird)
 	else:
-		_play(q.what, q.midi, q.vol)
+		_play(q.what, q.midi, q.vol, q.bird)
 
 
 # --- Voices -----------------------------------------------------------------
 
-func _play(inst: String, midi: int, vol: float) -> void:
+func _play(inst: String, midi: int, vol: float, bird := false) -> void:
 	var bank: Dictionary = _bank.get(inst, {})
 	if bank.is_empty():
 		return
@@ -340,25 +384,30 @@ func _play(inst: String, midi: int, vol: float) -> void:
 	var src := clampi(midi, r.x, r.y)
 	if not bank.has(src):
 		return
-	_voice(bank[src], pow(2.0, (midi - src) / 12.0), GROUP_DB[inst] + linear_to_db(vol / REF_VOL))
+	_voice(bank[src], pow(2.0, (midi - src) / 12.0), GROUP_DB[inst] + linear_to_db(vol / REF_VOL), bird)
 	note_played.emit(midi, inst)
 
 
 ## Winds are tuned: one file per pitch class, picked by the note that sounds.
-func _play_wind(kind: String, midi: int, vol: float) -> void:
+func _play_wind(kind: String, midi: int, vol: float, bird := false) -> void:
 	var bank: Dictionary = _wind.get(kind, {})
 	var lo: int = WIND_KINDS.get(kind, 60)
 	var src := lo + posmod(midi - lo, 12)
 	if not bank.has(src):
 		return
 	var group := "zone" if kind == "zona" else "wind"
-	_voice(bank[src], 1.0, GROUP_DB[group] + linear_to_db(vol / REF_VOL))
+	_voice(bank[src], 1.0, GROUP_DB[group] + linear_to_db(vol / REF_VOL), bird)
 
 
 ## Round robin over the pool: the next voice is always the oldest one, so it is the one stolen.
-func _voice(stream: AudioStream, pitch: float, db: float) -> void:
-	var p := _voices[_voice_i]
-	_voice_i = (_voice_i + 1) % VOICES
+func _voice(stream: AudioStream, pitch: float, db: float, bird := false) -> void:
+	var p: AudioStreamPlayer
+	if bird:
+		p = _bird_voices[_bird_i]
+		_bird_i = (_bird_i + 1) % BIRD_VOICES
+	else:
+		p = _voices[_voice_i]
+		_voice_i = (_voice_i + 1) % VOICES
 	p.stream = stream
 	p.pitch_scale = pitch
 	p.volume_db = db
@@ -398,6 +447,22 @@ func _setup_buses() -> void:
 		AudioServer.add_bus_effect(_choir_bus, _choir_filter)
 	else:
 		_choir_filter = AudioServer.get_bus_effect(_choir_bus, 0) as AudioEffectLowPassFilter
+	_bird_bus = AudioServer.get_bus_index(BIRD_BUS)
+	if _bird_bus == -1:
+		AudioServer.add_bus()
+		_bird_bus = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(_bird_bus, BIRD_BUS)
+		AudioServer.set_bus_send(_bird_bus, MUSIC_BUS)
+		_bird_panner = AudioEffectPanner.new()
+		AudioServer.add_bus_effect(_bird_bus, _bird_panner)
+		var delay := AudioEffectDelay.new()
+		delay.tap1_delay_ms = 340.0
+		delay.tap1_level_db = -10.0
+		delay.tap2_active = false
+		delay.feedback_active = false
+		AudioServer.add_bus_effect(_bird_bus, delay)
+	else:
+		_bird_panner = AudioServer.get_bus_effect(_bird_bus, 0) as AudioEffectPanner
 
 
 static func note_name(m: int) -> String:
