@@ -18,14 +18,18 @@ static func italic() -> Font:
 	return _italic
 
 
+## Cormorant Garamond ships with the game (fonts/, SIL Open Font License), so it looks the same on
+## the web and on any machine. It is a variable font: the weight is set on its "wght" axis.
+const REGULAR := "res://fonts/CormorantGaramond.ttf"
+const ITALIC := "res://fonts/CormorantGaramond-Italic.ttf"
+const WEIGHT := 500
+
+
 static func _make(is_italic: bool) -> Font:
-	var f := SystemFont.new()
-	f.font_names = PackedStringArray(["Cormorant Garamond", "Cormorant", "Garamond", "Georgia", "Times New Roman", "serif"])
-	f.font_weight = 300 if not is_italic else 400
-	f.font_italic = is_italic
-	f.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	var f: FontFile = load(ITALIC if is_italic else REGULAR)
 	var v := FontVariation.new()
 	v.base_font = f
+	v.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): WEIGHT}
 	v.spacing_glyph = 1
 	return v
 
