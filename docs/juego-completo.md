@@ -29,19 +29,20 @@ Total del build actual: entre **1 y 3 horas**, casi todo trabado al final. La cu
 
 Ajustes para que dure eso: zona 1 más lenta (que la primera barrera pida 5–8 taps), y las barreras 21–40 calibradas para 45–75 s cada una.
 
-### Cómo termina la demo (barrera 40)
+### Cómo termina la demo (barreras 40–45, decidido el 31/10/2026)
 
-No con la carta entera. La carta es el cierre del juego; en la demo la usamos a medias, como promesa:
+La oscuridad se juega. Antes la demo se cortaba justo cuando aparecía lo más intrigante; ahora se atraviesa y algo despierta, que es lo que deja con ganas de más.
 
-1. Se rompe la barrera 40 y vuelve el verde… pero solo un instante. Desde los bordes, la tinta se oscurece y las líneas de la torre empiezan a **resquebrajarse** (anticipo de la mecánica de §4).
-2. El ave pasa, y por primera vez su canto suena en menor, incompleto. Se pierde en lo oscuro.
-3. La voz: *"Not everything comes back so easily."* (*"No todo vuelve tan fácil."*) — pausa — *"But you're not alone in this."* (*"Pero no estás solo en esto."*)
-4. Pantalla de papel. La silueta de la ciudad completa en punteado: las 2 estructuras construidas en color y las otras 8 apenas dibujadas, esperando.
-5. Una carta corta del creador:
+1. Se rompe la barrera 40 y vuelve el verde… pero solo un instante. Voz: *"Not everything comes back so easily."* (*"No todo vuelve tan fácil."*)
+2. **El mundo se vuelve blanco sobre negro** (el negativo de la página, como en Gris): el papel se apaga, la tinta brilla. La torre se agrieta y las estructuras que el jugador dibujó **se rompen**: sus trazos se parten en fragmentos que se separan, giran y caen. El ave pasa, herida, con su canto en menor.
+3. **Barreras 41–45, en la oscuridad.** El fondo es caos: figuras blancas que se multiplican, flotan y chocan entre sí; cada choque es una nota suave y grave del acorde (el caos interior, intentando calmarse). La torre se desmorona: astillas de tinta que se desprenden con cada toque, polvo, y temblores cada pocos segundos que sacuden la cámara y rompen un poco más las estructuras. La música se reduce a bajo y coro. Cada barrera rota calma un poco el caos. No hay voz: el caos habla solo. Dura unos 2,5–4 minutos (`tools/sim_time`).
+4. **Se rompe la 45: todo se acomoda.** Las figuras se deslizan a su lugar y forman un mandala que gira, con hilos dorados; cada una suena al llegar, en un arpegio que sube. Acorde mayor amplio, coro, cascada de cristal. Las grietas se cierran bajo la luz y los fragmentos de las estructuras vuelven a su sitio con costuras de oro (kintsugi).
+5. **Algo despierta: la ballena celeste.** Una ballena de luz, mucho más grande que el ave, cruza el cielo despacio, con constelaciones adentro y una estela de motas; canta tres veces (un canto largo y grave afinado en la tonalidad, con brillo de celesta y cristal). Voz: *"But you're not alone in this."* (*"Pero no estás solo en esto."*). Mientras pasa, el negativo se deshace y vuelve el papel.6. Pantalla de papel. La silueta de la ciudad completa en punteado: las 2 estructuras construidas en color y las otras 8 apenas dibujadas, esperando.
+7. Una carta corta del creador:
    > Gracias por jugar hasta acá. Tocaste {taps} veces.
    > El resto del camino todavía está por dibujarse.
    > — Pablo
-6. Botones: **Wishlist en Steam** · Seguir tocando (modo libre en la zona 4).
+8. Botones: **Wishlist en Steam** · Seguir tocando (modo libre en la zona 4).
 
 **Por qué funciona como gancho:** la demo termina en una pregunta (¿qué es lo oscuro?, ¿quién me habla?) y con algo visible que falta (la ciudad punteada). La carta corta con el número de taps conserva el momento de "esto me habla a mí", sin gastar el "estoy orgulloso de vos", que queda para el final del juego completo.
 

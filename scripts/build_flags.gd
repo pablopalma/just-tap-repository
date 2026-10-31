@@ -4,10 +4,13 @@ extends RefCounted
 ## the full game goes on to barrier 100. Change DEMO before exporting.
 
 const DEMO := true
-const DEMO_LAST := 40
+const DEMO_LAST := 45
+## The demo's dark stretch: from here to DEMO_LAST the world crumbles and the background is chaos,
+## until the last barrier breaks and everything settles (docs/juego-completo.md §2).
+const DARK_FROM := 41
 
 ## Shown in the play data so balance can be compared between builds.
-const VERSION := "0.9.0-beta"
+const VERSION := "0.10.0-beta"
 
 ## Google Apps Script web app that receives the beta play data (docs/beta-datos.md). Empty: nothing
 ## is recorded and the title screen does not offer the switch.
@@ -15,6 +18,10 @@ const TELEMETRY_URL := "https://script.google.com/macros/s/AKfycbymBcAgdGNKFZroe
 
 ## Store page for the wishlist button. Empty hides the button until the page exists.
 const STEAM_URL := ""
+
+
+static func is_dark(n: int) -> bool:
+	return DEMO and n >= DARK_FROM and n <= DEMO_LAST
 
 
 static func last_barrier() -> int:

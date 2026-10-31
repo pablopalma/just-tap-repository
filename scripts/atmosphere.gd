@@ -86,6 +86,76 @@ static func boom(length := 2.4) -> AudioStreamWAV:
 	return _wav(out)
 
 
+## The ground giving way far below: low, rolling noise that swells and dies (a tremor).
+static func rumble(length := 3.0) -> AudioStreamWAV:
+	var n := int(length * RATE)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 53
+	var lo := 0.0
+	var lo2 := 0.0
+	for i in n:
+		var t := float(i) / n
+		lo += (rng.randf_range(-1.0, 1.0) - lo) * 0.012
+		lo2 += (lo - lo2) * 0.05
+		# slow beating, like something heavy shifting
+		var roll := 0.7 + 0.3 * sin(TAU * 3.2 * t * length) * sin(TAU * 0.9 * t * length)
+		var env := smoothstep(0.0, 0.18, t) * pow(1.0 - t, 1.8)
+		out[i] = lo2 * roll * env
+	return _wav(out)
+
+
+## Bits of ink and stone falling apart: sparse little clicks and grains over a short hiss.
+static func crumble(length := 1.4) -> AudioStreamWAV:
+	var n := int(length * RATE)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 61
+	var hiss := 0.0
+	var grain := 0.0
+	var grain_v := 0.0
+	for i in n:
+		var t := float(i) / n
+		hiss += (rng.randf_range(-1.0, 1.0) - hiss) * 0.4
+		# a new grain now and then, denser at the start
+		if rng.randf() < lerpf(0.004, 0.0006, t):
+			grain_v = rng.randf_range(0.5, 1.0) * (1.0 if rng.randf() < 0.5 else -1.0)
+		grain_v *= 0.93
+		grain += (grain_v - grain) * 0.6
+		var env := pow(1.0 - t, 2.2)
+		out[i] = (grain * 0.9 + hiss * 0.08) * env
+	return _wav(out)
+
+
+## A whale far up in the sky: a long, low call that rises, holds and falls, with slow vibrato,
+## soft overtones and air. Rendered around A3 (MIDI 57) and tuned with pitch_scale.
+static func whale(length := 5.0) -> AudioStreamWAV:
+	var n := int(length * RATE)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 71
+	var phase := 0.0
+	var air := 0.0
+	for i in n:
+		var t := float(i) / n
+		# rise a fifth, hold, sink below where it started
+		var semis := 7.0 * smoothstep(0.0, 0.35, t) - 9.0 * smoothstep(0.6, 1.0, t)
+		semis += 0.25 * sin(TAU * 4.2 * t * length) * smoothstep(0.2, 0.5, t)
+		var f := 220.0 * pow(2.0, semis / 12.0)
+		phase += TAU * f / RATE
+		air += (rng.randf_range(-1.0, 1.0) - air) * 0.08
+		# the voice brightens in the middle, like a mouth opening
+		var open := sin(PI * t)
+		var tone := sin(phase) + 0.45 * open * sin(2.0 * phase) + 0.22 * open * sin(3.0 * phase) \
+			+ 0.08 * sin(5.0 * phase)
+		var env := smoothstep(0.0, 0.2, t) * smoothstep(1.0, 0.75, t)
+		out[i] = (tone * 0.75 + air * 0.25) * env
+	return _wav(out)
+
+
 static func _wav(samples: PackedFloat32Array) -> AudioStreamWAV:
 	var peak := 0.0001
 	for s in samples:

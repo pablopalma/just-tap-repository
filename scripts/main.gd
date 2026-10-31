@@ -52,6 +52,12 @@ var bird: GiantBird
 var landscape: Landscape
 var colour_wave: ColourWave
 var darkness: Darkness
+## The demo's dark stretch (BuildFlags.DARK_FROM..DEMO_LAST): chaos behind, the tower crumbling,
+## and at its end the whale.
+var chaos: Chaos
+var crumble
+var whale: CelestialWhale
+var _dark := false
 var flash: ColorRect
 ## Only in debug builds (editor, debug exports).
 var dev_menu: DevMenu
@@ -111,6 +117,13 @@ func _build() -> void:
 	add_child(darkness)
 	bird = GiantBird.new()
 	add_child(bird)
+	chaos = Chaos.new()
+	add_child(chaos)
+	chaos.settled.connect(_on_chaos_settled)
+	whale = CelestialWhale.new()
+	add_child(whale)
+	whale.passing.connect(_on_whale_passing)
+	whale.gone.connect(_on_whale_gone)
 	bird.passed_close.connect(_on_bird_close)
 
 	var font := UIStyle.font()
@@ -135,6 +148,9 @@ func _build() -> void:
 	tip.path = path
 	fx = _node("FX", "res://scripts/world/fx.gd")
 	fx.font = UIStyle.italic()
+	crumble = _node("Crumble", "res://scripts/world/crumble.gd")
+	crumble.path = path
+	crumble.quaked.connect(_on_quake)
 
 	camera = Camera2D.new()
 	camera.set_script(load("res://scripts/world/camera.gd"))
@@ -238,6 +254,8 @@ func _start() -> void:
 		return
 	mode = Mode.PLAY
 	GameState.running = true
+	if BuildFlags.is_dark(GameState.stage):
+		_enter_dark(true)  # a save from inside the dark
 
 
 func _on_line(id: String, text: String, duration: float) -> void:
@@ -273,7 +291,7 @@ func _panorama() -> void:
 
 ## Reaching a barrier the voice talks about plays it as a cinematic, once per run.
 func _maybe_cinematic(n: int) -> void:
-	if not cinematics_enabled or not VoiceLines.ON_REACH.has(n) or GameState.cinemas.has(n):
+	if not cinematics_enabled or not VoiceLines.ON_REACH.has(n) or GameState.cinemas.has(n) or BuildFlags.is_dark(n):
 		return
 	if GameState.finished or mode != Mode.PLAY:
 		return
@@ -419,8 +437,10 @@ func _process(delta: float) -> void:
 	depth.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	landscape.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size, tint)
 	colour_wave.update_view(camera.position, camera.zoom.x, camera.offset, get_viewport_rect().size)
+	crumble.view_center = camera.position
+	crumble.view_half = get_viewport_rect().size * 0.5 / camera.zoom.x
 	bird.set_tint(tint)
-	if GameState.running and not GameState.finished:
+	if GameState.running and not GameState.finished and not _dark:
 		_bird_wait -= delta
 		if _bird_wait <= 0.0:
 			_summon_bird()
@@ -435,6 +455,8 @@ func _base_zoom() -> float:
 
 func _on_hit(damage: float, crit: bool, source: String) -> void:
 	tip.kick(6.0 if source == "auto" else 12.0)
+	if _dark and source == "tap":
+		crumble.tap(GameState.stage)
 	gates.hit(0.25 if source == "auto" else 0.6)
 	var p := path.gate_pos(GameState.stage) + Vector2(randf_range(-55, 55), randf_range(-26, -6))
 	if crit:
@@ -445,6 +467,11 @@ func _on_hit(damage: float, crit: bool, source: String) -> void:
 
 func _on_gate_broken(n: int) -> void:
 	_maybe_cinematic(n + 1)
+	if BuildFlags.DEMO and n == BuildFlags.DARK_FROM - 1:
+		# The colour of the zone comes back for a moment… then the dark.
+		get_tree().create_timer(EVENT_TIME * 0.7).timeout.connect(_enter_dark.bind(false))
+	elif _dark and n < BuildFlags.DEMO_LAST:
+		_dark_step(n)
 	# Halfway through every zone, step back and look at what is being built.
 	if n % 10 == 5:
 		get_tree().create_timer(1.2).timeout.connect(_panorama)
@@ -628,6 +655,7 @@ func _dev_jump(n: int) -> void:
 	fx.clear()
 	washes.clear()
 	landscape.reset()
+	_clear_dark()
 	GameState.dev_jump(n)
 	GameState.running = true
 	mode = Mode.PLAY
@@ -638,6 +666,8 @@ func _dev_jump(n: int) -> void:
 	end_screen.visible = false
 	hud.modulate.a = 1.0
 	tip.lit = maxf(0.0, path.gate_len(n) - 260.0)
+	if BuildFlags.is_dark(n):
+		_enter_dark(true)
 
 
 func _dev_break() -> void:
@@ -670,27 +700,122 @@ func _enter_final(immediate: bool) -> void:
 	_grand = false
 	if immediate:
 		_show_end()
-	elif _demo_end:
-		_demo_darken()
 	GameState.running = false
 
 
-## The demo's last barrier broke. First the colour returns as always (the zone/chapter events
-## already fired), then, after that moment, the dark comes in.
-func _on_demo_finished() -> void:
-	_demo_end = true
-	_final_pending = EVENT_TIME
+# --- The demo's dark stretch ---------------------------------------------------
+
+## How much chaos at the current barrier: full when the dark begins, calmer with each barrier.
+func _dark_level() -> float:
+	var k := float(GameState.stage - BuildFlags.DARK_FROM) / float(BuildFlags.DEMO_LAST - BuildFlags.DARK_FROM)
+	return lerpf(1.0, 0.35, clampf(k, 0.0, 1.0))
 
 
-## The dark creeps in from the edges, the line cracks under the tip and the bird passes, hurt.
-func _demo_darken() -> void:
-	darkness.to(0.85, 7.0)
-	var top := path.gate_pos(BuildFlags.DEMO_LAST)
-	fx.crack(top + Vector2(0, 10), 320.0, 5.0)
-	fx.crack(path.gate_pos(BuildFlags.DEMO_LAST - 2), 260.0, 6.0)
-	fx.crack(path.gate_pos(BuildFlags.DEMO_LAST - 5), 220.0, 7.0)
+## The dark comes in: the world turns white on black, the line cracks, what was built starts to
+## break apart, the background turns to chaos and the tower crumbles. immediate: arriving inside it (a save, the dev menu), no build-up.
+func _enter_dark(immediate: bool) -> void:
+	if _dark or not BuildFlags.is_dark(GameState.stage) or GameState.finished:
+		return
+	_dark = true
+	Music.dark = true
+	Music.prepare_dark()
+	var level := _dark_level()
+	darkness.to(lerpf(0.25, 0.5, level), 0.5 if immediate else 6.0)
+	darkness.invert_to(1.0, 0.5 if immediate else 4.0)
+	chaos.start(level, immediate)
+	crumble.start(level)
+	if immediate:
+		landscape.break_to(0.5, 0.5)
+		return
+	landscape.break_to(0.3, 2.5)
+	var at := path.gate_pos(BuildFlags.DARK_FROM - 1)
+	fx.crack(at + Vector2(0, 10), 320.0, 5.0)
+	fx.crack(path.gate_pos(BuildFlags.DARK_FROM - 3), 260.0, 6.0)
+	fx.crack(path.gate_pos(BuildFlags.DARK_FROM - 6), 220.0, 7.0)
+	camera.add_trauma(0.6)
+	landscape.tremble = 1.0
+	Music.tremor(1.0)
 	get_tree().create_timer(2.5).timeout.connect(bird.fly.bind(true))
 
+
+## A barrier broken in the dark: it calms a little, but the line cracks where it broke.
+func _dark_step(n: int) -> void:
+	var level := _dark_level()
+	chaos.calm(level)
+	crumble.intensity = level
+	darkness.to(lerpf(0.25, 0.5, level), 3.0)
+	fx.crack(path.gate_pos(n) + Vector2(0, 10), 200.0, 3.0)
+	camera.add_trauma(0.3)
+
+
+func _on_quake(strength: float) -> void:
+	camera.add_trauma(0.25 + 0.45 * strength)
+	landscape.tremble = maxf(landscape.tremble, strength)
+	landscape.break_to(minf(1.0, landscape.broken + 0.05 + 0.12 * strength))
+
+
+## The demo's last barrier broke: the chaos finds its order, the cracks fill with gold, and
+## something awakens.
+func _on_demo_finished() -> void:
+	_demo_end = true
+	crumble.active = false  # what is already falling keeps falling
+	# Step back to take in the mandala around the tip.
+	mode = Mode.EVENT
+	_event_center = tip.position + Vector2(0, -40)
+	_event_zoom = _base_zoom() * 0.8
+	_event_t = 60.0
+	cinema.show_bars(true)
+	create_tween().tween_property(hud, "modulate:a", 0.0, 1.5)
+	if chaos.active:
+		chaos.resolve()
+	else:
+		_on_chaos_settled()
+
+
+func _on_chaos_settled() -> void:
+	if not _demo_end:
+		return
+	Music.resolve_chord()  # major, on the dark's root: the zone's dominant…
+	Music.dark = false     # …so the zone's own key that follows feels like coming home (V → I)
+	_flash(0.22, 2.5)
+	colour_wave.pass_wave(tip.position, Palette.GOLD, 0.6)
+	# Still dark enough for the whale's light to shine; it lifts as the whale passes. What broke
+	# comes back together, with golden seams.
+	darkness.to(0.15, 3.0)
+	landscape.tremble = 0.0
+	landscape.mend(4.0)
+	fx.clear()  # the cracks close under the light
+	get_tree().create_timer(2.5).timeout.connect(_awaken)
+
+
+func _awaken() -> void:
+	whale.swim()
+	get_tree().create_timer(4.0).timeout.connect(Narrator.say.bind(VoiceLines.DEMO_ENDING[1]))
+
+
+func _on_whale_passing() -> void:
+	darkness.to(0.0, 6.0)
+	darkness.invert_to(0.0, 6.0)
+
+
+func _on_whale_gone() -> void:
+	_dark = false
+	chaos.stop()
+	crumble.stop()
+	cinema.show_bars(false, 1.2)
+	_enter_final(false)
+
+
+func _clear_dark() -> void:
+	_dark = false
+	Music.dark = false
+	chaos.stop()
+	crumble.stop()
+	whale.stop()
+	darkness.amount = 0.0
+	darkness.invert = 0.0
+	landscape.tremble = 0.0
+	landscape.unbreak()
 
 ## "Start over" from the demo's end screen.
 func _restart() -> void:
@@ -699,7 +824,7 @@ func _restart() -> void:
 	SaveSystem.save_game()
 	_demo_end = false
 	_grand = false
-	darkness.amount = 0.0
+	_clear_dark()
 	_on_reborn()
 	tip.lit = 0.0
 	_greet(false)
@@ -707,7 +832,7 @@ func _restart() -> void:
 
 func _on_reborn() -> void:
 	_stop_cinematic(true)
-	darkness.amount = 0.0
+	_clear_dark()
 	tip.lit = 0.0
 	gates.reset()
 	star.reset()

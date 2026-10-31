@@ -48,7 +48,7 @@ A single line of ink climbs through barriers. Every tap pushes it a little furth
 And slowly, the colour comes back.
 
 **In this demo**
-- Climb the first 40 barriers of the day — about 30 minutes.
+- Climb the first 45 barriers of the day — about 30–35 minutes, through the dark at the end.
 - Two chapters: the grey, and the red.
 - Star circuits: your light splits into many and runs a turning star.
 - A tree of upgrades that grows upward, like the line.
@@ -78,7 +78,7 @@ Una línea de tinta sube rompiendo barreras. Cada toque la empuja un poco más, 
 Y de a poco, el color vuelve.
 
 **En esta demo**
-- Las primeras 40 barreras del día: unos 30 minutos.
+- Las primeras 45 barreras del día: unos 30–35 minutos, con la oscuridad al final.
 - Dos capítulos: el gris y el rojo.
 - Estrellas-circuito: tu luz se divide en muchas y recorre una estrella que gira.
 - Un árbol de mejoras que crece hacia arriba, como la línea.
@@ -111,10 +111,11 @@ Clic, toque o **Espacio**. Nada más. Abrí el **árbol** cuando las barreras em
 
 | Archivo | Uso | Tamaño |
 |---|---|---|
-| `cover.png` | **Cover image** (miniatura en itch) | 630 × 500 |
-| `banner.png` | Banner del tema | 960 × 300 |
-| `screenshot_1..6.png` | **Screenshots** | 1920 × 1080 |
-| `just_tap_colour.gif` | Arriba de la descripción | 960 de ancho |
+| `cover.png` | **Cover image** (miniatura en itch). Es la cápsula nueva de `Builds/capsule/itch/cover.png` (docs/capsulas.md): reemplaza a la portada vieja sacada del tráiler | 630 × 500 |
+| `banner.png` | Banner del tema (sale del arte de la cápsula) | 960 × 300 |
+| `screenshot_1..8.png` | **Screenshots**: el color, la ciudad armándose, la estrella, el ave, las ramas, la oscuridad, el mandala dorado, la ballena | 1920 × 1080 |
+| `gif_*.gif` | En la descripción, uno por mecánica (`gif_build`: la ciudad armándose; `gif_dark`, `gif_mandala`, `gif_whale`: el final de la demo) | 640 de ancho, menos de 3 MB |
+| `just_tap_colour.gif` | Arriba de la descripción (está en `Builds/trailer/`) | 640 de ancho |
 | `just_tap_trailer.mp4` | Subir a YouTube y pegar el enlace en **Gameplay video or trailer** | 1080p |
 
 ---
@@ -123,4 +124,4 @@ Clic, toque o **Espacio**. Nada más. Abrí el **árbol** cuando las barreras em
 
 **Title:** Just Tap — the demo is out
 
-> A small game about getting through a grey day. One line of ink, a lot of barriers, and the colour slowly coming back. The demo covers the first 40 barriers (about half an hour). I'd love to know how the ending made you feel. — Pablo
+> A small game about getting through a grey day. One line of ink, a lot of barriers, and the colour slowly coming back. The demo covers the first 45 barriers (about half an hour). I'd love to know how the ending made you feel. — Pablo

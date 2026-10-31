@@ -114,7 +114,10 @@ func _tween_music(db: float, time: float) -> void:
 
 func _on_gate_broken(n: int) -> void:
 	var reached := n + 1
-	if VoiceLines.ON_REACH.has(reached):
+	if BuildFlags.DEMO and reached == BuildFlags.DARK_FROM:
+		say(VoiceLines.DEMO_ENDING[0])  # the dark comes in
+	# In the demo's dark the voice stays quiet: the chaos speaks for itself.
+	if VoiceLines.ON_REACH.has(reached) and not BuildFlags.is_dark(reached):
 		say(VoiceLines.ON_REACH[reached])
 
 
@@ -134,9 +137,9 @@ func _on_finished() -> void:
 		say(id)
 
 
+## The dark settles and something awakens: the last line, as the whale arrives (Main times it).
 func _on_demo_finished() -> void:
-	for id in VoiceLines.DEMO_ENDING:
-		say(id)
+	pass
 
 
 func _on_reborn() -> void:

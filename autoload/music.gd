@@ -21,6 +21,8 @@ const DISTANT_VOICES := 10
 const BIRD_BODY_BUS := &"BirdBody"
 const BIRD_VOICE_BUS := &"BirdVoice"
 const BODY_VOICES := 8
+## The celestial whale's song: its own wide, soft reverb, straight to Master.
+const CELESTIAL_BUS := &"Celestial"
 const BIRD_VOICES := 8
 ## The bird's calls: chord degrees, a short phrase that falls and lifts like a cry.
 const BIRD_CALLS := [[7, 5, 6], [8, 6, 4], [6, 7, 5, 4], [9, 7, 8]]
@@ -75,6 +77,25 @@ var _cry_i := 0
 var _body_panners: Array[AudioEffectPanner] = []
 ## Pool a scheduled note plays on (see _fire); empty: the usual one.
 var _route := ""
+## The demo's dark stretch (Main sets it): the music drops a fifth, to the zone's dominant, and
+## turns minor — i(add9) VI(maj7) III(add9) VII, dark but consonant, so every tap and every
+## collision still lands in the chord. The choir (recorded in the zone's major chords) rests; a low
+## pedal of bass and wind holds instead. The resolution's major chord on that dominant then leads
+## home to the zone's tonic when the dark ends: V → I.
+var dark := false:
+	set(v):
+		if v == dark:
+			return
+		dark = v
+		if dark:
+			for p in _choir_players:
+				if p.playing:
+					create_tween().tween_property(p, "volume_db", -60.0, CHOIR_FADE * 2.0)
+const DARK_CHORDS := [[0, 3, 7, 14], [8, 12, 15, 19], [3, 7, 10, 14], [10, 14, 17]]
+const DARK_DROP := 5
+var _celestial: Array[AudioStreamPlayer] = []
+var _celestial_i := 0
+var _chaos_t := -1.0
 ## Air, swell, cry and resonance (scripts/atmosphere.gd), made once at start.
 var _atmos := {}
 ## Set by a director (the trailer): zone and layers stay put whatever the game does.
@@ -119,6 +140,11 @@ func _ready() -> void:
 		p.bus = BIRD_VOICE_BUS
 		add_child(p)
 		_cry_voices.append(p)
+	for i in 3:
+		var p := AudioStreamPlayer.new()
+		p.bus = CELESTIAL_BUS
+		add_child(p)
+		_celestial.append(p)
 	_atmos = {"whoosh": Atmosphere.whoosh(), "swell": Atmosphere.swell(), "cry": Atmosphere.cry(), "boom": Atmosphere.boom()}
 	for i in 2:
 		var p := AudioStreamPlayer.new()
@@ -187,7 +213,7 @@ func lock(z: int, layer_count: int) -> void:
 func set_enabled(on: bool) -> void:
 	SaveSystem.music_on = on
 	AudioServer.set_bus_mute(_music_bus, not on)
-	for b in [DISTANT_BUS, BIRD_BODY_BUS, BIRD_VOICE_BUS]:
+	for b in [DISTANT_BUS, BIRD_BODY_BUS, BIRD_VOICE_BUS, CELESTIAL_BUS]:
 		var d := AudioServer.get_bus_index(b)
 		if d != -1:
 			AudioServer.set_bus_mute(d, not on)
@@ -198,11 +224,13 @@ func is_enabled() -> bool:
 
 
 func chord() -> Array:
+	if dark:
+		return DARK_CHORDS[_chord_idx]
 	return Zones.PROGRESSIONS[zone - 1][_chord_idx]
 
 
 func tonic() -> int:
-	return Zones.TONIC[zone - 1]
+	return Zones.TONIC[zone - 1] - (DARK_DROP if dark else 0)
 
 
 ## Degree `deg` of the current chord, counting up through octaves from `base`.
@@ -379,6 +407,10 @@ func _pool(name: String) -> AudioStreamPlayer:
 		var p := _body_voices[_body_i]
 		_body_i = (_body_i + 1) % BODY_VOICES
 		return p
+	if name == "celestial":
+		var p := _celestial[_celestial_i]
+		_celestial_i = (_celestial_i + 1) % _celestial.size()
+		return p
 	if name == "cry":
 		var p := _cry_voices[_cry_i]
 		_cry_i = (_cry_i + 1) % _cry_voices.size()
@@ -411,6 +443,84 @@ static func _fold(midi: int, ceiling: int) -> int:
 	while midi > ceiling:
 		midi -= 12
 	return midi
+
+
+# --- The demo's dark stretch --------------------------------------------------
+
+## Makes the dark's sounds (a few hundred ms of work) before they are needed.
+func prepare_dark() -> void:
+	if not _atmos.has("rumble"):
+		_atmos["rumble"] = Atmosphere.rumble()
+		_atmos["crumble"] = Atmosphere.crumble()
+		_atmos["whale"] = Atmosphere.whale()
+
+
+## Two figures of the chaos collide: a soft, low note of the chord, far away. Chaos you can hear
+## trying to calm itself. strength 0..1.
+func chaos_hit(strength: float) -> void:
+	if not playing or _time - _chaos_t < 0.11:
+		return
+	_chaos_t = _time
+	var inst: String = ["harp", "celesta", "harp", "glass"][randi() % 4]
+	var deg := randi_range(0, 5)
+	var base := tonic() + (24 if inst == "glass" else 12)
+	var midi := chord_note(deg, base)
+	while midi > BRIGHT_CEILING - 7:
+		midi -= 12
+	_queue.append({"t": _time, "kind": "note", "what": inst, "midi": midi, "bird": false,
+		"vol": lerpf(0.012, 0.035, strength), "pool": "distant"})
+
+
+## The ground shakes: a rumble and things falling apart. strength 0..1.
+func tremor(strength: float) -> void:
+	if not playing or not _atmos.has("rumble"):
+		return
+	_schedule_atmos(_time, "rumble", randf_range(0.8, 1.05), lerpf(-22.0, -9.0, strength), "distant")
+	_schedule_atmos(_time + randf_range(0.2, 0.6), "crumble", randf_range(0.85, 1.15), lerpf(-24.0, -14.0, strength), "distant")
+
+
+## A piece breaks off: a small crumble.
+func crumble_bit() -> void:
+	if not playing or not _atmos.has("crumble"):
+		return
+	_schedule_atmos(_time, "crumble", randf_range(1.0, 1.4), -24.0, "distant")
+
+
+## A figure of the chaos settles into the mandala: the i-th note of a slow, rising arpeggio.
+func settle_note(i: int) -> void:
+	if not playing:
+		return
+	var t := _grid_time(_s16())
+	_schedule_deg(t, "harp" if i % 2 == 0 else "celesta", i, 12 if i < 6 else 24, 0.035)
+
+
+## Everything is in its place: a wide major chord, choir rising, glass falling like light.
+func resolve_chord() -> void:
+	if not playing:
+		return
+	var t := _grid_time(_s16() * 4.0)
+	var root := tonic()
+	for k in [0, 7, 12, 16, 19, 24]:
+		_schedule(t + 0.03 * k, "note", "harp", root + k, 0.05)
+	_schedule(t, "note", "bass", root - 12, 0.08)
+	_schedule(t, "wind", "zona", root, 0.06)
+	for i in 10:
+		_schedule(t + 0.35 + _s16() * i, "note", "glass", root + 24 + [16, 12, 7, 4, 0][i % 5] - 12 * int(i / 5.0), 0.03)
+	choir_swell()
+
+
+## The whale sings: a long call tuned to the key (i picks the interval), with light above it.
+func whale_song(i: int) -> void:
+	if not playing or not _atmos.has("whale"):
+		return
+	var t := _grid_time(_s16() * 4.0)
+	var target: int = tonic() - 12 + [0, 7, -5, 4][i % 4]
+	_schedule_atmos(t, "whale", pow(2.0, (target - 57) / 12.0), -7.0, "celestial")
+	for k in 4:
+		_schedule_deg(t + 1.2 + _s16() * 3.0 * k, "celesta", 4 + k, 24, 0.02)
+		_schedule_deg(t + 1.2 + _s16() * 3.0 * k, "glass", 6 + k, 24, 0.012)
+	if i == 0:
+		choir_swell()
 
 
 ## The bird owns the pan of its bus while it flies.
@@ -532,30 +642,46 @@ func _on_step() -> void:
 
 func _accompany(s: int) -> void:
 	var bar := s % 16
+	var lay := mini(layers, 1) if dark else layers
 	var c := chord()
 	var root := tonic() + int(c[0])
-	if layers >= 1 and bar == 0:
+	if dark:
+		if bar == 8:
+			_play("bass", root - 12 + 7, 0.04)
+		if s % 4 == 2:
+			var deg: int = ARP_PATTERN[_arp_i % ARP_PATTERN.size()]
+			_arp_i += 1
+			var low := chord_note(deg, tonic())
+			_play("harp", low, 0.022)
+			shape_note.emit(low, false)
+	if lay >= 1 and bar == 0:
 		_play("bass", root - 12, 0.07)
-	if layers >= 3 and bar == 10:
+	if lay >= 3 and bar == 10:
 		_play("bass", root - 12 + 7, 0.05)
-	if layers >= 2 or tension > 0.5:
-		var fast := layers >= 5 and tension > 0.55
+	if lay >= 2 or tension > 0.5:
+		var fast := lay >= 5 and tension > 0.55
 		if fast or s % 2 == 0:
 			var deg: int = ARP_PATTERN[_arp_i % ARP_PATTERN.size()]
 			_arp_i += 1
 			var arp := chord_note(deg, tonic() + 12)
 			_play(_arp_instrument(), arp, 0.018 + tension * 0.04)
 			shape_note.emit(arp, false)
-	if layers >= 4 and s % 8 == 4:
+	if lay >= 4 and s % 8 == 4:
 		var shine := chord_note(randi_range(0, c.size() - 1), tonic() + 24)
 		_play("glass", shine, 0.02)
 		shape_note.emit(shine, true)
-	if layers >= 5 and bar == 0:
+	if lay >= 5 and bar == 0:
 		var b := int(s / 16.0)
 		_play("flute", chord_note(COUNTER_PATTERN[b % COUNTER_PATTERN.size()], tonic() + 12), 0.03)
 
 
 func _play_choir() -> void:
+	if dark:
+		# The low pedal: the chord's root held in the bass and the deep wind, a fifth under it.
+		var root := tonic() + int(chord()[0])
+		_play("bass", root - 12, 0.06)
+		_play_wind("zona", root, 0.05)
+		return
 	var stream: AudioStream = _choir.get(zone * 10 + _chord_idx + 1)
 	if stream == null:
 		return
@@ -726,6 +852,18 @@ func _setup_buses() -> void:
 		delay.feedback_active = false
 		AudioServer.add_bus_effect(_bird_bus, delay)
 	_body_panners = [_bird_side_bus(BIRD_BODY_BUS, 0.0), _bird_side_bus(BIRD_VOICE_BUS, 0.12)]
+	if AudioServer.get_bus_index(CELESTIAL_BUS) == -1:
+		AudioServer.add_bus()
+		var cb := AudioServer.bus_count - 1
+		AudioServer.set_bus_name(cb, CELESTIAL_BUS)
+		AudioServer.set_bus_send(cb, &"Master")
+		var hall := AudioEffectReverb.new()
+		hall.room_size = 0.9
+		hall.damping = 0.5
+		hall.wet = 0.35
+		hall.dry = 0.85
+		AudioServer.add_bus_effect(cb, hall)
+		AudioServer.set_bus_mute(cb, AudioServer.is_bus_mute(_music_bus))
 	if AudioServer.get_bus_index(DISTANT_BUS) == -1:
 		AudioServer.add_bus()
 		var d := AudioServer.bus_count - 1

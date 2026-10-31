@@ -25,6 +25,13 @@ var grand := 0.0
 ## A partial grand view for a few seconds (the panoramas during play): 0 distant .. 1 aligned.
 var glimpse := 0.0
 var _glimpse_tween: Tween
+## The demo's dark: the structures shake (0 still .. 1 a hard quake). Eases back on its own.
+var tremble := 0.0
+## The demo's dark: how broken the built structures are (0 whole .. 1 in pieces, falling). Mending
+## brings every fragment back and leaves golden seams for a while (kintsugi).
+var broken := 0.0
+var mending := 0.0
+var _break_tween: Tween
 
 
 func _ready() -> void:
@@ -36,6 +43,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_drawer.now = _t
+	tremble = maxf(0.0, tremble - delta * 0.6)
+	_drawer.broken = broken
+	_drawer.mending = mending
 
 
 ## Barrier n just broke: draw its piece.
@@ -52,6 +62,31 @@ func set_grand(on: bool, time := 7.0, ghost := false) -> void:
 	tw.tween_property(self, "grand", 1.0 if on else 0.0, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if ghost:
 		tw.parallel().tween_property(_drawer, "ghost", 1.0, time * 1.4)
+
+
+## The structures break a little more (quakes in the demo's dark), up to 	o.
+func break_to(to: float, time := 1.2) -> void:
+	if _break_tween:
+		_break_tween.kill()
+	_break_tween = create_tween()
+	_break_tween.tween_property(self, "broken", maxf(broken, to), time).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+
+
+## Every fragment flies back to its place; the seams glow gold, then fade.
+func mend(time := 4.0) -> void:
+	if _break_tween:
+		_break_tween.kill()
+	mending = 1.0
+	_break_tween = create_tween()
+	_break_tween.tween_property(self, "broken", 0.0, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_break_tween.tween_property(self, "mending", 0.0, 6.0).set_delay(1.0)
+
+
+func unbreak() -> void:
+	if _break_tween:
+		_break_tween.kill()
+	broken = 0.0
+	mending = 0.0
 
 
 ## Ease the landscape toward (or away from) the tower for a panorama.
@@ -81,6 +116,12 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 	_drawer.width_mul = maxf(1.0, zn / z)
 	scale = Vector2(z, z)
 	offset = vp * 0.5 - center * z
+	if tremble > 0.0:
+		var a := tremble * tremble * 14.0 * vp.y / 720.0
+		offset += Vector2(sin(_t * 41.0) + sin(_t * 23.0), cos(_t * 37.0) + sin(_t * 19.0)) * a * 0.5
+		rotation = sin(_t * 17.0) * tremble * tremble * 0.006
+	else:
+		rotation = 0.0
 	_drawer.set_view(center, vp * 0.5 / z)
 
 
@@ -89,6 +130,8 @@ class Drawer extends Node2D:
 	var now := 0.0
 	var grand := 0.0
 	var ghost := 0.0
+	var broken := 0.0
+	var mending := 0.0
 	## Keeps strokes readable when the layer is zoomed far out.
 	var width_mul := 1.0
 	var _cache := {}     # z -> Array[Dictionary] pieces
@@ -126,7 +169,7 @@ class Drawer extends Node2D:
 				busy = true
 			else:
 				anim.erase(n)
-		if busy or grand > 0.0:
+		if busy or grand > 0.0 or broken > 0.0 or mending > 0.0:
 			queue_redraw()
 
 	func _draw() -> void:
@@ -162,6 +205,13 @@ class Drawer extends Node2D:
 						continue
 					# It floats up into place as it is drawn, the way things rise in Gris.
 					rise = Vector2(0.0, 90.0 * pow(1.0 - p, 2.0))
+				# In the dark each piece breaks at its own moment, a little apart from the others.
+				var bj := clampf(broken * 1.7 - _h(n * 7 + 3) * 0.7, 0.0, 1.0)
+				if bj > 0.0:
+					_broken_piece(ps[j], rise, bj, col, n)
+					continue
+				if mending > 0.0:
+					_seams(ps[j], rise, col, n)
 				_piece(ps[j], rise, p, glow, col)
 				if glow > 0.0:
 					_motes(ps[j], rise, p, glow, col, n)
@@ -182,6 +232,46 @@ class Drawer extends Node2D:
 			if p < 1.0:
 				draw_circle(tip, 3.0 / Landscape.STRUCT_SCALE, Color(Palette.INK, 0.8))
 				draw_circle(tip, 9.0 / Landscape.STRUCT_SCALE, Color(col, 0.18))
+
+	static func _h(k: int) -> float:
+		return fposmod(sin(k * 12.9898) * 43758.5453, 1.0)
+
+	## A piece in fragments: every stroke cut into short shards that drift apart, turn and fall,
+	## floating a little as if under water. b: 0 whole .. 1 scattered.
+	func _broken_piece(piece: Dictionary, f: Vector2, b: float, col: Color, n: int) -> void:
+		var fill: PackedVector2Array = piece.fill
+		if fill.size() >= 3 and b < 0.6:
+			_fan(fill, f, Color(col, lerpf(0.09, 0.42, grand) * (1.0 - b / 0.6)))
+		var ink := Color(Palette.INK.lerp(col.darkened(0.4), grand * 0.6), 0.42 + 0.3 * grand)
+		var w := (1.6 + 0.6 * grand) * width_mul / Landscape.STRUCT_SCALE
+		var k := n * 131
+		for line in piece.lines:
+			for i in range(1, line.size()):
+				var a: Vector2 = line[i - 1]
+				var c: Vector2 = line[i]
+				var cuts := maxi(1, int(ceil(a.distance_to(c) / 40.0)))
+				for s in cuts:
+					k += 1
+					var p0 := a.lerp(c, s / float(cuts))
+					var p1 := a.lerp(c, (s + 1) / float(cuts))
+					var mid := (p0 + p1) * 0.5
+					var drift := Vector2.from_angle(_h(k) * TAU) * b * (40.0 + 60.0 * _h(k + 7))
+					drift.y += b * b * (60.0 + 200.0 * _h(k + 13))
+					drift += Vector2(sin(now * 1.1 + k), cos(now * 0.9 + k * 0.7)) * 5.0 * b
+					var ang := (_h(k + 29) - 0.5) * 2.4 * b
+					draw_line(mid + (p0 - mid).rotated(ang) + drift + f, mid + (p1 - mid).rotated(ang) + drift + f,
+						Color(ink, ink.a * (1.0 - 0.35 * b)), w, true)
+
+	## The mended seams: gold along every stroke, fading out.
+	func _seams(piece: Dictionary, f: Vector2, _col: Color, _n: int) -> void:
+		var w := 5.0 * width_mul / Landscape.STRUCT_SCALE
+		var gold := Color(Palette.GOLD.lightened(0.2), 0.55 * mending)
+		for line in piece.lines:
+			var pts := PackedVector2Array()
+			for q in line:
+				pts.append(q + f)
+			if pts.size() >= 2:
+				draw_polyline(pts, gold, w, true)
 
 	## Sparks of light rising from the pen while it draws, then from the whole piece as it settles.
 	func _motes(piece: Dictionary, f: Vector2, p: float, glow: float, col: Color, n: int) -> void:

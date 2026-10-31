@@ -19,30 +19,31 @@ const PROFILES := {
 
 func _ready() -> void:
 	SaveSystem.enabled = false
+	var dark_hp: float = GameState.chapter_hp[2]  # 41–45, the demo's dark: the game's own value
 	for cand in CANDIDATES:
 		for profile in PROFILES:
-			var zones := [0.0, 0.0, 0.0, 0.0]
+			var zones := [0.0, 0.0, 0.0, 0.0, 0.0]
 			var total := 0.0
 			var worst := 0.0
 			var worst_at := 0
 			for run in RUNS:
-				GameState.chapter_hp = [cand[0], cand[1], 1.0, 1.0, 1.0]
+				GameState.chapter_hp = [cand[0], cand[1], dark_hp, 1.0, 1.0]
 				var res := _play(PROFILES[profile])
 				total += res[0]
-				for z in 4:
+				for z in 5:
 					zones[z] += res[1][z]
 				if res[2] > worst:
 					worst = res[2]
 					worst_at = res[3]
 			var line := "SIM %-6s hp=%s  total=%.1f min  worst=%.1f min (b%d)  zones:" % [profile, str(cand),
 				total / RUNS / 60.0, worst / 60.0, worst_at]
-			for z in 4:
+			for z in 5:
 				line += " %.1f" % (zones[z] / RUNS / 60.0)
 			print(line)
 	get_tree().quit()
 
 
-## Returns [total s, [s in zones 1..4], longest s on one barrier, that barrier].
+## Returns [total s, [s in zones 1..5], longest s on one barrier, that barrier].
 func _play(p: Dictionary) -> Array:
 	var g := GameState
 	g.new_game()
@@ -53,7 +54,7 @@ func _play(p: Dictionary) -> Array:
 	var next_tree: float = p.tree_every
 	var next_pause: float = p.pause_every
 	var busy_until := 0.0
-	var zone_start := [0.0, -1.0, -1.0, -1.0]
+	var zone_start := [0.0, -1.0, -1.0, -1.0, -1.0]
 	var gate_since := 0.0
 	var gate := g.stage
 	var worst := 0.0
@@ -102,11 +103,11 @@ func _play(p: Dictionary) -> Array:
 				worst_at = gate
 			gate = g.stage
 			gate_since = t
-		var z := clampi(int((g.stage - 1) / 10), 0, 3)
+		var z := clampi(int((g.stage - 1) / 10), 0, 4)
 		if zone_start[z] < 0.0:
 			zone_start[z] = t
 	var spent := []
-	for z in 4:
-		var end: float = zone_start[z + 1] if z < 3 else t
+	for z in 5:
+		var end: float = zone_start[z + 1] if z < 4 else t
 		spent.append(end - zone_start[z])
 	return [t, spent, worst, worst_at]

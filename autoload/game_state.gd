@@ -127,8 +127,9 @@ const INTRO_START := 0.2
 const INTRO_UNTIL := 7
 ## Tuned with tools/sim_time.tscn (with the gentler regeneration and fatigue): grey ×8 and red ×10 make the
 ## demo (barriers 1–40) about 19 min for an efficient player and 31 for a casual one, and nobody spends
-## more than ~1.5 min on one barrier. Later chapters are still on the original curve.
-var chapter_hp := [8.0, 10.0, 1.0, 1.0, 1.0]
+## more than ~1.5 min on one barrier. ×7 for 41–60 keeps the demo's dark stretch (41–45) around 3–4 min.
+## Later chapters are still on the original curve.
+var chapter_hp := [8.0, 10.0, 7.0, 1.0, 1.0]
 
 
 func max_hp(n: int) -> float:
@@ -205,8 +206,8 @@ func branch_progress(b: Dictionary) -> float:
 
 
 func fork_count(n: int) -> int:
-	if n < FORK_FROM or n > FORK_TO:
-		return 0
+	if n < FORK_FROM or n > FORK_TO or (BuildFlags.DEMO and n <= BuildFlags.DEMO_LAST):
+		return 0  # the demo's dark stretch is one line, alone
 	return 2 if n < FORK_THREE else 3
 
 
