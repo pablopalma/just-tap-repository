@@ -21,6 +21,9 @@ var _last_tap := 0.0
 var _duck_tween: Tween
 ## Off while a director (the trailer) decides exactly when each line is said.
 var auto := true
+## How far the music ducks under the voice, and which buses duck (the trailer ducks more of them).
+var duck_db := DUCK_DB
+var duck_buses: Array[StringName] = [&"Music"]
 
 
 func _ready() -> void:
@@ -91,8 +94,14 @@ func _speak(id: String) -> void:
 	line_started.emit(id, VoiceLines.text(id, SaveSystem.lang), duration)
 
 
+## The voice's reverb (0..1); the trailer keeps it drier, so the voice sits in front.
+func set_reverb(wet: float) -> void:
+	var rv := AudioServer.get_bus_effect(AudioServer.get_bus_index(VOICE_BUS), 0) as AudioEffectReverb
+	rv.wet = wet
+
+
 func _duck() -> void:
-	_tween_music(DUCK_DB, 0.6)
+	_tween_music(duck_db, 0.6)
 
 
 func _unduck() -> void:
@@ -100,14 +109,15 @@ func _unduck() -> void:
 
 
 func _tween_music(db: float, time: float) -> void:
-	var bus := AudioServer.get_bus_index(Music.MUSIC_BUS)
-	if bus == -1:
-		return
 	if _duck_tween:
 		_duck_tween.kill()
-	_duck_tween = create_tween()
-	_duck_tween.tween_method(func(v: float) -> void: AudioServer.set_bus_volume_db(bus, v),
-		AudioServer.get_bus_volume_db(bus), db, time)
+	_duck_tween = create_tween().set_parallel()
+	for bus_name in duck_buses:
+		var bus := AudioServer.get_bus_index(bus_name)
+		if bus == -1:
+			continue
+		_duck_tween.tween_method(func(v: float) -> void: AudioServer.set_bus_volume_db(bus, v),
+			AudioServer.get_bus_volume_db(bus), db, time)
 
 
 # --- Triggers ---------------------------------------------------------------

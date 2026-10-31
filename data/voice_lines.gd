@@ -87,6 +87,8 @@ const LINES := {
 	"tr_04": {"en": "Some days fall apart. You keep tapping anyway.",
 		"es": "Hay días que se desarman. Y vos seguís tocando igual."},
 	"tr_05": {"en": "And slowly… everything finds its place.", "es": "Y de a poco… todo encuentra su lugar."},
+	"tr_06": {"en": "Every time you fall short, you learn. And you come back… a little stronger.",
+		"es": "Cada vez que no alcanza, aprendés. Y volvés… un poco más fuerte."},
 	"tz_01": {"en": "Just tap. That's all.", "es": "Solo tocá. Nada más."},
 	"tz_02": {"en": "Every tap… draws a little of the world back.",
 		"es": "Cada toque… dibuja de vuelta un poco del mundo."},

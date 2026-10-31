@@ -15,7 +15,15 @@ La voz es la del juego (Eleven v3, mismos ajustes que `docs/voces-elevenlabs.md`
 
 ---
 
-## Tráiler (≈57 s, 20 compases): *"a story about a grey day"*
+## Tráiler (≈64 s, 22,5 compases): *"a story about a grey day"*
+
+**Revisión del 31/10/2026.** Al ver el primer corte: *"le falta mostrar más el tema del build… que el jugador sienta que su progreso mejora"*, y algunos sonidos tapaban la voz. Cambios:
+
+- El acto 2 pasa a ser **aprender**: la barrera no cede (números chicos) → *"Grow a little. Then try again."* (**05**, ya grabada) → el árbol se abre vacío y el build crece nodo por nodo (20 compras, cada una desbloquea la siguiente) → la misma barrera cae enseguida, el pulso toca solo, y **tr_06** (*"Every time you fall short, you learn…"*). Sale la toma del color (el panorama ya lo muestra) y **tr_03** no se usa en el tráiler.
+- Números de daño visibles en los actos 1 y 2.
+- Mezcla: la voz con menos reverb (0,06 en vez de 0,18) y todo lo demás, también la ballena, el ave y lo lejano, baja 9 dB mientras habla (en el juego siguen 3 dB y solo la música).
+
+La tabla de abajo es la versión anterior; los tiempos vigentes están en `tools/trailer.gd`.
 
 | Compases | Tiempo | Imagen | Voz |
 |---|---|---|---|
@@ -85,6 +93,12 @@ Mismo modelo y ajustes que el resto (Eleven v3; Stability ~50 %, Similarity ~75 
 [softly] And slowly... [pause] [in awe] everything finds its place.
 ```
 *Y de a poco… todo encuentra su lugar.*
+
+### vo_tr_06.mp3 · tráiler, la barrera que ahora cae (revisión del 31/10)
+```
+[softly] Every time you fall short, [short pause] you learn. [pause] [warmly] And you come back... a little stronger.
+```
+*Cada vez que no alcanza, aprendés. Y volvés… un poco más fuerte.*
 
 ### vo_tz_01.mp3 · teaser, apertura
 ```
