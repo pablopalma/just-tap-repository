@@ -40,6 +40,8 @@ func _ready() -> void:
 	_sid = _rand_id(8)
 	_http = HTTPRequest.new()
 	_http.timeout = 20.0
+	# Apps Script writes the row, then redirects to its answer; following it would re-POST and fail.
+	_http.max_redirects = 0
 	add_child(_http)
 	_http.request_completed.connect(_on_sent)
 	GameState.gate_broken.connect(_on_gate)
@@ -135,8 +137,9 @@ func flush() -> void:
 
 
 func _on_sent(result: int, code: int, _headers: PackedStringArray, _body_bytes: PackedByteArray) -> void:
-	# Apps Script answers a POST with a redirect to the result; either means it was written.
-	if result != HTTPRequest.RESULT_SUCCESS or code >= 400:
+	# Apps Script answers a POST with a 302 to the result: the row is already written.
+	var ok := result in [HTTPRequest.RESULT_SUCCESS, HTTPRequest.RESULT_REDIRECT_LIMIT_REACHED] and code < 400
+	if not ok:
 		_requeue()
 	_inflight.clear()
 
@@ -158,7 +161,8 @@ func _body(events: Array) -> String:
 
 
 func _meta_dict() -> Dictionary:
-	return {"uid": uid, "sid": _sid, "v": BuildFlags.VERSION, "plat": _platform(), "lang": SaveSystem.lang}
+	var v := BuildFlags.VERSION + ("-test" if testing else "")
+	return {"uid": uid, "sid": _sid, "v": v, "plat": _platform(), "lang": SaveSystem.lang}
 
 
 func _meta() -> String:

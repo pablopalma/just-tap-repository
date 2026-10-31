@@ -11,7 +11,7 @@ const VERSION := "0.9.0-beta"
 
 ## Google Apps Script web app that receives the beta play data (docs/beta-datos.md). Empty: nothing
 ## is recorded and the title screen does not offer the switch.
-const TELEMETRY_URL := ""
+const TELEMETRY_URL := "https://script.google.com/macros/s/AKfycbymBcAgdGNKFZroeHRA1b4oxmpAjul-0zDKcY0jI_1buBkDJThyapyx0orRLs3kvG9W/exec"
 
 ## Store page for the wishlist button. Empty hides the button until the page exists.
 const STEAM_URL := ""

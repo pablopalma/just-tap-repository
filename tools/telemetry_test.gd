@@ -34,6 +34,7 @@ func _process(delta: float) -> void:
 	if _t > 9.0 and not _done:
 		_done = true
 		Telemetry.event("leave", {"test": true})
-	if _t > 34.0:
+		Telemetry.flush()
+	if _t > 16.0:
 		print("TELEMETRY queue=%d inflight=%d stage=%d" % [Telemetry._queue.size(), Telemetry._inflight.size(), GameState.stage])
 		get_tree().quit()
