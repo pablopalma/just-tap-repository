@@ -1,6 +1,6 @@
-"""Store capsules for Steam and itch (docs/capsulas.md), from the key art the game renders itself.
+"""Store capsules for Steam and itch (docs/capsulas.md), from the key art (tools/key_art.py).
 
-Needs Builds/capsule/art_land.png and art_port.png (tools/capsule_art.tscn, see docs/capsulas.md).
+Needs Builds/capsule/art_land.png, art_port.png, art_cover.png and art_banner.png (python tools/key_art.py).
 Writes Builds/capsule/steam/, Builds/capsule/itch/ and Builds/capsule/presskit/ (clean art, the
 logo on transparent, and layered PSDs: art, glow, title, tagline).
 
@@ -109,19 +109,23 @@ def capsule(name, art, size, focal, logo_at=None, title_frac=0.0, tagline=True, 
 def main():
     land = Image.open(os.path.join(SRC, "art_land.png")).convert("RGB")
     port = Image.open(os.path.join(SRC, "art_port.png")).convert("RGB")
+    cover_art = Image.open(os.path.join(SRC, "art_cover.png")).convert("RGB")
+    banner_art = Image.open(os.path.join(SRC, "art_banner.png")).convert("RGB")
     os.makedirs(os.path.join(SRC, "presskit"), exist_ok=True)
 
-    # Landscape: the coloured column on the right, the logo in the empty paper on the left.
-    capsule("header_capsule", land, (920, 430), (0.5, 0.45), (0.27, 0.5), 0.27)
-    capsule("small_capsule", land, (462, 174), (0.62, 0.42), (0.31, 0.48), 0.4, tagline=False)
+    # Landscape: the whale and the person on the right, the logo in the empty paper on the left.
+    capsule("header_capsule", land, (920, 430), (0.5, 0.45), (0.23, 0.48), 0.24)
+    capsule("small_capsule", land, (462, 174), (0.5, 0.36), (0.23, 0.5), 0.33, tagline=False)
     capsule("main_capsule", land, (1232, 706), (0.5, 0.5), (0.26, 0.5), 0.2, psd=True)
-    capsule("library_header", land, (920, 430), (0.5, 0.45), (0.27, 0.5), 0.27)
+    capsule("library_header", land, (920, 430), (0.5, 0.45), (0.23, 0.48), 0.24)
     capsule("library_hero", land, (3840, 1240), (0.5, 0.33))  # no text: Steam puts the logo on top
-    # Portrait: sky on top for the logo, the bird below it, the city underneath.
+    # Portrait: sky on top for the logo, the whale below it, the person at the bottom.
     capsule("vertical_capsule", port, (748, 896), (0.5, 0.38), (0.5, 0.13), 0.13)
     capsule("library_capsule", port, (600, 900), (0.5, 0.5), (0.5, 0.12), 0.12, psd=True)
-    # itch cover: the top of the portrait art (logo, bird and the first structures).
-    capsule("cover", port, (630, 500), (0.5, 0.28), (0.5, 0.2), 0.2, folder="itch", psd=True)
+    # itch cover: its own layout (logo on top, the whale, the person).
+    capsule("cover", cover_art, (630, 500), (0.5, 0.5), (0.5, 0.17), 0.2, folder="itch", psd=True)
+    # itch page banner: the logo on the left, the scene on the right.
+    capsule("banner", banner_art, (960, 300), (0.5, 0.5), (0.27, 0.48), 0.3, folder="itch")
 
     # Page background: the art faded into the paper, no text.
     bg = cover(land, 1438, 810, 0.5, 0.5)

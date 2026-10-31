@@ -1,6 +1,10 @@
 # Cápsulas de tienda (Steam e itch)
 
-El arte de las cápsulas sale del propio juego: `tools/capsule_art.tscn` renderiza la ciudad terminada, en color, con la línea de tinta y el ave, sin interfaz ni texto y a cualquier resolución. `tools/make_capsules.py` recorta ese arte para cada tamaño y le pone el logo (Cormorant Garamond, tinta `#3b3835`) con un halo de papel (`#ebe6de`) para que se lea sobre el dibujo.
+**Desde el 31/10/2026 el arte de las cápsulas es una ilustración propia, no una captura del juego.** Una cápsula hecha con el juego se ve como una captura de pantalla; la cápsula tiene que vender el tono, la calidez y la promesa (*if you had a bad day…*) antes que la mecánica.
+
+`tools/key_art.py` la dibuja: alguien chiquito, sentado en un día gris con las rodillas abrazadas y una bufanda roja; desde la punta de un dedo levantado (un toque, con su anillo) sube una línea de tinta que se vuelve dorada hasta una ballena de luz que nada sobre su cabeza. Tinta y papel como el juego, con aguadas de acuarela: gris y lluvia abajo, la luz cálida de la ballena arriba y en el suelo alrededor de la persona.
+
+`tools/make_capsules.py` recorta ese arte para cada tamaño y le pone el logo (Cormorant Garamond, tinta `#3b3835`) con un halo de papel (`#ebe6de`) para que se lea sobre el dibujo.
 
 ## Qué sale
 
@@ -17,7 +21,8 @@ En `Builds/capsule/`:
 | `steam/library_hero.png` | 3840 × 1240 | Biblioteca: héroe. Sin texto (Steam pone el logo encima) |
 | `steam/library_logo.png` | 1280 × 720 | Biblioteca: logo transparente |
 | `steam/page_background.png` | 1438 × 810 | Fondo de la página de la tienda: el arte fundido con el papel |
-| `itch/cover.png` | 630 × 500 | Portada de itch (`tools/make_itch_images.ps1` la copia a `Builds/itch/`) |
+| `itch/cover.png` | 630 × 500 | Portada de itch: se sube en *Edit game → Cover image* (`tools/make_itch_images.ps1` la copia a `Builds/itch/`) |
+| `itch/banner.png` | 960 × 300 | Banner de la página de itch: se sube en *Edit theme → Images → Banner* (también se copia a `Builds/itch/`) |
 
 Y `presskit/`, para prensa y streamers:
 
@@ -27,24 +32,22 @@ Y `presskit/`, para prensa y streamers:
 
 ## Composición
 
-- **Horizontales:** la columna de estructuras de colores a la derecha, el ave volando hacia la izquierda arriba y el logo centrado en el papel vacío de la izquierda.
-- **Verticales y portada de itch:** cielo arriba con el logo, el ave debajo y la ciudad abajo.
+Tres encuadres, cada uno dibujado aparte (`LAYOUTS` en `tools/key_art.py`):
+
+- **Horizontal** (`art_land.png`, 3840 × 2160): la ballena arriba a la derecha, la persona abajo, el logo en el papel vacío de la izquierda.
+- **Vertical** (`art_port.png`, 1800 × 2700): el logo arriba, la ballena cruzando el medio, la persona abajo.
+- **Portada de itch** (`art_cover.png`, 2520 × 2000): igual que la vertical pero más ancha.
+- **Banner de itch** (`art_banner.png`, 1920 × 600): el logo a la izquierda, la ballena y la persona a la derecha.
 - La cápsula chica no lleva subtítulo: a ese tamaño no se lee.
 
 ## Regenerar
 
-1. El arte, con la versión de Godot sin C# (`Godot_v4.7.2-stable_win64`), con ventana: renderiza fuera de pantalla y se cierra solo a los 11 s.
-
-   ```
-   godot --path . --resolution 640x360 res://tools/capsule_art.tscn -- --size=3840x2160 --zoom=0.045 --cy=-5650 --x=-5200 --bird=0.22 --dir=-1 --out=Builds/capsule/art_land.png
-   godot --path . --resolution 640x360 res://tools/capsule_art.tscn -- --size=1800x2700 --zoom=0.028 --cy=-10900 --bird=0.3 --dir=1 --bscale=0.5 --bx=0.64 --by=0.29 --out=Builds/capsule/art_port.png
-   ```
-
-   Parámetros: `zoom` (respecto del zoom base; `0` deja la cámara del final), `cy` y `x` (adónde mira la cámara, en unidades del mundo), `bird` (momento del vuelo, 0–1; `-1` lo oculta), `dir` (1 a la derecha, −1 a la izquierda), `bscale`, `bx`, `by` (tamaño del ave y su lugar como fracción del cuadro).
-
+1. El arte: `python tools/key_art.py` (necesita `pillow` y `numpy`; tarda un par de minutos). Con `--fast` lo hace a un cuarto del tamaño (`art_*_fast.png`) para probar cambios.
 2. Las cápsulas: `python tools/make_capsules.py` (necesita `pillow` y `psd-tools`). Los recortes y el lugar del logo de cada tamaño están en `main()`.
+
+`tools/capsule_art.tscn`, que renderiza la ciudad terminada desde el juego, sigue disponible para capturas de prensa o fondos, pero ya no es el arte de las cápsulas.
 
 ## Notas
 
 - Steam pide que el logo se lea en la cápsula chica y que el héroe de biblioteca no tenga texto. Revisar las reglas vigentes de Steamworks antes de subir.
-- Si el juego cambia de aspecto (paleta, estructuras, ave), volver a renderizar el arte: así las cápsulas siempre muestran el juego como es.
+- Es una ilustración generada por código, en el estilo del juego. Para Steam a largo plazo, una ilustración pintada a mano por un ilustrador sobre esta misma composición sería el paso siguiente.

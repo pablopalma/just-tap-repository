@@ -25,15 +25,10 @@ try {
         & $ffmpeg -v error -y -ss $shots[$i] -i $video -frames:v 1 "$out/screenshot_$($i + 1).png"
     }
 
-    # Cover 630x500 and banner 960x300 come from the store key art (tools/make_capsules.py,
-    # docs/capsulas.md): the trailer no longer ends on the whole city.
+    # Cover 630x500 and banner 960x300 come from the key art, an illustration of its own
+    # (tools/key_art.py, tools/make_capsules.py, docs/capsulas.md).
     Copy-Item "Builds/capsule/itch/cover.png" "$out/cover.png" -Force
-    & $ffmpeg -v error -y -i "Builds/capsule/art_land.png" -frames:v 1 -vf (
-        "scale=960:-1,crop=960:300:0:110," +
-        "drawbox=x=0:y=0:w=960:h=300:color=0xebe6de@0.72:t=fill," +
-        "drawtext=${title}:text='just tap':fontsize=104:x=(w-text_w)/2:y=62," +
-        "drawtext=${tag}:text='if you had a bad day...':fontsize=30:x=(w-text_w)/2:y=190"
-    ) "$out/banner.png"
+    Copy-Item "Builds/capsule/itch/banner.png" "$out/banner.png" -Force
     # Paper texture for the page background (fine grain, tiles without visible seams).
     & $ffmpeg -v error -y -f lavfi -i "color=c=0xebe6de:s=256x256,noise=alls=7:allf=u" -frames:v 1 "$out/paper_tile.png"
 
