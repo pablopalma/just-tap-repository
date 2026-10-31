@@ -52,16 +52,27 @@ func _init() -> void:
 	_button(box, "El color vuelve · azul (b.60)", "edge", 60)
 	_button(box, "El color vuelve · amarillo (b.80)", "edge", 80)
 
+	if BuildFlags.DEMO:
+		_title(box, "Oscuridad (demo, b.%d–%d)" % [BuildFlags.DARK_FROM, BuildFlags.DEMO_LAST])
+		_button(box, "Entra la oscuridad (romper la b.%d)" % (BuildFlags.DARK_FROM - 1), "edge", BuildFlags.DARK_FROM - 1)
+		_button(box, "Jugarla desde el principio (b.%d)" % BuildFlags.DARK_FROM, "jump", BuildFlags.DARK_FROM)
+		_button(box, "En el medio del caos (b.43)", "jump", 43)
+		_button(box, "La última: mandala y ballena (b.%d)" % BuildFlags.DEMO_LAST, "edge", BuildFlags.DEMO_LAST)
+		_button(box, "Temblor", "quake", 0)
+		_button(box, "Ballena celeste", "whale", 0)
+
 	_title(box, "Estrellas y ramas")
 	_button(box, "Estrella · 4 luces (b.16)", "jump", 16)
 	_button(box, "Estrella · 6 luces (b.37)", "jump", 37)
-	_button(box, "Bifurcación en 2 (b.41)", "jump", 41)
+	# In the demo 41–45 are the dark: the first fork shows from 46.
+	var fork2 := BuildFlags.DEMO_LAST + 1 if BuildFlags.DEMO else 41
+	_button(box, "Bifurcación en 2 (b.%d)" % fork2, "jump", fork2)
 	_button(box, "Bifurcación en 3 (b.51)", "jump", 51)
 	_button(box, "Unión de las ramas (b.60)", "edge", 60)
 
 	_title(box, "Final")
 	if BuildFlags.DEMO:
-		_button(box, "Final de la demo (b.40)", "edge", BuildFlags.DEMO_LAST)
+		_button(box, "Final de la demo (b.%d)" % BuildFlags.DEMO_LAST, "edge", BuildFlags.DEMO_LAST)
 	_button(box, "Romper la barrera 100 (final entero)", "edge", 100)
 	_button(box, "Ciudad: \"You made all of this\"", "grand", 0)
 	_button(box, "Solo la carta", "letter", 0)

@@ -632,6 +632,13 @@ func _on_dev(id: String, arg: int) -> void:
 			GameState.add_light(arg)
 		"bird":
 			_summon_bird()
+		"quake":
+			if _dark:
+				crumble.quake(1.0)
+			else:
+				camera.add_trauma(0.6)
+		"whale":
+			whale.swim()
 		"wave":
 			colour_wave.reveal(camera.position, Palette.chapter_color(randi_range(1, 4)))
 		"lang":
