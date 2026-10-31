@@ -6,6 +6,13 @@ extends RefCounted
 const DEMO := true
 const DEMO_LAST := 40
 
+## Shown in the play data so balance can be compared between builds.
+const VERSION := "0.9.0-beta"
+
+## Google Apps Script web app that receives the beta play data (docs/beta-datos.md). Empty: nothing
+## is recorded and the title screen does not offer the switch.
+const TELEMETRY_URL := ""
+
 ## Store page for the wishlist button. Empty hides the button until the page exists.
 const STEAM_URL := ""
 

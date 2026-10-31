@@ -24,6 +24,8 @@ const S := {
 	"demo_end": {"es": "La demo termina acá. El resto del día te espera.", "en": "The demo ends here. The rest of the day is waiting."},
 	"wishlist": {"es": "agregar a deseados en Steam", "en": "wishlist on Steam"},
 	"continue_tap": {"es": "tocá para seguir", "en": "tap to continue"},
+	"data_on": {"es": "beta · datos de juego anónimos: sí", "en": "beta · anonymous play data: on"},
+	"data_off": {"es": "beta · datos de juego anónimos: no", "en": "beta · anonymous play data: off"},
 }
 
 ## The creator's letter (end of the game). {taps} is the player's own count of taps.

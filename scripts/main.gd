@@ -175,6 +175,7 @@ func _build() -> void:
 	tree_panel.set_script(load("res://scripts/ui/tree_panel.gd"))
 	ui.add_child(tree_panel)
 	hud.tree_pressed.connect(tree_panel.open_panel)
+	tree_panel.visibility_changed.connect(func() -> void: Telemetry.tree_visible(tree_panel.visible))
 	if OS.is_debug_build():
 		dev_menu = DevMenu.new()
 		dev_menu.action.connect(_on_dev)

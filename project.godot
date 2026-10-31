@@ -23,6 +23,7 @@ GameState="*res://autoload/game_state.gd"
 SaveSystem="*res://autoload/save_system.gd"
 Music="*res://autoload/music.gd"
 Narrator="*res://autoload/narrator.gd"
+Telemetry="*res://autoload/telemetry.gd"
 
 [display]
 

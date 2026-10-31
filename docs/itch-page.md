@@ -61,6 +61,8 @@ Click, tap or press **Space**. That's it. Open the **tree** when the barriers st
 
 *The full game continues through the rest of the day — the green, the blue, the night, and the morning after.*
 
+**About the beta.** This is a beta: to balance it, the game sends anonymous play data — how long each barrier takes and what you buy in the tree, with a random id and no personal information. You can turn it off on the title screen. (docs/beta-datos.md)
+
 ---
 
 ## Descripción (español)

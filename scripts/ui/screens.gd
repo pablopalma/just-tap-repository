@@ -27,6 +27,7 @@ class Intro extends Control:
 	var _continue: Button
 	var _new: Button
 	var _lang: Button
+	var _data: Button
 	var _confirming := false
 	var _confirm_left := 0.0
 
@@ -69,6 +70,16 @@ class Intro extends Control:
 		_lang.offset_bottom = -18
 		_lang.pressed.connect(func() -> void: SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es"))
 		add_child(_lang)
+		# Beta: the play data switch (docs/beta-datos.md), only when there is somewhere to send it.
+		if Telemetry.url != "":
+			_data = UIStyle.button("", 15)
+			_data.set_anchors_and_offsets_preset(PRESET_BOTTOM_RIGHT)
+			_data.grow_horizontal = GROW_DIRECTION_BEGIN
+			_data.offset_right = -22
+			_data.offset_top = -58
+			_data.offset_bottom = -20
+			_data.pressed.connect(_toggle_data)
+			add_child(_data)
 		_refresh()
 
 	func _ready() -> void:
@@ -96,6 +107,13 @@ class Intro extends Control:
 		_new.add_theme_color_override("font_color",
 			Palette.chapter_color(1) if _confirming else Color(Palette.INK, 0.8))
 		_lang.text = SaveSystem.lang
+		if _data:
+			_data.text = Loc.t("data_on" if Telemetry.enabled else "data_off")
+			_data.modulate.a = 0.75 if Telemetry.enabled else 0.45
+
+	func _toggle_data() -> void:
+		Telemetry.set_enabled(not Telemetry.enabled)
+		_refresh()
 
 	func _on_new() -> void:
 		if _confirming:
