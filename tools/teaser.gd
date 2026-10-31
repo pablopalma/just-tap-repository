@@ -12,7 +12,7 @@ func _init() -> void:
 
 
 func _plan() -> void:
-	# 0–4 · one take: tap, climb, break; open the tree, buy Strength; the next ones fall faster
+	# 0–4 · one take: tap, climb, break; open the tree, the build grows; the next ones fall faster
 	_at(0, 0.05, "start", 0)
 	_at(0, 0.05, "hud", true)
 	_at(0, 0.05, "layers", 2)
@@ -24,12 +24,14 @@ func _plan() -> void:
 	_at(2.2, 0.0, "taps", 0.0)
 	_at(2.2, 0.0, "tree_open", {})
 	_at(2.2, 0.2, "caption", ["grow", 2.6])
-	_at(2.5, 0.0, "buy", "fuerza")
-	_at(2.7, 0.0, "buy", "fuerza")
-	_at(2.9, 0.0, "buy", "fuerza")
-	_at(3.3, 0.0, "tree_close", true)
-	_at(3.3, 0.0, "taps", 5.0)
-	_at(3.3, 0.0, "layers", 3)
+	# the build grows fast, every node opening the next
+	var picks := ["fuerza", "fuerza", "fuerza", "ganancia", "pulso", "fuerza", "fuerza", "ganancia",
+		"pulso", "resonancia", "ganancia", "pulso", "eco", "corrosion"]
+	for i in picks.size():
+		_at(2.35 + i * 0.075, 0.0, "pick", picks[i])
+	_at(3.45, 0.0, "tree_close", true)
+	_at(3.45, 0.0, "taps", 5.0)
+	_at(3.45, 0.0, "layers", 3)
 	# 4–7 · every barrier draws a piece of the world back; the colour returns
 	_cut(4)
 	_at(4, 0.0, "jump", 19)
