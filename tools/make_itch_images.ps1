@@ -12,32 +12,28 @@ $out = "Builds/itch"
 Push-Location $root  # relative paths keep drawtext's font paths free of drive-letter colons
 try {
     New-Item -ItemType Directory -Force $out | Out-Null
+    Remove-Item "$out/screenshot_*.png", "$out/gif_*.gif" -ErrorAction SilentlyContinue  # no leftovers from older cuts
     $ink = "0x3b3835"
     $title = "fontfile=fonts/CormorantGaramond.ttf:fontcolor=$ink"
     $tag = "fontfile=fonts/CormorantGaramond-Italic.ttf:fontcolor=$ink@0.8"
 
-    # Screenshots: the colour coming back, the star, the bird, the branches, the dark, the city.
-    $shots = @(17.5, 28.0, 33.0, 38.5, 42.5, 51.0)
+    # Times follow the 57 s trailer (docs/trailer.md: 20 bars of 2.857 s).
+    # Screenshots: the colour coming back, the city building itself, the star, the bird, the
+    # branches, the dark, the golden mandala, the whale.
+    $shots = @(17.5, 21.0, 24.5, 27.0, 29.2, 35.0, 44.5, 48.5)
     for ($i = 0; $i -lt $shots.Count; $i++) {
         & $ffmpeg -v error -y -ss $shots[$i] -i $video -frames:v 1 "$out/screenshot_$($i + 1).png"
     }
 
-    # Cover 630x500: the whole city (after the subtitle is gone), with the title over it.
-    & $ffmpeg -v error -y -ss 53.6 -i $video -frames:v 1 -vf (
-        "scale=-1:620,crop=630:500:(iw-630)/2:30," +
-        "drawbox=x=0:y=0:w=630:h=150:color=0xebe6de@0.82:t=fill," +
-        "drawtext=${title}:text='just tap':fontsize=78:x=(w-text_w)/2:y=22," +
-        "drawtext=${tag}:text='if you had a bad day...':fontsize=26:x=(w-text_w)/2:y=106"
-    ) "$out/cover.png"
-
-    # Banner 960x300: a strip of the city behind the title.
-    & $ffmpeg -v error -y -ss 53.6 -i $video -frames:v 1 -vf (
-        "scale=960:-1,crop=960:300:0:130," +
-        "drawbox=x=0:y=0:w=960:h=300:color=0xebe6de@0.8:t=fill," +
+    # Cover 630x500 and banner 960x300 come from the store key art (tools/make_capsules.py,
+    # docs/capsulas.md): the trailer no longer ends on the whole city.
+    Copy-Item "Builds/capsule/itch/cover.png" "$out/cover.png" -Force
+    & $ffmpeg -v error -y -i "Builds/capsule/art_land.png" -frames:v 1 -vf (
+        "scale=960:-1,crop=960:300:0:110," +
+        "drawbox=x=0:y=0:w=960:h=300:color=0xebe6de@0.72:t=fill," +
         "drawtext=${title}:text='just tap':fontsize=104:x=(w-text_w)/2:y=62," +
         "drawtext=${tag}:text='if you had a bad day...':fontsize=30:x=(w-text_w)/2:y=190"
     ) "$out/banner.png"
-
     # Paper texture for the page background (fine grain, tiles without visible seams).
     & $ffmpeg -v error -y -f lavfi -i "color=c=0xebe6de:s=256x256,noise=alls=7:allf=u" -frames:v 1 "$out/paper_tile.png"
 
@@ -45,13 +41,15 @@ try {
     # Starts at 640 px; if a GIF is too heavy it is made again with fewer frames, pixels or colours.
     $maxBytes = 3MB - 64KB
     $gifs = [ordered]@{
-        "gif_colour" = @(15.5, 5.0)   # the colour comes back
-        "gif_tree"   = @(11.5, 2.7)   # the upgrade tree opens, node by node
-        "gif_star"   = @(26.0, 4.6)   # a star circuit fills, spins up and bursts
-        "gif_bird"   = @(31.6, 2.6)   # the giant bird passes close
-        "gif_forks"  = @(34.4, 5.4)   # the line splits in two, then three
-        "gif_dark"   = @(40.1, 5.0)   # the dark comes in, the line cracks
-        "gif_city"   = @(47.5, 5.6)   # everything you built
+        "gif_colour"  = @(15.5, 4.5)   # the colour comes back
+        "gif_tree"    = @(11.5, 2.7)   # the upgrade tree opens, node by node
+        "gif_build"   = @(20.1, 2.7)   # far back: the city builds itself, piece by piece
+        "gif_star"    = @(22.95, 2.7)  # a star circuit spins
+        "gif_bird"    = @(25.75, 2.7)  # the giant bird passes close
+        "gif_forks"   = @(28.65, 1.3)  # the line splits in three
+        "gif_dark"    = @(31.5, 5.0)   # the dark: chaos behind, the tower crumbling
+        "gif_mandala" = @(37.2, 6.0)   # the last barriers break, the chaos settles into gold
+        "gif_whale"   = @(46.0, 5.0)   # something awakens
     }
     # [fps, width, colours], lightest last
     $ladder = @(@(15, 640, 128), @(12, 640, 112), @(10, 600, 96), @(10, 540, 80), @(8, 500, 72), @(8, 440, 64))

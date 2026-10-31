@@ -1,14 +1,18 @@
 extends Node
 ## The demo trailer (docs/trailer.md), played by the game itself. Record it with tools/make_trailer.ps1.
 ## One continuous score: the music is locked to zone 10's key and tempo (84 BPM) and the director
-## adds or removes layers; every cut lands on a bar, through a quick dip to paper. Never touches the
-## player's save. Subtitles in English; no HUD, no damage numbers.
+## adds or removes layers; every cut lands on a bar. It opens calm (cuts through a dip to paper),
+## speeds up into a montage of one bar or half a bar per shot (quick cuts), breaks into glimpses of
+## the dark, and ends on the whale, barely seen. Never touches the player's save. Subtitles in
+## English; no HUD, no damage numbers.
 
-const LENGTH := 24.0 * 4.0 * 60.0 / 84.0  # 24 bars, 68.6 s
-const MUSIC_ZONE := 10
 const BAR := 4.0 * 60.0 / 84.0   # 2.857 s
+const LENGTH := 20.0 * BAR       # 57.1 s
+const MUSIC_ZONE := 10
 const CUT_OUT := 0.16
 const CUT_IN := 0.32
+const QUICK_OUT := 0.06
+const QUICK_IN := 0.12
 
 var _main: Node
 var _t := 0.0
@@ -17,6 +21,8 @@ var _shots: Array = []          # [time, method, argument], sorted by time
 var _tap_rate := 0.0
 var _tap_acc := 0.0
 var _veil: ColorRect
+## The whale starts this far into its crossing (0..1) as soon as it appears; -1: leave it alone.
+var _whale_from := -1.0
 
 
 func _ready() -> void:
@@ -52,7 +58,7 @@ func _plan() -> void:
 	_at(4, 0.0, "taps", 0.0)
 	_at(4, 0.0, "tree_open", 0)
 	_at(4, 0.0, "layers", 2)
-	# 5–8 · the colour comes back
+	# 5–7 · the colour comes back
 	_cut(5)
 	_at(5, 0.0, "tree_close", 0)
 	_at(5, 0.0, "jump", 19)
@@ -60,59 +66,60 @@ func _plan() -> void:
 	_at(5, 0.0, "taps", 6.0)
 	_at(5, 0.0, "layers", 3)
 	_at(5, 2.4, "taps", 0.0)
-	_at(6, 0.4, "voice", "06")
-	# 8–10 · far back: the city building itself, piece after piece, with sparks rising
-	_cut(8)
-	_at(8, 0.0, "jump", 21)
-	_at(8, 0.0, "damage", 100000.0)
-	_at(8, 0.0, "layers", 3)
-	_at(8, 0.05, "pano", 0)  # after the jump, which ends any panorama
-	_at(8, 0.3, "taps", 1.3)
-	_at(9, 2.0, "taps", 0.0)
-	# 10–17 · montage, one or two bars each
-	_cut(10)
-	_at(10, 0.0, "jump", 16)
-	_at(10, 0.0, "damage", 22.0)
+	_at(5, 0.8, "voice", "06")
+	# 7–11 · the montage: everything speeds up, one bar or half a bar per shot
+	# far back, the city building itself
+	_quick(7)
+	_at(7, 0.0, "jump", 21)
+	_at(7, 0.0, "damage", 100000.0)
+	_at(7, 0.0, "layers", 5)
+	_at(7, 0.05, "pano", 0)
+	_at(7, 0.1, "taps", 2.5)
+	# a star circuit, spinning up
+	_quick(8)
+	_at(8, 0.0, "jump", 27)
+	_at(8, 0.0, "damage", 400.0)
+	_at(8, 0.0, "taps", 7.0)
+	# the bird, close
+	_quick(9)
+	_at(9, 0.0, "jump", 31)
+	_at(9, 0.0, "damage", 120.0)
+	_at(9, 0.0, "taps", 3.0)
+	_at(9, 0.05, "bird", 1.1)
+	# the line splits in three
+	_quick(10)
+	_at(10, 0.0, "jump", 51)
+	_at(10, 0.0, "damage", 1000.0)
 	_at(10, 0.0, "taps", 5.0)
-	_at(10, 0.0, "layers", 4)
-	_at(10, 0.5, "voice", "small_lights")
+	# the tree again, half a bar
+	_quick(10.5)
+	_at(10.5, 0.0, "jump", 33)
+	_at(10.5, 0.0, "taps", 0.0)
+	_at(10.5, 0.0, "tree_open", 0)
+	# 11–14 · the dark: white on black, chaos behind, the tower crumbling under each tap
+	_at(11, -CUT_OUT - 0.02, "veil_ink", 0)
 	_cut(11)
-	_at(11, 0.0, "jump", 27)
-	_at(11, 0.0, "damage", 260.0)
-	_at(11, 0.0, "taps", 6.0)
-	_at(11, 2.2, "taps", 0.0)  # the star is complete: let it spin up and burst on its own
-	_at(12, 0.6, "voice", "whole")
-	# the bird passes close: fewer layers so its wings, cry and rush are heard
-	_cut(13)
-	_at(13, 0.0, "jump", 31)
-	_at(13, 0.0, "damage", 120.0)
-	_at(13, 0.0, "taps", 2.0)
-	_at(13, 0.0, "layers", 2)
-	_at(13, 0.05, "bird", 0)  # after the jump, which grounds the bird
-	_cut(15)
-	_at(15, 0.0, "jump", 41)
-	_at(15, 0.0, "damage", 300.0)
-	_at(15, 0.0, "taps", 4.0)
-	_at(15, 0.0, "layers", 5)
-	_at(15, 0.3, "voice", "13")
-	_cut(16)
-	_at(16, 0.0, "jump", 51)
-	_at(16, 0.0, "damage", 1000.0)
-	# 17–19 · the dark
-	_cut(17)
-	_at(17, 0.0, "jump", 39)
-	_at(17, 0.0, "taps", 0.0)
-	_at(17, 0.0, "layers", 1)
-	_at(17, 0.2, "dark", 0)
-	_at(17, 1.0, "voice", "demo_1")
-	# 19–22 · the city
-	_at(18, 2.4, "light", 0)
-	_cut(19)
-	_at(19, 0.0, "city", 0)
-	_at(19, 0.0, "layers", 5)
-	_at(19, 1.8, "voice", "made")
-	# 22–24 · the card
-	_at(22, 0.0, "card", 0)
+	_at(11, 0.0, "tree_close", 0)
+	_at(11, 0.0, "jump", 42)
+	_at(11, 0.0, "damage", 1.0)
+	_at(11, 0.0, "taps", 5.0)
+	_at(11, 0.0, "layers", 1)
+	_at(11, 0.5, "voice", "demo_1")
+	_at(12.5, 0.0, "taps", 8.0)
+	# barriers break on the beat: each one cracks the line and shakes the world (42, 43, 44)
+	_at(13, 0.0, "brk", 0)
+	_at(13.5, 0.0, "brk", 0)
+	_at(14, 0.0, "brk", 0)
+	# 14.5–16 · the last one (45): the chaos finds its order, a golden mandala, gold in the seams
+	_at(14.5, 0.0, "layers", 3)
+	_at(14.5, 0.0, "taps", 0.0)
+	_at(14.5, 0.0, "brk", 0)
+	_at(14.5, 0.0, "whale_at", 0.16)
+	# 16–18 · something awakens: the whale, barely seen
+	_at(16, 0.0, "layers", 5)
+	_at(17, 0.0, "voice", "demo_2")  # as the whale appears (the game's own line is off: Narrator.auto)
+	# 18–20 · the card
+	_at(18, 0.0, "card", 0)
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 
 
@@ -122,8 +129,14 @@ func _at(bar: float, offset: float, method: String, arg) -> void:
 
 ## A cut on the bar: dip to paper just before it, come back just after.
 func _cut(bar: float) -> void:
-	_shots.append([bar * BAR - CUT_OUT, "fade", 1.0])
-	_shots.append([bar * BAR + 0.02, "fade", 0.0])
+	_shots.append([bar * BAR - CUT_OUT, "fade", [1.0, CUT_OUT]])
+	_shots.append([bar * BAR + 0.02, "fade", [0.0, CUT_IN]])
+
+
+## A montage cut: a blink.
+func _quick(bar: float) -> void:
+	_shots.append([bar * BAR - QUICK_OUT, "fade", [1.0, QUICK_OUT]])
+	_shots.append([bar * BAR + 0.02, "fade", [0.0, QUICK_IN]])
 
 
 func _process(delta: float) -> void:
@@ -132,9 +145,13 @@ func _process(delta: float) -> void:
 		var s: Array = _shots[_i]
 		_i += 1
 		call("_" + String(s[1]), s[2])
-	_main.hud.modulate.a = 0.0
+	_main.hud.visible = false
 	if _main.intro != null:
 		_main.intro._lang.visible = false
+	if _whale_from >= 0.0 and _main.whale.active:
+		# Skip the slow start of its crossing: it appears already a little way in.
+		_main.whale._t = maxf(_main.whale._t, _whale_from * CelestialWhale.DURATION)
+		_whale_from = -1.0
 	if _tap_rate > 0.0 and GameState.running and not GameState.finished:
 		_tap_acc += _tap_rate * delta
 		while _tap_acc >= 1.0:
@@ -170,9 +187,23 @@ func _jump(n: int) -> void:
 	_main._dev_jump(n)
 
 
-func _fade(to: float) -> void:
+## Breaks the current barrier at once.
+func _brk(_arg) -> void:
+	_main._dev_break()
+
+
+func _whale_at(p: float) -> void:
+	_whale_from = p
+
+
+func _fade(a: Array) -> void:
 	var tw := create_tween()
-	tw.tween_property(_veil, "color:a", to, CUT_OUT if to > 0.5 else CUT_IN).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(_veil, "color:a", a[0], a[1]).set_trans(Tween.TRANS_SINE)
+
+
+## From here on the cuts dip to ink instead of paper (the dark).
+func _veil_ink(_arg) -> void:
+	_veil.color = Color(Palette.INK.darkened(0.6), _veil.color.a)
 
 
 func _tree_open(_arg) -> void:
@@ -198,26 +229,10 @@ func _pano(_arg) -> void:
 	cam.snap()
 
 
-func _bird(_arg) -> void:
+## lead: seconds until it passes closest.
+func _bird(lead: float) -> void:
 	_main._summon_bird()
-	# Start it partway: it comes in beating its wings and passes closest early in the shot.
-	_main.bird._t = 0.3 * GiantBird.DURATION - 2.4
-
-
-func _dark(_arg) -> void:
-	_main.darkness.to(0.85, 2.0)
-	var p: Vector2 = _main.path.gate_pos(GameState.stage)
-	_main.fx.crack(p + Vector2(0, 10), 320.0, 3.0)
-	_main.fx.crack(_main.path.gate_pos(GameState.stage - 2), 240.0, 4.0)
-
-
-func _light(_arg) -> void:
-	_main.darkness.to(0.0, 0.5)
-
-
-func _city(_arg) -> void:
-	_main.fx.clear()
-	_main._on_dev("grand", 0)
+	_main.bird._t = 0.3 * GiantBird.DURATION - lead
 
 
 func _build_veil() -> void:
