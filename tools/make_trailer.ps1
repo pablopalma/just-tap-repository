@@ -37,8 +37,8 @@ function Make-Gif($start, $name, $len = 4.5) {
         if ((Get-Item $gif).Length -le 3MB) { break }
     }
 }
-Make-Gif 15.5 "just_tap_colour.gif"   # the colour coming back
-Make-Gif 20.1 "just_tap_city.gif" 2.7 # the city building itself (bar 7)
-Make-Gif 33.5 "just_tap_dark.gif"     # the dark: chaos and the tower crumbling (bars 11–14)
-Make-Gif 46.6 "just_tap_whale.gif"    # something awakens: the whale (bars 16–18)
+Make-Gif 19.0 "just_tap_colour.gif" 4.0   # the colour coming back (bars 6.5–8)
+Make-Gif 23.4 "just_tap_city.gif"       # the city building itself, the bird (bars 8–10)
+Make-Gif 34.5 "just_tap_dark.gif"       # the dark: chaos and the tower crumbling (bars 11.5–14)
+Make-Gif 49.8 "just_tap_whale.gif"      # something awakens: the whale (bars 17.5–19)
 Get-ChildItem $out -File | Where-Object { $_.Extension -in ".mp4", ".gif" } | Select-Object Name, @{n = "MB"; e = { [math]::Round($_.Length / 1MB, 1) } }

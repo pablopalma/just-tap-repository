@@ -78,6 +78,18 @@ const LINES := {
 	"idle1": {"en": "I'll wait.", "es": "Te espero."},
 	"idle2": {"en": "Take your time.", "es": "Tomate tu tiempo."},
 	"idle3": {"en": "Still here.", "es": "Sigo acá."},
+	# Trailer and teaser narration (docs/guion-trailer-teaser.md): the same voice, telling the story.
+	"tr_01": {"en": "This is a story about a grey day. Maybe… one like yours.",
+		"es": "Esta es la historia de un día gris. Tal vez… uno como el tuyo."},
+	"tr_02": {"en": "It doesn't start with anything big. Just one tap. And then… another.",
+		"es": "No empieza con nada grande. Solo un toque. Y después… otro."},
+	"tr_03": {"en": "Small things add up. They always have.", "es": "Las cosas chiquitas suman. Siempre sumaron."},
+	"tr_04": {"en": "Some days fall apart. You keep tapping anyway.",
+		"es": "Hay días que se desarman. Y vos seguís tocando igual."},
+	"tr_05": {"en": "And slowly… everything finds its place.", "es": "Y de a poco… todo encuentra su lugar."},
+	"tz_01": {"en": "Just tap. That's all.", "es": "Solo tocá. Nada más."},
+	"tz_02": {"en": "Every tap… draws a little of the world back.",
+		"es": "Cada toque… dibuja de vuelta un poco del mundo."},
 }
 
 ## Reaching barrier n says the line once.

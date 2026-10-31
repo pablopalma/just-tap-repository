@@ -1,13 +1,12 @@
 extends Node
-## The demo trailer (docs/trailer.md), played by the game itself. Record it with tools/make_trailer.ps1.
-## One continuous score: the music is locked to zone 10's key and tempo (84 BPM) and the director
-## adds or removes layers; every cut lands on a bar. It opens calm (cuts through a dip to paper),
-## speeds up into a montage of one bar or half a bar per shot (quick cuts), breaks into glimpses of
-## the dark, and ends on the whale, barely seen. Never touches the player's save. Subtitles in
-## English; no HUD, no damage numbers.
+## The demo trailer (docs/guion-trailer-teaser.md), played by the game itself and narrated by its
+## voice. Record it with tools/make_trailer.ps1. One continuous score: the music is locked to zone
+## 10's key and tempo (84 BPM) and the director adds or removes layers; every cut lands on a bar.
+## The director's own taps show a ripple where they land (tools/tap_ripple.gd) so a viewer can tell
+## them from what happens on its own. The teaser (tools/teaser.gd) is this same director with
+## another plan. Never touches the player's save. Subtitles in English.
 
 const BAR := 4.0 * 60.0 / 84.0   # 2.857 s
-const LENGTH := 20.0 * BAR       # 57.1 s
 const MUSIC_ZONE := 10
 const CUT_OUT := 0.16
 const CUT_IN := 0.32
@@ -23,6 +22,13 @@ var _tap_acc := 0.0
 var _veil: ColorRect
 ## The whale starts this far into its crossing (0..1) as soon as it appears; -1: leave it alone.
 var _whale_from := -1.0
+## How long it runs, in bars.
+var length_bars := 21.0
+## Damage numbers over the barriers (the teaser keeps them: they say "incremental").
+var show_numbers := false
+var _hud_on := false
+var _ripple: Node2D
+var _caption_label: Label
 
 
 func _ready() -> void:
@@ -37,91 +43,83 @@ func _ready() -> void:
 	Music.start()  # the score starts with the first frame, so bars and cuts line up
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
-	_main.fx.font = null
+	if not show_numbers:
+		_main.fx.font = null
 	_main.cinematics_enabled = false  # the director decides every shot
+	_ripple = Node2D.new()
+	_ripple.set_script(load("res://tools/tap_ripple.gd"))
+	_ripple.path = _main.path
+	_ripple.camera = _main.camera
+	_main.add_child(_ripple)
 	_build_veil()
 	_plan()
 
 
-## The whole trailer, in bars.
+## The whole trailer, in bars (docs/guion-trailer-teaser.md): a story about a grey day.
 func _plan() -> void:
-	# 0–2 · "just tap" on paper
-	_at(0.0, 0.6, "voice", "00")
-	# 2–4 · first taps, the line climbs, the arch draws itself
-	_cut(2)
-	_at(2, 0.0, "start", 0)
-	_at(2, 0.0, "layers", 1)
-	_at(2, 0.0, "taps", 4.5)
-	_at(2, 1.0, "voice", "01")
-	# 4 · the tree opens
-	_cut(4)
-	_at(4, 0.0, "taps", 0.0)
-	_at(4, 0.0, "tree_open", 0)
-	_at(4, 0.0, "layers", 2)
-	# 5–7 · the colour comes back
-	_cut(5)
-	_at(5, 0.0, "tree_close", 0)
-	_at(5, 0.0, "jump", 19)
-	_at(5, 0.0, "damage", 70.0)
-	_at(5, 0.0, "taps", 6.0)
-	_at(5, 0.0, "layers", 3)
-	_at(5, 2.4, "taps", 0.0)
-	_at(5, 0.8, "voice", "06")
-	# 7–11 · the montage: everything speeds up, one bar or half a bar per shot
-	# far back, the city building itself
-	_quick(7)
-	_at(7, 0.0, "jump", 21)
-	_at(7, 0.0, "damage", 100000.0)
-	_at(7, 0.0, "layers", 5)
-	_at(7, 0.05, "pano", 0)
-	_at(7, 0.1, "taps", 2.5)
-	# a star circuit, spinning up
-	_quick(8)
-	_at(8, 0.0, "jump", 27)
-	_at(8, 0.0, "damage", 400.0)
-	_at(8, 0.0, "taps", 7.0)
-	# the bird, close
-	_quick(9)
-	_at(9, 0.0, "jump", 31)
-	_at(9, 0.0, "damage", 120.0)
-	_at(9, 0.0, "taps", 3.0)
-	_at(9, 0.05, "bird", 1.1)
-	# the line splits in three
-	_quick(10)
-	_at(10, 0.0, "jump", 51)
-	_at(10, 0.0, "damage", 1000.0)
-	_at(10, 0.0, "taps", 5.0)
-	# the tree again, half a bar
-	_quick(10.5)
-	_at(10.5, 0.0, "jump", 33)
-	_at(10.5, 0.0, "taps", 0.0)
-	_at(10.5, 0.0, "tree_open", 0)
-	# 11–14 · the dark: white on black, chaos behind, the tower crumbling under each tap
-	_at(11, -CUT_OUT - 0.02, "veil_ink", 0)
-	_cut(11)
-	_at(11, 0.0, "tree_close", 0)
-	_at(11, 0.0, "jump", 42)
-	_at(11, 0.0, "damage", 1.0)
-	_at(11, 0.0, "taps", 5.0)
-	_at(11, 0.0, "layers", 1)
-	_at(11, 0.5, "voice", "demo_1")
-	_at(12.5, 0.0, "taps", 8.0)
-	# barriers break on the beat: each one cracks the line and shakes the world (42, 43, 44)
-	_at(13, 0.0, "brk", 0)
-	_at(13.5, 0.0, "brk", 0)
-	_at(14, 0.0, "brk", 0)
-	# 14.5–16 · the last one (45): the chaos finds its order, a golden mandala, gold in the seams
-	_at(14.5, 0.0, "layers", 3)
-	_at(14.5, 0.0, "taps", 0.0)
-	_at(14.5, 0.0, "brk", 0)
-	_at(14.5, 0.0, "whale_at", 0.16)
-	# 16–18 · something awakens: the whale, barely seen
-	_at(16, 0.0, "layers", 5)
-	_at(17, 0.0, "voice", "demo_2")  # as the whale appears (the game's own line is off: Narrator.auto)
-	# 18–20 · the card
-	_at(18, 0.0, "card", 0)
+	# Act 1 · a grey day. The title, the voice, then one long take: every tap lands, the line climbs.
+	_at(0, 0.5, "voice", "tr_01")
+	_at(1.6, 0.0, "start", 0)
+	_at(1.6, 0.0, "hud", true)
+	_at(1.6, 0.0, "layers", 1)
+	_at(1.6, 0.0, "damage", 4.0)  # two or three barriers fall in the long take
+	_at(2, 0.0, "tap", 0)
+	_at(2.3, 0.0, "voice", "tr_02")
+	_at(2.4, 0.0, "taps", 2.6)
+	_at(3.5, 0.0, "layers", 2)
+	# Act 2 · small things add up. The tree, then the pulse taps on its own (no ripple) beside yours.
+	_at(5, 0.0, "taps", 0.0)
+	_at(5, 0.0, "tree_open", {"fuerza": 4, "ganancia": 2, "pulso": 4, "resonancia": 1})
+	_at(5, 0.2, "voice", "tr_03")
+	_at(6, 0.0, "tree_close", true)
+	_at(6, 0.0, "taps", 1.2)
+	# the colour comes back
+	_cut(6.5)
+	_at(6.5, 0.0, "hud", false)
+	_at(6.5, 0.0, "jump", 19)
+	_at(6.5, 0.0, "damage", 70.0)
+	_at(6.5, 0.0, "taps", 6.0)
+	_at(6.5, 0.0, "layers", 3)
+	# far back: every barrier broken draws a piece of the city; the bird passes
+	_cut(8)
+	_at(8, 0.0, "jump", 21)
+	_at(8, 0.0, "damage", 100000.0)
+	_at(8, 0.0, "layers", 4)
+	_at(8, 0.05, "pano", 0)
+	_at(8, 0.1, "taps", 1.4)
+	_at(8, 0.4, "voice", "14")
+	_at(8.6, 0.0, "bird", 1.8)
+	# Act 3 · the dark. Barrier 40 breaks: green for a moment, then white on black.
+	_cut(10)
+	_at(10, 0.0, "jump", 40)
+	_at(10, 0.0, "layers", 2)
+	_at(10, 0.0, "damage", 1000000.0)
+	_at(10, 0.0, "taps", 0.0)
+	_at(10, 0.4, "tap", 0)
+	_at(10, 0.5, "damage", 1.0)
+	_at(10.6, 0.0, "voice", "demo_1")
+	_at(11.3, 0.0, "veil_ink", 0)
+	_at(11.5, 0.0, "taps", 3.0)
+	_at(12, 0.0, "layers", 1)
+	_at(12.2, 0.0, "voice", "tr_04")
+	# you keep tapping: 41–44 give way one by one
+	_at(12.75, 0.0, "brk", 0)
+	_at(13.25, 0.0, "brk", 0)
+	_at(13.75, 0.0, "brk", 0)
+	_at(14.25, 0.0, "brk", 0)
+	# Act 4 · the last one: the chaos finds its order, the cracks fill with gold
+	_at(14.75, 0.0, "taps", 0.0)
+	_at(14.75, 0.0, "brk", 0)
+	_at(14.75, 0.0, "layers", 3)
+	_at(14.75, 0.0, "whale_at", 0.16)
+	_at(15.5, 0.0, "voice", "tr_05")
+	# something awakens
+	_at(16.5, 0.0, "layers", 5)
+	_at(18, 0.0, "voice", "demo_2")
+	# the card
+	_at(19, 0.0, "card", 0)
+	_at(19.4, 0.0, "voice", "00")
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
-
 
 func _at(bar: float, offset: float, method: String, arg) -> void:
 	_shots.append([bar * BAR + offset, method, arg])
@@ -145,7 +143,7 @@ func _process(delta: float) -> void:
 		var s: Array = _shots[_i]
 		_i += 1
 		call("_" + String(s[1]), s[2])
-	_main.hud.visible = false
+	_main.hud.visible = _hud_on
 	if _main.intro != null:
 		_main.intro._lang.visible = false
 	if _whale_from >= 0.0 and _main.whale.active:
@@ -156,8 +154,8 @@ func _process(delta: float) -> void:
 		_tap_acc += _tap_rate * delta
 		while _tap_acc >= 1.0:
 			_tap_acc -= 1.0
-			GameState.tap("tap")
-	if _t >= LENGTH:
+			_tap(0)
+	if _t >= length_bars * BAR:
 		get_tree().quit()
 
 
@@ -169,6 +167,40 @@ func _voice(id: String) -> void:
 
 func _start(_arg) -> void:
 	_main._start()
+
+
+## One tap of the player's, with its ripple.
+func _tap(_arg) -> void:
+	if GameState.running and not GameState.finished:
+		GameState.tap("tap")
+		_ripple.tap()
+
+
+func _hud(on: bool) -> void:
+	_hud_on = on
+	if on:
+		_main.hud.modulate.a = 1.0
+
+
+## Two or three words on screen, for viewers with the sound off: [text, seconds].
+func _caption(a: Array) -> void:
+	_caption_label.text = a[0]
+	var tw := create_tween()
+	tw.tween_property(_caption_label, "modulate:a", 1.0, 0.3)
+	tw.tween_interval(maxf(0.1, float(a[1]) - 0.7))
+	tw.tween_property(_caption_label, "modulate:a", 0.0, 0.4)
+
+
+func _buy(id: String) -> void:
+	GameState.buy(id)
+
+
+func _quake(_arg) -> void:
+	_main.crumble.quake(1.0)
+
+
+func _whale(_arg) -> void:
+	_main.whale.swim()
 
 
 func _taps(rate: float) -> void:
@@ -187,8 +219,9 @@ func _jump(n: int) -> void:
 	_main._dev_jump(n)
 
 
-## Breaks the current barrier at once.
+## Breaks the current barrier at once (as one of the player's taps).
 func _brk(_arg) -> void:
+	_ripple.tap()
 	_main._dev_break()
 
 
@@ -206,17 +239,19 @@ func _veil_ink(_arg) -> void:
 	_veil.color = Color(Palette.INK.darkened(0.6), _veil.color.a)
 
 
-func _tree_open(_arg) -> void:
-	# A few levels so several nodes cascade in, and enough light to make them glow.
-	GameState.up = {"fuerza": 5, "ganancia": 3, "pulso": 3, "resonancia": 2}
+## up: the levels to show (several nodes cascade in), with enough light to make them glow.
+func _tree_open(up: Dictionary) -> void:
+	GameState.up = up.duplicate()
 	GameState.seen = {}
-	GameState.light = 5000.0
+	GameState.light = maxf(GameState.light, 400.0 if up.is_empty() else 5000.0)
 	_main.tree_panel.open_panel()
 
 
-func _tree_close(_arg) -> void:
+## keep: the levels stay (the pulse goes on tapping by itself).
+func _tree_close(keep: bool) -> void:
 	_main.tree_panel.visible = false
-	GameState.up = {}
+	if not keep:
+		GameState.up = {}
 
 
 ## The camera pulls far back over the landscape (the game's panorama, longer than a shot).
@@ -244,6 +279,17 @@ func _build_veil() -> void:
 	_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_veil)
+	_caption_label = UIStyle.label("", 46, true, Palette.INK)
+	_caption_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_caption_label.offset_top = 70
+	_caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_caption_label.add_theme_constant_override("outline_size", 12)
+	_caption_label.add_theme_color_override("font_outline_color", Color(Palette.PAPER, 0.9))
+	_caption_label.modulate.a = 0.0
+	var cl := CanvasLayer.new()
+	cl.layer = 24
+	add_child(cl)
+	cl.add_child(_caption_label)
 
 
 ## Closing card: paper, the title and where to play.
