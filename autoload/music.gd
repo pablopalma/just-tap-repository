@@ -14,6 +14,9 @@ const STEPS_PER_CHORD := 32
 const MUSIC_BUS := &"Music"
 const CHOIR_BUS := &"Choir"
 const BIRD_BUS := &"Bird"
+## Far away: big reverb and a low-pass, for the landscape building itself in the distance.
+const DISTANT_BUS := &"Distant"
+const DISTANT_VOICES := 10
 const BIRD_VOICES := 8
 ## The bird's calls: chord degrees, a short phrase that falls and lifts like a cry.
 const BIRD_CALLS := [[7, 5, 6], [8, 6, 4], [6, 7, 5, 4], [9, 7, 8]]
@@ -59,6 +62,10 @@ var _bird_voices: Array[AudioStreamPlayer] = []
 var _bird_i := 0
 var _bird_call_i := 0
 var _bird_active := false
+var _distant_voices: Array[AudioStreamPlayer] = []
+var _distant_i := 0
+## Air, swell, cry and resonance (scripts/atmosphere.gd), made once at start.
+var _atmos := {}
 ## Set by a director (the trailer): zone and layers stay put whatever the game does.
 var locked := false
 
@@ -86,6 +93,12 @@ func _ready() -> void:
 		p.bus = BIRD_BUS
 		add_child(p)
 		_bird_voices.append(p)
+	for i in DISTANT_VOICES:
+		var p := AudioStreamPlayer.new()
+		p.bus = DISTANT_BUS
+		add_child(p)
+		_distant_voices.append(p)
+	_atmos = {"whoosh": Atmosphere.whoosh(), "swell": Atmosphere.swell(), "cry": Atmosphere.cry(), "boom": Atmosphere.boom()}
 	for i in 2:
 		var p := AudioStreamPlayer.new()
 		p.bus = CHOIR_BUS
@@ -153,6 +166,9 @@ func lock(z: int, layer_count: int) -> void:
 func set_enabled(on: bool) -> void:
 	SaveSystem.music_on = on
 	AudioServer.set_bus_mute(_music_bus, not on)
+	var d := AudioServer.get_bus_index(DISTANT_BUS)
+	if d != -1:
+		AudioServer.set_bus_mute(d, not on)
 
 
 func is_enabled() -> bool:
@@ -241,15 +257,18 @@ func bird_call(vol: float) -> void:
 	for i in phrase.size():
 		var at := t + i * eighth
 		var midi := chord_note(int(phrase[i]), tonic() + 12)
-		_schedule(at, "note", "flute", midi, vol, true)
-		_schedule(at, "note", "glass", midi + 12, vol * 0.35, true)
+		_schedule(at, "note", "flute", midi, vol * 0.5, true)
+		_schedule(at, "note", "glass", midi + 12, vol * 0.2, true)
+	bird_cry(clampf(vol / 0.06, 0.0, 1.0))
 
 
 ## Rush of air from the wings as it passes close.
 func bird_whoosh(vol: float) -> void:
 	if not playing:
 		return
-	_schedule(_grid_time(_s16() * 4.0), "wind", "zona", tonic(), vol, true)
+	# It rushes past: air swelling in, then a whoosh that drops in pitch as it goes (Doppler).
+	_schedule_atmos(_time, "swell", 0.9, -18.0, "bird")
+	_schedule_atmos(_time + 1.2, "whoosh", 1.25, -11.0, "bird", 0.7, 1.4)
 	_schedule(_grid_time(_s16() * 4.0), "note", "bass", tonic() - 12, vol * 0.8, true)
 
 
@@ -277,8 +296,12 @@ func build_piece(j: int, side: float, draw_time := 2.6) -> void:
 		set_bird_pan(side * 0.6)
 	var div := _tap_div()
 	var t := _grid_time(div * 2.0) + div * 2.0
+	# Far away, air swells in before the piece appears, then a quick harp glissando opens it.
+	_schedule_atmos(maxf(_time, t - 1.45), "swell", randf_range(0.9, 1.1), -20.0, "distant")
+	for i in 5:
+		_schedule_deg(t + div * 0.25 * i, "harp", start_deg(j) + i, 12, 0.03)
 	_schedule(t, "wind", "auto", chord_note(j, tonic() + 12), 0.05, true)
-	var start := j % 3 + 2
+	var start := start_deg(j)
 	var steps := maxi(4, floori(draw_time / (div * 2.0)))
 	for i in steps:
 		var at := t + div * 2.0 * i
@@ -298,12 +321,62 @@ func build_piece(j: int, side: float, draw_time := 2.6) -> void:
 		_schedule_deg(c0, "harp", 0, 0, 0.06)
 		_schedule_deg(c0 + div, "harp", 2, 0, 0.05)
 		_schedule(c0, "wind", "zona", tonic(), 0.05, true)
+		# and a deep resonance under it, far away, with the choir rising.
+		_schedule_atmos(c0, "boom", 1.0, -9.0, "distant")
+		choir_swell()
+
+
+static func start_deg(j: int) -> int:
+	return j % 3 + 2
 
 
 ## A note given as a chord degree; the pitch is picked when it plays (see _fire).
 func _schedule_deg(t: float, inst: String, deg: int, octave_offset: int, vol: float) -> void:
 	_queue.append({"t": t, "kind": "deg", "what": inst, "deg": deg, "base": octave_offset, "vol": vol,
 		"bird": true})
+
+
+## Air, swell, cry or boom on the "bird" or "distant" bus. glide: pitch multiplier reached over
+## glide_time (a Doppler pass).
+func _schedule_atmos(t: float, what: String, pitch: float, db: float, pool: String, glide := 1.0, glide_time := 1.0) -> void:
+	_queue.append({"t": t, "kind": "atmos", "what": what, "pitch": pitch, "db": db, "pool": pool,
+		"glide": glide, "glide_time": glide_time})
+
+
+func _pool(name: String) -> AudioStreamPlayer:
+	if name == "distant":
+		var p := _distant_voices[_distant_i]
+		_distant_i = (_distant_i + 1) % DISTANT_VOICES
+		return p
+	var b := _bird_voices[_bird_i]
+	_bird_i = (_bird_i + 1) % BIRD_VOICES
+	return b
+
+
+## A wing beat: air, louder the closer the bird is.
+func bird_flap(depth: float) -> void:
+	if not playing:
+		return
+	_schedule_atmos(_time, "whoosh", randf_range(0.85, 1.1), lerpf(-30.0, -17.0, depth), "bird")
+
+
+## The bird's voice, far away: a cry in the chord's key, answered a third higher.
+func bird_cry(depth: float) -> void:
+	if not playing:
+		return
+	var t := _grid_time(_s16() * 2.0)
+	var a := _fold(chord_note(randi_range(4, 6), tonic() + 12), 81)
+	var b := _fold(chord_note(randi_range(6, 8), tonic() + 12), 84)
+	var db := lerpf(-24.0, -15.0, depth)
+	_schedule_atmos(t, "cry", pow(2.0, (a - 69) / 12.0), db, "bird")
+	_schedule_atmos(t + _s16() * 6.0, "cry", pow(2.0, (b - 69) / 12.0), db - 5.0, "bird")
+
+
+static func _fold(midi: int, ceiling: int) -> int:
+	while midi > ceiling:
+		midi -= 12
+	return midi
+
 
 ## The bird owns the pan of its bus while it flies.
 func set_bird_active(on: bool) -> void:
@@ -503,6 +576,15 @@ func _schedule(t: float, kind: String, what: String, midi: int, vol: float, bird
 
 
 func _fire(q: Dictionary) -> void:
+	if q.kind == "atmos":
+		var p := _pool(q.pool)
+		p.stream = _atmos[q.what]
+		p.pitch_scale = q.pitch
+		p.volume_db = q.db
+		p.play()
+		if q.glide != 1.0:
+			create_tween().tween_property(p, "pitch_scale", q.pitch * q.glide, q.glide_time)
+		return
 	if q.kind == "deg":
 		var midi := chord_note(q.deg, tonic() + q.base)
 		while midi > BRIGHT_CEILING:
@@ -601,6 +683,28 @@ func _setup_buses() -> void:
 		delay.tap2_active = false
 		delay.feedback_active = false
 		AudioServer.add_bus_effect(_bird_bus, delay)
+		# A wide, airy hall: the bird is far behind everything, even when it is big on screen.
+		var hall := AudioEffectReverb.new()
+		hall.room_size = 0.92
+		hall.damping = 0.35
+		hall.wet = 0.45
+		hall.dry = 0.75
+		AudioServer.add_bus_effect(_bird_bus, hall)
+	if AudioServer.get_bus_index(DISTANT_BUS) == -1:
+		AudioServer.add_bus()
+		var d := AudioServer.bus_count - 1
+		AudioServer.set_bus_name(d, DISTANT_BUS)
+		AudioServer.set_bus_send(d, &"Master")
+		var far := AudioEffectReverb.new()
+		far.room_size = 0.96
+		far.damping = 0.45
+		far.wet = 0.55
+		far.dry = 0.6
+		AudioServer.add_bus_effect(d, far)
+		var dull := AudioEffectLowPassFilter.new()
+		dull.cutoff_hz = 2800.0
+		AudioServer.add_bus_effect(d, dull)
+		AudioServer.set_bus_mute(d, AudioServer.is_bus_mute(_music_bus))
 	else:
 		_bird_panner = AudioServer.get_bus_effect(_bird_bus, 0) as AudioEffectPanner
 

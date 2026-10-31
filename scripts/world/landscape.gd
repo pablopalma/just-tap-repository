@@ -152,6 +152,7 @@ class Drawer extends Node2D:
 					continue
 				var p := 1.0
 				var glow := 0.0
+				var rise := Vector2.ZERO
 				if anim.has(n):
 					var e := now - float(anim[n])
 					p = clampf(e / Landscape.DRAW_TIME, 0.0, 1.0)
@@ -159,7 +160,11 @@ class Drawer extends Node2D:
 					glow = 1.0 - clampf((e - Landscape.DRAW_TIME) / Landscape.SETTLE, 0.0, 1.0)
 					if e < 0.0:
 						continue
-				_piece(ps[j], Vector2.ZERO, p, glow, col)
+					# It floats up into place as it is drawn, the way things rise in Gris.
+					rise = Vector2(0.0, 90.0 * pow(1.0 - p, 2.0))
+				_piece(ps[j], rise, p, glow, col)
+				if glow > 0.0:
+					_motes(ps[j], rise, p, glow, col, n)
 		draw_set_transform(Vector2.ZERO)
 
 	func _piece(piece: Dictionary, f: Vector2, p: float, glow: float, col: Color) -> void:
@@ -170,10 +175,41 @@ class Drawer extends Node2D:
 		var ink := Color(Palette.INK.lerp(col.darkened(0.4), grand * 0.6), 0.42 + 0.4 * glow + 0.3 * grand)
 		var w := (1.6 + 0.8 * glow + 0.6 * grand) * width_mul / Landscape.STRUCT_SCALE
 		for line in piece.lines:
+			if glow > 0.0:
+				# a soft light behind the fresh stroke
+				_partial(line, f, p, Color(col, 0.22 * glow), w * 6.0)
 			var tip := _partial(line, f, p, ink, w)
 			if p < 1.0:
 				draw_circle(tip, 3.0 / Landscape.STRUCT_SCALE, Color(Palette.INK, 0.8))
 				draw_circle(tip, 9.0 / Landscape.STRUCT_SCALE, Color(col, 0.18))
+
+	## Sparks of light rising from the pen while it draws, then from the whole piece as it settles.
+	func _motes(piece: Dictionary, f: Vector2, p: float, glow: float, col: Color, n: int) -> void:
+		if piece.lines.is_empty():
+			return
+		var line: PackedVector2Array = piece.lines[0]
+		var light := col.lightened(0.2)
+		for k in 14:
+			var seed := float(n * 31 + k * 7)
+			var age := fposmod(now * 0.55 + k / 14.0 + seed * 0.13, 1.0)
+			# born near the pen while drawing, anywhere along the line once drawn
+			var u := clampf(p - 0.04 * fposmod(seed, 3.0), 0.0, 1.0) if p < 1.0 else fposmod(seed * 0.37, 1.0)
+			var at := _along(line, u) + f
+			# they open out as they rise, and swirl a little
+			var drift := Vector2(sin(seed) * 50.0 * age + sin(seed + now * 1.7) * 8.0, -age * 150.0)
+			drift /= Landscape.STRUCT_SCALE
+			var a := glow * pow(sin(PI * age), 2.0)
+			var r := lerpf(3.5, 1.5, age) / Landscape.STRUCT_SCALE
+			draw_circle(at + drift, r * 2.5, Color(col, a * 0.2))
+			draw_circle(at + drift, r, Color(light, a * 0.55))
+
+	## The point a fraction u of the way through a polyline's vertices.
+	func _along(line: PackedVector2Array, u: float) -> Vector2:
+		if line.size() == 1:
+			return line[0]
+		var x := u * (line.size() - 1)
+		var i := mini(int(x), line.size() - 2)
+		return line[i].lerp(line[i + 1], x - i)
 
 	## A piece not built yet: a faint dashed sketch.
 	func _ghost_piece(piece: Dictionary, col: Color) -> void:

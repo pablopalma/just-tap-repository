@@ -17,6 +17,7 @@ var _events: Array[float] = []
 var _prev_x := 0.0
 var _tint := Color.WHITE
 var _sad := false
+var _beat := 0.0
 
 
 func _ready() -> void:
@@ -79,6 +80,11 @@ func _process(delta: float) -> void:
 
 	var pan := clampf(x / (vp.x * 0.5), -1.0, 1.0) * 0.8
 	Music.set_bird_pan(pan)
+	# A breath of air on every down-stroke (the beat wraps), louder when it is near.
+	var ph := Music.beat_phase()
+	if ph < _beat and _drawer.fade > 0.2:
+		Music.bird_flap(depth * _drawer.fade)
+	_beat = ph
 	while not _events.is_empty() and p >= _events[0]:
 		var e: float = _events.pop_front()
 		if is_equal_approx(e, 0.3):
