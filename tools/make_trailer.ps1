@@ -1,6 +1,7 @@
 ﻿# Records the demo trailer (tools/trailer.tscn) and exports it.
 #   Builds/trailer/just_tap_trailer.mp4  — 1080p, H.264, loudness -14 LUFS (itch, YouTube, redes)
 #   Builds/trailer/just_tap_colour.gif   — the colour coming back, for Reddit
+#   Builds/trailer/just_tap_city.gif     — the city building itself in the distance
 # Usage: powershell -File tools/make_trailer.ps1
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
@@ -26,8 +27,14 @@ try {
     -af "loudnorm=I=-14:TP=-1.5:LRA=11" -ar 48000 -c:a aac -b:a 192k -movflags +faststart `
     (Join-Path $out "just_tap_trailer.mp4")
 
-# The colour coming back (about 15.5–20.5 s), 960 px, 20 fps, its own palette.
-& $ffmpeg -v error -y -ss 15.5 -t 5 -i $avi -vf "fps=20,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192[p];[b][p]paletteuse=dither=sierra2_4a" `
-    (Join-Path $out "just_tap_colour.gif")
-
+# GIFs for Reddit and the itch page: at most 3 MB, so try smaller sizes and fewer frames until one fits.
+function Make-Gif($start, $name) {
+    $gif = Join-Path $out $name
+    foreach ($q in @(@(960, 15, 128), @(800, 15, 128), @(800, 12, 96), @(640, 12, 96), @(560, 10, 64))) {
+        & $ffmpeg -v error -y -ss $start -t 4.5 -i $avi -vf "fps=$($q[1]),scale=$($q[0]):-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=$($q[2]):stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" $gif
+        if ((Get-Item $gif).Length -le 3MB) { break }
+    }
+}
+Make-Gif 15.5 "just_tap_colour.gif"   # the colour coming back
+Make-Gif 23.4 "just_tap_city.gif"     # the city building itself (bars 8–10)
 Get-ChildItem $out -File | Where-Object { $_.Extension -in ".mp4", ".gif" } | Select-Object Name, @{n = "MB"; e = { [math]::Round($_.Length / 1MB, 1) } }

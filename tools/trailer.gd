@@ -4,7 +4,7 @@ extends Node
 ## adds or removes layers; every cut lands on a bar, through a quick dip to paper. Never touches the
 ## player's save. Subtitles in English; no HUD, no damage numbers.
 
-const LENGTH := 60.0
+const LENGTH := 24.0 * 4.0 * 60.0 / 84.0  # 24 bars, 68.6 s
 const MUSIC_ZONE := 10
 const BAR := 4.0 * 60.0 / 84.0   # 2.857 s
 const CUT_OUT := 0.16
@@ -61,48 +61,58 @@ func _plan() -> void:
 	_at(5, 0.0, "layers", 3)
 	_at(5, 2.4, "taps", 0.0)
 	_at(6, 0.4, "voice", "06")
-	# 8–14 · montage, one or two bars each
+	# 8–10 · far back: the city building itself, piece after piece, with sparks rising
 	_cut(8)
-	_at(8, 0.0, "jump", 16)
-	_at(8, 0.0, "damage", 22.0)
-	_at(8, 0.0, "taps", 5.0)
-	_at(8, 0.0, "layers", 4)
-	_at(8, 0.5, "voice", "small_lights")
-	_cut(9)
-	_at(9, 0.0, "jump", 27)
-	_at(9, 0.0, "damage", 260.0)
-	_at(9, 0.0, "taps", 6.0)
-	_at(9, 2.2, "taps", 0.0)  # the star is complete: let it spin up and burst on its own
-	_at(10, 0.6, "voice", "whole")
+	_at(8, 0.0, "jump", 21)
+	_at(8, 0.0, "damage", 100000.0)
+	_at(8, 0.0, "layers", 3)
+	_at(8, 0.05, "pano", 0)  # after the jump, which ends any panorama
+	_at(8, 0.3, "taps", 1.3)
+	_at(9, 2.0, "taps", 0.0)
+	# 10–17 · montage, one or two bars each
+	_cut(10)
+	_at(10, 0.0, "jump", 16)
+	_at(10, 0.0, "damage", 22.0)
+	_at(10, 0.0, "taps", 5.0)
+	_at(10, 0.0, "layers", 4)
+	_at(10, 0.5, "voice", "small_lights")
 	_cut(11)
-	_at(11, 0.0, "jump", 31)
-	_at(11, 0.0, "damage", 120.0)
-	_at(11, 0.0, "taps", 3.0)
-	_at(11, 0.0, "bird", 0)
-	_cut(12)
-	_at(12, 0.0, "jump", 41)
-	_at(12, 0.0, "damage", 300.0)
-	_at(12, 0.0, "taps", 4.0)
-	_at(12, 0.0, "layers", 5)
-	_at(12, 0.3, "voice", "13")
+	_at(11, 0.0, "jump", 27)
+	_at(11, 0.0, "damage", 260.0)
+	_at(11, 0.0, "taps", 6.0)
+	_at(11, 2.2, "taps", 0.0)  # the star is complete: let it spin up and burst on its own
+	_at(12, 0.6, "voice", "whole")
+	# the bird passes close: fewer layers so its wings, cry and rush are heard
 	_cut(13)
-	_at(13, 0.0, "jump", 51)
-	_at(13, 0.0, "damage", 1000.0)
-	# 14–16 · the dark
-	_cut(14)
-	_at(14, 0.0, "jump", 39)
-	_at(14, 0.0, "taps", 0.0)
-	_at(14, 0.0, "layers", 1)
-	_at(14, 0.2, "dark", 0)
-	_at(14, 1.0, "voice", "demo_1")
-	# 16–19 · the city
-	_at(15, 2.4, "light", 0)
+	_at(13, 0.0, "jump", 31)
+	_at(13, 0.0, "damage", 120.0)
+	_at(13, 0.0, "taps", 2.0)
+	_at(13, 0.0, "layers", 2)
+	_at(13, 0.05, "bird", 0)  # after the jump, which grounds the bird
+	_cut(15)
+	_at(15, 0.0, "jump", 41)
+	_at(15, 0.0, "damage", 300.0)
+	_at(15, 0.0, "taps", 4.0)
+	_at(15, 0.0, "layers", 5)
+	_at(15, 0.3, "voice", "13")
 	_cut(16)
-	_at(16, 0.0, "city", 0)
-	_at(16, 0.0, "layers", 5)
-	_at(16, 1.8, "voice", "made")
-	# 19–21 · the card
-	_at(19, 0.0, "card", 0)
+	_at(16, 0.0, "jump", 51)
+	_at(16, 0.0, "damage", 1000.0)
+	# 17–19 · the dark
+	_cut(17)
+	_at(17, 0.0, "jump", 39)
+	_at(17, 0.0, "taps", 0.0)
+	_at(17, 0.0, "layers", 1)
+	_at(17, 0.2, "dark", 0)
+	_at(17, 1.0, "voice", "demo_1")
+	# 19–22 · the city
+	_at(18, 2.4, "light", 0)
+	_cut(19)
+	_at(19, 0.0, "city", 0)
+	_at(19, 0.0, "layers", 5)
+	_at(19, 1.8, "voice", "made")
+	# 22–24 · the card
+	_at(22, 0.0, "card", 0)
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 
 
@@ -178,10 +188,20 @@ func _tree_close(_arg) -> void:
 	GameState.up = {}
 
 
+## The camera pulls far back over the landscape (the game's panorama, longer than a shot).
+func _pano(_arg) -> void:
+	_main._pano = 10.0
+	# Hidden by the cut: start already halfway back, then keep pulling away.
+	var cam = _main.camera
+	cam.target_pos = Vector2(0.0, _main.tip.position.y + 700.0)
+	cam.target_zoom = _main._base_zoom() * 0.3
+	cam.snap()
+
+
 func _bird(_arg) -> void:
 	_main._summon_bird()
-	# Start it partway so it passes closest within this bar.
-	_main.bird._t = 0.3 * GiantBird.DURATION - 1.6
+	# Start it partway: it comes in beating its wings and passes closest early in the shot.
+	_main.bird._t = 0.3 * GiantBird.DURATION - 2.4
 
 
 func _dark(_arg) -> void:
