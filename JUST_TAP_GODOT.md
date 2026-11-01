@@ -214,7 +214,7 @@ z: ko ki ri
 - **Zona completa**: se pinta el disco interior con un barrido circular (4.5 s), aparece un círculo exterior en tinta y dos pilares verticales que la unen con el mandala de abajo. Desde ese momento el mandala gira muy lento (0.01 rad/s).
 
 ### 7.2 Figura abstracta de cada barrera
-- Cada barrera tiene una figura determinística (seed = n), de 5 familias: **rosa**, **lissajous**, **hipotrocoide**, **armonógrafo** (amortiguado), **pétalos**. 900 puntos normalizados a radio 1. Ver fórmulas en `figPts()` del prototipo.
+- Cada barrera tiene una figura determinística (seed = n) de geometría sagrada, de 17 familias que se alternan (n % 17): semilla, germen, flor, huevo y fruto de la vida, estrella {p/q}, espiral áurea, merkaba, toro, cubo de Metatrón, loto, vector equilibrio, vesica piscis, cuadrados anidados, tetraedro estrella de 64, Sri Yantra y árbol de la vida. Son trazos normalizados a radio 1 que se dibujan en orden, del centro hacia afuera, a medida que se rompe la barrera (`scripts/world/barrier_figure.gd`).
 - Centrada detrás de la barrera, radio 150 u.
 - **Se dibuja mientras le pegás**: cantidad de puntos visibles = `figProg * N`, con `figProg → (1 − hp/max)` suavizado (dt·6). **Si la barrera se regenera, la figura se deshace.**
 - Relleno acuarela que se intensifica: `alpha = 0.04 + 0.14 * figProg²`.

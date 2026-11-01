@@ -25,7 +25,7 @@ var _veil: ColorRect
 ## The whale starts this far into its crossing (0..1) as soon as it appears; -1: leave it alone.
 var _whale_from := -1.0
 ## How long it runs, in bars.
-var length_bars := 24.3
+var length_bars := 24.9
 ## Damage numbers over the barriers (the teaser keeps them: they say "incremental").
 var show_numbers := false
 var _hud_on := false
@@ -92,54 +92,54 @@ func _plan() -> void:
 	_at(8.4, 0.0, "damage", 1.0)
 	_at(8.4, 0.0, "taps", 3.0)
 	_at(8.4, 0.0, "layers", 3)
-	_at(8.45, 0.0, "voice", "tr_06")
+	_at(8.2, 0.0, "voice", "tr_06")  # 2.4 bars long: it has to end before the forks
 	# the line forks into three, braided, each branch with its own barrier (full game, after the demo)
-	_cut(10.5)
-	_at(10.5, 0.0, "hud", false)
-	_at(10.5, 0.0, "numbers", false)
-	_at(10.5, 0.0, "jump", 51)
-	_at(10.5, 0.0, "damage", FORK_DAMAGE)
-	_at(10.5, 0.0, "layers", 4)
-	_at(10.5, 0.1, "taps", 3.0)
-	_at(10.6, 0.0, "voice", "13")  # "You can be more than one thing at once."
+	_cut(11.1)
+	_at(11.1, 0.0, "hud", false)
+	_at(11.1, 0.0, "numbers", false)
+	_at(11.1, 0.0, "jump", 51)
+	_at(11.1, 0.0, "damage", FORK_DAMAGE)
+	_at(11.1, 0.0, "layers", 4)
+	_at(11.1, 0.1, "taps", 3.0)
+	_at(11.2, 0.0, "voice", "13")  # "You can be more than one thing at once."
 	# far back: every barrier broken draws a piece of the city, in colour again; the bird passes
-	_cut(12.25)
-	_at(12.25, 0.0, "jump", 21)
-	_at(12.25, 0.0, "damage", 100000.0)
-	_at(12.25, 0.05, "pano", 0)
-	_at(12.25, 0.1, "taps", 1.4)
-	_at(12.35, 0.0, "voice", "14")
-	_at(12.75, 0.0, "bird", 1.8)
+	_cut(12.85)
+	_at(12.85, 0.0, "jump", 21)
+	_at(12.85, 0.0, "damage", 100000.0)
+	_at(12.85, 0.05, "pano", 0)
+	_at(12.85, 0.1, "taps", 1.4)
+	_at(12.95, 0.0, "voice", "14")
+	_at(13.35, 0.0, "bird", 1.8)
 	# Act 3 · the dark. Barrier 40 breaks: green for a moment, then white on black.
-	_cut(14.25)
-	_at(14.25, 0.0, "jump", 40)
-	_at(14.25, 0.0, "layers", 2)
-	_at(14.25, 0.0, "damage", 1000000.0)
-	_at(14.25, 0.0, "taps", 0.0)
-	_at(14.25, 0.4, "tap", 0)
-	_at(14.25, 0.5, "damage", 1.0)
-	_at(14.85, 0.0, "voice", "demo_1")
-	_at(15.55, 0.0, "veil_ink", 0)
-	_at(15.75, 0.0, "taps", 3.0)
-	_at(16.25, 0.0, "layers", 1)
-	_at(16.45, 0.0, "voice", "tr_04")
+	_cut(14.85)
+	_at(14.85, 0.0, "jump", 40)
+	_at(14.85, 0.0, "layers", 2)
+	_at(14.85, 0.0, "damage", 1000000.0)
+	_at(14.85, 0.0, "taps", 0.0)
+	_at(14.85, 0.4, "tap", 0)
+	_at(14.85, 0.5, "damage", 1.0)
+	_at(15.45, 0.0, "voice", "demo_1")
+	_at(16.15, 0.0, "veil_ink", 0)
+	_at(16.35, 0.0, "taps", 3.0)
+	_at(16.85, 0.0, "layers", 1)
+	_at(17.05, 0.0, "voice", "tr_04")
 	# you keep tapping: 41–44 give way one by one
-	_at(16.85, 0.0, "brk", 0)
-	_at(17.15, 0.0, "brk", 0)
 	_at(17.45, 0.0, "brk", 0)
 	_at(17.75, 0.0, "brk", 0)
-	# Act 4 · the last one: the chaos finds its order, the cracks fill with gold
-	_at(18.05, 0.0, "taps", 0.0)
 	_at(18.05, 0.0, "brk", 0)
-	_at(18.05, 0.0, "layers", 3)
-	_at(18.05, 0.0, "whale_at", 0.16)
-	_at(18.8, 0.0, "voice", "tr_05")
+	_at(18.35, 0.0, "brk", 0)
+	# Act 4 · the last one: the chaos finds its order, the cracks fill with gold
+	_at(18.65, 0.0, "taps", 0.0)
+	_at(18.65, 0.0, "brk", 0)
+	_at(18.65, 0.0, "layers", 3)
+	_at(18.65, 0.0, "whale_at", 0.16)
+	_at(19.4, 0.0, "voice", "tr_05")
 	# something awakens
-	_at(19.8, 0.0, "layers", 5)
-	_at(21.3, 0.0, "voice", "demo_2")
+	_at(20.4, 0.0, "layers", 5)
+	_at(21.9, 0.0, "voice", "demo_2")
 	# the card
-	_at(22.3, 0.0, "card", 0)
-	_at(22.7, 0.0, "voice", "00")
+	_at(22.9, 0.0, "card", 0)
+	_at(23.3, 0.0, "voice", "00")
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 
 func _at(bar: float, offset: float, method: String, arg) -> void:
