@@ -23,6 +23,7 @@ var shapes
 var star
 var forks
 var fx
+var spark
 var camera
 var hud
 var tree_panel
@@ -148,6 +149,10 @@ func _build() -> void:
 	tip.path = path
 	fx = _node("FX", "res://scripts/world/fx.gd")
 	fx.font = UIStyle.italic()
+	spark = _node("Spark", "res://scripts/world/spark.gd")
+	spark.tip = tip
+	spark.visible = false
+	spark.landed.connect(_on_spark_landed)
 	crumble = _node("Crumble", "res://scripts/world/crumble.gd")
 	crumble.path = path
 	crumble.quaked.connect(_on_quake)
@@ -156,6 +161,7 @@ func _build() -> void:
 	camera.set_script(load("res://scripts/world/camera.gd"))
 	add_child(camera)
 	camera.make_current()
+	spark.camera = camera
 
 	var ui_layer := CanvasLayer.new()
 	ui_layer.layer = 10
@@ -237,13 +243,14 @@ func _unhandled_input(e: InputEvent) -> void:
 		GameState.tap("tap")
 
 
-## The intro fades in 3 s, the HUD appears in 2 s and the line climbs from below to the first barrier.
+## The intro fades in 3 s, the spark comes down onto the tip, the HUD appears in 2 s and the line
+## climbs from below to the first barrier.
 func _start() -> void:
 	if intro == null:
 		return
 	intro.dismiss()
 	intro = null
-	colour_wave.pass_wave(tip.position, Palette.GOLD, 0.3)
+	spark.play()
 	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
 	Music.start()
 	_demo_end = BuildFlags.DEMO and GameState.finished and GameState.stage >= BuildFlags.DEMO_LAST
@@ -256,6 +263,12 @@ func _start() -> void:
 	GameState.running = true
 	if BuildFlags.is_dark(GameState.stage):
 		_enter_dark(true)  # a save from inside the dark
+
+
+## The spark has become the tip: a soft wave of gold from it, and a note.
+func _on_spark_landed() -> void:
+	colour_wave.pass_wave(tip.position, Palette.GOLD, 0.3)
+	Music.play_celesta(0)
 
 
 func _on_line(id: String, text: String, duration: float) -> void:

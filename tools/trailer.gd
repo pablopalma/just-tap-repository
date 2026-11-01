@@ -10,6 +10,8 @@ const BAR := 4.0 * 60.0 / 84.0   # 2.857 s
 const MUSIC_ZONE := 10
 const CUT_OUT := 0.16
 const CUT_IN := 0.32
+## The forks shot: the branches' barriers give way slowly, so the braid stays in view.
+const FORK_DAMAGE := 300.0
 const QUICK_OUT := 0.06
 const QUICK_IN := 0.12
 
@@ -23,7 +25,7 @@ var _veil: ColorRect
 ## The whale starts this far into its crossing (0..1) as soon as it appears; -1: leave it alone.
 var _whale_from := -1.0
 ## How long it runs, in bars.
-var length_bars := 22.95
+var length_bars := 24.3
 ## Damage numbers over the barriers (the teaser keeps them: they say "incremental").
 var show_numbers := false
 var _hud_on := false
@@ -62,16 +64,17 @@ func _ready() -> void:
 
 ## The whole trailer, in bars (docs/guion-trailer-teaser.md): a story about a grey day.
 func _plan() -> void:
-	# Act 1 · a grey day. The title, the voice, then one long take: every tap lands, the line climbs.
+	# Act 1 · a grey day. The title, the voice; a spark comes down onto the page and becomes the tip;
+	# then one long take: every tap lands, the line climbs.
 	_at(0, 0.5, "voice", "tr_01")
-	_at(1.6, 0.0, "start", 0)
+	_at(1.6, 0.0, "start", 0)  # the spark: it lands about 0.6 bars later
 	_at(1.6, 0.0, "hud", true)
 	_at(1.6, 0.0, "layers", 1)
 	_at(1.6, 0.0, "damage", 4.0)  # two or three barriers fall in the long take
 	_at(1.6, 0.0, "numbers", true)
-	_at(2, 0.0, "tap", 0)
-	_at(2.3, 0.0, "voice", "tr_02")
-	_at(2.4, 0.0, "taps", 2.6)
+	_at(2.35, 0.0, "tap", 0)
+	_at(2.4, 0.0, "voice", "tr_02")
+	_at(2.6, 0.0, "taps", 2.6)
 	_at(3.5, 0.0, "layers", 2)
 	# Act 2 · you learn. The next barrier will not give: small numbers, the line barely moves.
 	_at(4.5, 0.0, "damage", 0.2)
@@ -90,47 +93,53 @@ func _plan() -> void:
 	_at(8.4, 0.0, "taps", 3.0)
 	_at(8.4, 0.0, "layers", 3)
 	_at(8.45, 0.0, "voice", "tr_06")
-	# far back: every barrier broken draws a piece of the city, in colour again; the bird passes
+	# the line forks into three, braided, each branch with its own barrier (full game, after the demo)
 	_cut(10.5)
 	_at(10.5, 0.0, "hud", false)
 	_at(10.5, 0.0, "numbers", false)
-	_at(10.5, 0.0, "jump", 21)
-	_at(10.5, 0.0, "damage", 100000.0)
+	_at(10.5, 0.0, "jump", 51)
+	_at(10.5, 0.0, "damage", FORK_DAMAGE)
 	_at(10.5, 0.0, "layers", 4)
-	_at(10.5, 0.05, "pano", 0)
-	_at(10.5, 0.1, "taps", 1.4)
-	_at(11.05, 0.0, "voice", "14")
-	_at(11, 0.0, "bird", 1.8)
+	_at(10.5, 0.1, "taps", 3.0)
+	_at(10.6, 0.0, "voice", "13")  # "You can be more than one thing at once."
+	# far back: every barrier broken draws a piece of the city, in colour again; the bird passes
+	_cut(12.25)
+	_at(12.25, 0.0, "jump", 21)
+	_at(12.25, 0.0, "damage", 100000.0)
+	_at(12.25, 0.05, "pano", 0)
+	_at(12.25, 0.1, "taps", 1.4)
+	_at(12.35, 0.0, "voice", "14")
+	_at(12.75, 0.0, "bird", 1.8)
 	# Act 3 · the dark. Barrier 40 breaks: green for a moment, then white on black.
-	_cut(12.5)
-	_at(12.5, 0.0, "jump", 40)
-	_at(12.5, 0.0, "layers", 2)
-	_at(12.5, 0.0, "damage", 1000000.0)
-	_at(12.5, 0.0, "taps", 0.0)
-	_at(12.5, 0.4, "tap", 0)
-	_at(12.5, 0.5, "damage", 1.0)
-	_at(13.1, 0.0, "voice", "demo_1")
-	_at(13.8, 0.0, "veil_ink", 0)
-	_at(14, 0.0, "taps", 3.0)
-	_at(14.5, 0.0, "layers", 1)
-	_at(14.7, 0.0, "voice", "tr_04")
+	_cut(14.25)
+	_at(14.25, 0.0, "jump", 40)
+	_at(14.25, 0.0, "layers", 2)
+	_at(14.25, 0.0, "damage", 1000000.0)
+	_at(14.25, 0.0, "taps", 0.0)
+	_at(14.25, 0.4, "tap", 0)
+	_at(14.25, 0.5, "damage", 1.0)
+	_at(14.85, 0.0, "voice", "demo_1")
+	_at(15.55, 0.0, "veil_ink", 0)
+	_at(15.75, 0.0, "taps", 3.0)
+	_at(16.25, 0.0, "layers", 1)
+	_at(16.45, 0.0, "voice", "tr_04")
 	# you keep tapping: 41–44 give way one by one
-	_at(15.1, 0.0, "brk", 0)
-	_at(15.5, 0.0, "brk", 0)
-	_at(15.9, 0.0, "brk", 0)
-	_at(16.3, 0.0, "brk", 0)
+	_at(16.85, 0.0, "brk", 0)
+	_at(17.15, 0.0, "brk", 0)
+	_at(17.45, 0.0, "brk", 0)
+	_at(17.75, 0.0, "brk", 0)
 	# Act 4 · the last one: the chaos finds its order, the cracks fill with gold
-	_at(16.7, 0.0, "taps", 0.0)
-	_at(16.7, 0.0, "brk", 0)
-	_at(16.7, 0.0, "layers", 3)
-	_at(16.7, 0.0, "whale_at", 0.16)
-	_at(17.45, 0.0, "voice", "tr_05")
+	_at(18.05, 0.0, "taps", 0.0)
+	_at(18.05, 0.0, "brk", 0)
+	_at(18.05, 0.0, "layers", 3)
+	_at(18.05, 0.0, "whale_at", 0.16)
+	_at(18.8, 0.0, "voice", "tr_05")
 	# something awakens
-	_at(18.45, 0.0, "layers", 5)
-	_at(19.95, 0.0, "voice", "demo_2")
+	_at(19.8, 0.0, "layers", 5)
+	_at(21.3, 0.0, "voice", "demo_2")
 	# the card
-	_at(20.95, 0.0, "card", 0)
-	_at(21.35, 0.0, "voice", "00")
+	_at(22.3, 0.0, "card", 0)
+	_at(22.7, 0.0, "voice", "00")
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 
 func _at(bar: float, offset: float, method: String, arg) -> void:
