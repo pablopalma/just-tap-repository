@@ -101,6 +101,9 @@ func _ready() -> void:
 	camera.target_zoom = _base_zoom()
 	camera.snap()
 	_bird_wait = randf_range(BIRD_EVERY.x, BIRD_EVERY.y)
+	# The title theme plays on the menu, until the first tap (a director keeps its own score).
+	if not Music.locked:
+		Music.play_theme()
 
 
 func _build() -> void:
@@ -260,6 +263,7 @@ func _start() -> void:
 	spark.play()
 	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
 	Music.start()
+	Music.stop_theme()
 	_demo_end = BuildFlags.DEMO and GameState.finished and GameState.stage >= BuildFlags.DEMO_LAST
 	# The voice greets once the line has started climbing.
 	get_tree().create_timer(2.5).timeout.connect(_greet.bind(SaveSystem.had_progress))
@@ -728,6 +732,7 @@ func _show_end() -> void:
 		return
 	_end_shown = true
 	end_screen.show_end()
+	Music.play_theme()  # the title theme again, under the end screen
 
 
 func _enter_final(immediate: bool) -> void:
@@ -928,6 +933,7 @@ func _restart() -> void:
 	GameState.new_game()
 	SaveSystem.had_progress = false
 	SaveSystem.save_game()
+	Music.stop_theme()
 	_demo_end = false
 	_grand = false
 	_clear_dark()

@@ -100,6 +100,26 @@ var _chaos_t := -1.0
 var _atmos := {}
 ## Set by a director (the trailer): zone and layers stay put whatever the game does.
 var locked := false
+## The title theme (the menu, and the end screen): instead of the game's layers, a melody of its own
+## over the zone's chords and choir. Two phrases of four chords each (A, then A' higher with the
+## flute doubling and glass), looping. Each note is [sixteenth inside the chord, chord degree].
+var theme := false
+const THEME := [
+	[[0, 4], [6, 5], [8, 4], [12, 2], [16, 3], [28, 2]],
+	[[0, 3], [6, 4], [8, 5], [12, 4], [16, 2], [28, 1]],
+	[[0, 2], [6, 3], [8, 4], [12, 6], [16, 5], [24, 4], [28, 3]],
+	[[0, 4], [8, 3], [12, 2], [16, 1], [24, 2]],
+]
+var _theme_from := 0      # the step the melody starts on (a chord boundary)
+## The recorded title theme (audio/music/title_theme.ogg, 2 min, looping), played instead of the
+## generated one when it is there. Its own bus, so the Music bus's reverb does not wash it again.
+const TITLE_PATH := "res://audio/music/title_theme.ogg"
+const TITLE_BUS := &"Title"
+const TITLE_DB := -11.0   # the file is at -18 LUFS: this sits it a little above the game's music (≈ -31 LUFS)
+var _title: AudioStreamPlayer
+var _title_tween: Tween
+## The recorded theme is sounding: the game's own accompaniment and choir rest under it.
+var title_on := false
 
 var _time := 0.0
 var _next_step_time := 0.0
@@ -145,6 +165,18 @@ func _ready() -> void:
 		p.bus = CELESTIAL_BUS
 		add_child(p)
 		_celestial.append(p)
+	if ResourceLoader.exists(TITLE_PATH):
+		if AudioServer.get_bus_index(TITLE_BUS) == -1:
+			AudioServer.add_bus()
+			AudioServer.set_bus_name(AudioServer.bus_count - 1, TITLE_BUS)
+			AudioServer.set_bus_send(AudioServer.bus_count - 1, &"Master")
+		var stream: AudioStream = load(TITLE_PATH)
+		if stream is AudioStreamOggVorbis:
+			(stream as AudioStreamOggVorbis).loop = true
+		_title = AudioStreamPlayer.new()
+		_title.stream = stream
+		_title.bus = TITLE_BUS
+		add_child(_title)
 	_atmos = {"whoosh": Atmosphere.whoosh(), "swell": Atmosphere.swell(), "cry": Atmosphere.cry(), "boom": Atmosphere.boom()}
 	for i in 2:
 		var p := AudioStreamPlayer.new()
@@ -201,6 +233,42 @@ func start() -> void:
 	zone = _pending_zone
 
 
+## The title theme. The recorded one fades in over whatever is playing (the game's music rests
+## under it); without the file, the generated one: it starts the clock if it is not running and the
+## melody comes in on the next chord.
+func play_theme() -> void:
+	if _title != null:
+		title_on = true
+		for p in _choir_players:
+			if p.playing:
+				create_tween().tween_property(p, "volume_db", -60.0, CHOIR_FADE)
+		if not _title.playing:
+			_title.volume_db = -50.0
+			_title.play()
+		_fade_title(TITLE_DB, 2.0)
+		return
+	theme = true
+	if not playing:
+		start()
+	_theme_from = ceili(_step / float(STEPS_PER_CHORD)) * STEPS_PER_CHORD
+
+
+## Back to the game's own music: the recorded theme fades out under it (the clock keeps running).
+func stop_theme() -> void:
+	theme = false
+	if title_on:
+		title_on = false
+		_fade_title(-50.0, 2.5).tween_callback(_title.stop)
+
+
+func _fade_title(db: float, time: float) -> Tween:
+	if _title_tween:
+		_title_tween.kill()
+	_title_tween = create_tween()
+	_title_tween.tween_property(_title, "volume_db", db, time).set_trans(Tween.TRANS_SINE)
+	return _title_tween
+
+
 ## Keep zone z's key and tempo and the given layers until unlock (the trailer's continuous score).
 func lock(z: int, layer_count: int) -> void:
 	locked = true
@@ -213,7 +281,7 @@ func lock(z: int, layer_count: int) -> void:
 func set_enabled(on: bool) -> void:
 	SaveSystem.music_on = on
 	AudioServer.set_bus_mute(_music_bus, not on)
-	for b in [DISTANT_BUS, BIRD_BODY_BUS, BIRD_VOICE_BUS, CELESTIAL_BUS]:
+	for b in [DISTANT_BUS, BIRD_BODY_BUS, BIRD_VOICE_BUS, CELESTIAL_BUS, TITLE_BUS]:
 		var d := AudioServer.get_bus_index(b)
 		if d != -1:
 			AudioServer.set_bus_mute(d, not on)
@@ -645,6 +713,7 @@ func _on_step() -> void:
 			_step = 0
 			_zone_origin = _next_step_time
 			_slot_use.clear()
+			_theme_from = 0
 		_chord_idx = int(_step / float(STEPS_PER_CHORD)) % 4
 		_play_choir()
 	_accompany(_step)
@@ -652,6 +721,11 @@ func _on_step() -> void:
 
 
 func _accompany(s: int) -> void:
+	if title_on:
+		return
+	if theme and not dark:
+		_play_theme_step(s)
+		return
 	var bar := s % 16
 	var lay := mini(layers, 1) if dark else layers
 	var c := chord()
@@ -686,7 +760,46 @@ func _accompany(s: int) -> void:
 		_play("flute", chord_note(COUNTER_PATTERN[b % COUNTER_PATTERN.size()], tonic() + 12), 0.03)
 
 
+## One sixteenth of the title theme: bass on the bar, a soft harp in eighths, and the melody on piano.
+func _play_theme_step(s: int) -> void:
+	var c := chord()
+	var root := tonic() + int(c[0])
+	var bar := s % 16
+	if bar == 0:
+		_play("bass", root - 12, 0.06)
+	elif bar == 8:
+		_play("bass", root - 12 + 7, 0.035)
+	if s % 2 == 0:
+		var deg: int = ARP_PATTERN[_arp_i % ARP_PATTERN.size()]
+		_arp_i += 1
+		var low := chord_note(deg, tonic())
+		_play("harp", low, 0.02)
+		shape_note.emit(low, false)
+	if s < _theme_from:
+		return
+	var slot := int((s - _theme_from) / float(STEPS_PER_CHORD)) % 8
+	var second := slot >= 4   # A': a step higher in its second half, the flute along, glass
+	var k := (s - _theme_from) % STEPS_PER_CHORD
+	for n: Array in THEME[slot % 4]:
+		if int(n[0]) != k:
+			continue
+		var deg: int = int(n[1]) + (1 if second and slot % 4 >= 2 else 0)
+		var midi := chord_note(deg, tonic() + 12)
+		while midi > BRIGHT_CEILING:
+			midi -= 12
+		_play("piano", midi, 0.042)
+		if second:
+			_play("flute", midi, 0.022)
+		shape_note.emit(midi, false)
+	if second and k == 4:
+		var shine := chord_note(randi_range(0, c.size() - 1), tonic() + 24)
+		_play("glass", shine, 0.018)
+		shape_note.emit(shine, true)
+
+
 func _play_choir() -> void:
+	if title_on:
+		return
 	if dark:
 		# The low pedal: the chord's root held in the bass and the deep wind, a fifth under it.
 		var root := tonic() + int(chord()[0])
