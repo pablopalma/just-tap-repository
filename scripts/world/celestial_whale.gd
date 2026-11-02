@@ -16,10 +16,11 @@ signal gone
 const DURATION := 22.0
 const SPINE := 44
 const SONGS := [0.1, 0.42, 0.72]
-## Where along its crossing it sleeps, and wakes to swim on from.
-const SLEEP_P := 0.33
-## Its stars to light, on its body (u along it 0..1, v across -1..1): head to tail.
-const NODES := [Vector2(0.1, -0.15), Vector2(0.28, 0.45), Vector2(0.44, -0.35), Vector2(0.6, 0.2), Vector2(0.78, -0.05)]
+## Where along its crossing it sleeps, and wakes to swim on from: just peeking in from the left, so
+## only the edge of its head shows, a curve and a few stars no one can tell is a whale yet.
+const SLEEP_P := 0.15
+## Its stars to light, on its body (u along it 0..1, v across -1..1): all on the part that shows.
+const NODES := [Vector2(0.03, 0.05), Vector2(0.08, -0.5), Vector2(0.12, 0.45), Vector2(0.17, -0.15), Vector2(0.22, 0.4)]
 const SPARK_TIME := 0.9
 const WAKE_TIME := 2.2
 
@@ -224,6 +225,13 @@ func _draw_whale() -> void:
 	if _wake <= 0.0:
 		return
 	var a := _fade * _wake
+	if _wake < 1.0:
+		# Waking: a glow swells from where its stars were and fades as it starts to swim.
+		var glow_at := _point(0.12, 0.0)
+		for i in 6:
+			var f := 1.0 - i / 6.0
+			_drawer.draw_circle(glow_at, vp.y * (0.08 + 0.55 * f) * (0.4 + 0.8 * _wake),
+				Color(Palette.GOLD.lightened(0.5), 0.07 * sin(PI * _wake)))
 	var beat := pow(1.0 - Music.beat_phase(), 3.0)
 	var light := Color(1.0, 0.96, 0.86)
 	var gold := Palette.GOLD.lightened(0.45)  # luminous on the dark, still golden on the paper

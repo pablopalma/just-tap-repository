@@ -27,6 +27,8 @@ var spark
 ## Between zones: the Droste dive into the tip (scripts/world/droste.gd).
 var droste
 var _droste_zone := 0
+## The voice has stopped the game to tell a story (scripts/ui/story.gd).
+var _story := false
 var camera
 var hud
 var tree_panel
@@ -264,8 +266,8 @@ func _unhandled_input(e: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if not e is InputEventKey and inline_tree.try_tap(e.get("position")):
 		return  # a node of the tree: bought, never a hit
-	if _cine or _now:
-		return  # in a cinematic the tip plays on its own
+	if _cine or _now or _story:
+		return  # in a cinematic the tip plays on its own; in a story, we listen
 	if mode == Mode.INTRO:
 		_start()
 	else:
@@ -411,7 +413,8 @@ func _process(delta: float) -> void:
 	path_view.lit = tip.lit
 	tip.scale = Vector2.ONE * path.grow_at(tip.lit)  # grows towards the spiral's centre
 	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
-		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0 and not droste.is_playing()
+		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0 and not droste.is_playing() \
+		and not _story
 	subtitle.high = inline_tree.active and inline_tree.is_narrow()
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
@@ -563,6 +566,31 @@ func _face_zone() -> void:
 	camera.angle = _zone_angle(Zones.of(GameState.stage))
 
 
+## Between these two zones the voice stops and offers a story (scripts/ui/story.gd), once per run;
+## told or not, the dive follows.
+const STORY_AFTER_ZONE := 2
+const STORY_KEY := "story1"
+
+
+func _offer_story(z: int) -> void:
+	GameState.cinemas[STORY_KEY] = true
+	_story = true
+	GameState.cinematic = true  # the barrier does not heal while we talk
+	create_tween().tween_property(hud, "modulate:a", 0.0, 1.0)
+	var s = load("res://scripts/ui/story.gd").new()
+	s.finished.connect(_on_story_done.bind(z))
+	# under the subtitles, so the words show over the memory
+	subtitle.get_parent().add_child(s)
+	subtitle.get_parent().move_child(s, subtitle.get_index())
+
+
+func _on_story_done(_told: bool, z: int) -> void:
+	_story = false
+	GameState.cinematic = false
+	create_tween().tween_property(hud, "modulate:a", 1.0, 1.2)
+	_begin_droste(z)
+
+
 ## Each zone is the line inside the last one: fall into the tip and come out in the next zone.
 func _begin_droste(z: int) -> void:
 	_droste_zone = z
@@ -629,7 +657,10 @@ func _on_gate_broken(n: int) -> void:
 ## The camera pulls back to take in the zone's ten barriers.
 func _on_zone_completed(z: int) -> void:
 	if BuildFlags.DROSTE and cinematics_enabled and not BuildFlags.is_dark(z * 10 + 1):
-		_begin_droste(z)
+		if z == STORY_AFTER_ZONE and not GameState.cinemas.has(STORY_KEY):
+			_offer_story(z)
+		else:
+			_begin_droste(z)
 		return
 	# No dive (into the dark, or a director's cut): the world turns slowly to the next zone's way.
 	if absf(wrapf(_zone_angle(z + 1) - camera.angle, -PI, PI)) > 0.01:

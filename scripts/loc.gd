@@ -11,6 +11,8 @@ const S := {
 	"hint_tap": {"es": "tap", "en": "tap"},
 	"hint_tree": {"es": "mejorá el árbol", "en": "grow the tree"},
 	"hint_tree_inline": {"es": "tocá el árbol", "en": "tap the tree"},
+	"story_yes": {"es": "contame", "en": "tell me"},
+	"story_no": {"es": "seguir", "en": "keep going"},
 	"zone_label": {"es": "zona %s · %s", "en": "zone %s · %s"},
 	"zone_done": {"es": "zona %s completa", "en": "zone %s complete"},
 	"colour_back": {"es": "el color vuelve", "en": "the colour returns"},

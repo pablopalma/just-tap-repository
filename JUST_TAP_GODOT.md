@@ -55,6 +55,10 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
   - Las barreras se reparten a lo largo del espiral y quedan atravesadas sobre la curva (`PathData.gate_dir`).
   - En esta zona no hay estrella: la figura es la línea misma.
 - **Pendiente (Pablo hará un documento por nivel con lo que pasa en cada uno):** más formas de camino y más juego con la escala, la forma y la dirección de la línea en cada zona.
+- **Ideas de niveles, por acomodar:**
+  - **Lo que conectás da vida:** en cada zona, una criatura dormida (un boceto con estrellas apagadas) que despierta cuando sus barreras se rompen. Ya está hecha la ballena en la oscuridad (`CelestialWhale.sleep/light/wake`). Otras posibles: una luciérnaga, el ave, un caracol o nautilus en el espiral, un ciervo.
+  - **Noche estrellada:** un nivel de noche, con todo el fondo oscuro lleno de puntos blancos. Las barreras son estrellas: al romper cada una se enciende con una nota bien marcada y un destello lindo y fluido.
+  - **Pausas para contar una historia:** el narrador frena y ofrece contar un recuerdo real de Pablo ("contame" / "seguir"). Mientras se cuenta, la escena se dibuja en tinta. La primera va entre las zonas 2 y 3 (`scripts/ui/story.gd`).
 - **El árbol es parte del dibujo:** brota de la línea en ramas, no se abre en un menú (§5).
 
 | Pilar | Qué significa en la práctica |

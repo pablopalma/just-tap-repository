@@ -98,6 +98,29 @@ La punta rompe sola las últimas tres barreras, una nota tras otra, y la cámara
 [exhales] And right now... [pause] [warmly] it's enough.
 ```
 
+### Historia 1 · esperando a papá (entre las zonas 2 y 3)
+El narrador frena el juego y, si el jugador acepta, cuenta un recuerdo real de Pablo. Lo cuenta despacio, como quien recuerda en voz alta: cálido, íntimo y con pausas largas, no actuado. Las líneas pueden durar lo que necesiten, porque la escena espera a cada una.
+
+#### vo_story_ask.mp3 · la pregunta
+```
+[pause] [softly] Wait... [short pause] you know what? [pause] [warmly] Can I tell you something?
+```
+
+#### vo_story1_1.mp3
+```
+[warmly] When I was little... [pause] I used to wait for my dad on the sidewalk outside our house.
+```
+
+#### vo_story1_2.mp3
+```
+[softly] I'd lie back and watch the leaves of the tree... [long pause] and the sun slipping through them... [short pause] in little pieces.
+```
+
+#### vo_story1_3.mp3
+```
+[long pause] [softly] Nothing happened. [pause] [warmly] And it was perfect.
+```
+
 ### vo_demo_letter.mp3 · la carta corta de la demo
 Misma voz. El texto en pantalla dice además cuántas veces tocó el jugador.
 `

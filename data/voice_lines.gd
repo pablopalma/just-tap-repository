@@ -40,6 +40,11 @@ const LINES := {
 	"now_2": {"en": "All we really have… is this moment.", "es": "Lo único que tenemos de verdad… es este momento."},
 	"now_3": {"en": "This tap. This breath. Right here.", "es": "Este toque. Esta respiración. Acá."},
 	"now_4": {"en": "And right now… it's enough.", "es": "Y ahora mismo… alcanza."},
+	# A story (Main offers it between zones 2 and 3): the voice stops and tells a memory, if you want.
+	"story_ask": {"en": "Wait… you know what? Can I tell you something?", "es": "Esperá… ¿sabés qué? ¿Te puedo contar algo?"},
+	"story1_1": {"en": "When I was little, I used to wait for my dad on the sidewalk outside our house.", "es": "Cuando era chico, esperaba a mi papá sentado en la vereda de casa."},
+	"story1_2": {"en": "I'd lie back and watch the leaves of the tree… and the sun slipping through them, in little pieces.", "es": "Me recostaba y miraba las hojas del árbol… y cómo el sol se colaba entre ellas, en pedacitos."},
+	"story1_3": {"en": "Nothing happened. And it was perfect.", "es": "No pasaba nada. Y era perfecto."},
 	"demo_letter": {"en": "Thank you for playing this far.", "es": "Gracias por jugar hasta acá."},
 	# The creator's letter at the very end (shown by Screens.Letter, not queued by the Narrator).
 	# The text on screen is Loc.LETTER, with the player's real tap count; the voice says it without
