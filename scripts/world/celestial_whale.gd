@@ -5,14 +5,35 @@ extends CanvasLayer
 ## inside and leaves a trail of motes; it sings three times (Music.whale_song). Over the darkness,
 ## so it shines in it; the dark lifts as it passes (Main listens to `passing`).
 
+## What you connect also gives life: through the dark the whale sleeps in the sky, a dotted sketch
+## with NODES dark stars, each tied by a thread to one of the dark's barriers. Breaking a barrier
+## sends a spark up its thread and lights its star; when the last one lights, the whale fills with
+## light right where it sleeps and swims away (sleep, light, wake).
+
 signal passing  # halfway across: the light can come back
 signal gone
 
 const DURATION := 22.0
 const SPINE := 44
 const SONGS := [0.1, 0.42, 0.72]
+## Where along its crossing it sleeps, and wakes to swim on from.
+const SLEEP_P := 0.33
+## Its stars to light, on its body (u along it 0..1, v across -1..1): head to tail.
+const NODES := [Vector2(0.1, -0.15), Vector2(0.28, 0.45), Vector2(0.44, -0.35), Vector2(0.6, 0.2), Vector2(0.78, -0.05)]
+const SPARK_TIME := 0.9
+const WAKE_TIME := 2.2
 
 var active := false
+## Asleep in the sky (the dark), waiting for its stars.
+var sleeping := false
+## Where each node's barrier is on screen (Main sets it every frame while it sleeps).
+var anchors := PackedVector2Array()
+
+var _lit: Array[bool] = []
+var _sparks: Array[Dictionary] = []   # {i, t}: a light running up a thread
+var _pops := {}                       # node -> 0..1 its ring opening
+var _wake := 1.0                      # 0: a sketch, 1: all light
+var _breath := 0.0
 
 var _t := 0.0
 var _songs: Array = []
@@ -39,6 +60,8 @@ func _ready() -> void:
 
 func swim() -> void:
 	active = true
+	sleeping = false
+	_wake = 1.0
 	visible = true
 	_t = 0.0
 	_passed = false
@@ -49,11 +72,63 @@ func swim() -> void:
 
 func stop() -> void:
 	active = false
+	sleeping = false
 	visible = false
 	_motes.clear()
+	_sparks.clear()
+	_pops.clear()
+	_lit.clear()
+
+
+## Asleep in the sky: a sketch with its stars out. `already` of them are lit at once (a save inside
+## the dark).
+func sleep(already := 0) -> void:
+	if sleeping or active:
+		return
+	sleeping = true
+	visible = true
+	_wake = 0.0
+	_t = SLEEP_P * DURATION
+	_lit.clear()
+	for i in NODES.size():
+		_lit.append(i < already)
+	Music.prepare_dark()
+
+
+## Node i's barrier broke: a spark runs up its thread and lights it.
+func light(i: int) -> void:
+	if not sleeping or i < 0 or i >= _lit.size() or _lit[i]:
+		return
+	_sparks.append({"i": i, "t": 0.0})
+
+
+func all_lit() -> bool:
+	return sleeping and not _lit.has(false) and _sparks.is_empty()
+
+
+## All its stars lit: it fills with light right where it sleeps and swims on.
+func wake() -> void:
+	if not sleeping:
+		swim()
+		return
+	sleeping = false
+	active = true
+	_passed = false
+	_t = SLEEP_P * DURATION
+	_songs = []
+	for s in SONGS:
+		if s > SLEEP_P:
+			_songs.append(s)
+	_songs.push_front(SLEEP_P + 0.01)  # it sings as it wakes
+	_motes.clear()
+	create_tween().tween_property(self, "_wake", 1.0, WAKE_TIME).set_trans(Tween.TRANS_SINE)
 
 
 func _process(delta: float) -> void:
+	_breath += delta
+	if sleeping:
+		_process_sleep(delta)
+		return
 	if not active:
 		return
 	_t += delta
@@ -89,6 +164,27 @@ func _process(delta: float) -> void:
 	_drawer.queue_redraw()
 
 
+## Asleep: held where it will wake, breathing a little; the sparks climb, the stars pop.
+func _process_sleep(delta: float) -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var length := vp.y * 1.25
+	var p := SLEEP_P
+	var head := Vector2(lerpf(-0.1 * vp.x, vp.x + length * 1.05, p),
+		vp.y * (0.48 - 0.12 * p) + sin(_t * 0.45) * vp.y * 0.04 + sin(_breath * 0.7) * vp.y * 0.008)
+	_build_body(head, length)
+	for k in range(_sparks.size() - 1, -1, -1):
+		var s: Dictionary = _sparks[k]
+		s.t += delta
+		if s.t >= SPARK_TIME:
+			_lit[s.i] = true
+			_pops[s.i] = 0.0
+			Music.settle_note(int(s.i) * 2 + 2)
+			_sparks.remove_at(k)
+	for i in _pops.keys():
+		_pops[i] = minf(1.0, _pops[i] + delta / 1.2)
+	_drawer.queue_redraw()
+
+
 ## The spine trails behind the head; a wave runs from head to tail, growing towards the fluke.
 func _build_body(head: Vector2, length: float) -> void:
 	_spine.resize(SPINE)
@@ -119,11 +215,15 @@ func _point(u: float, v: float) -> Vector2:
 
 
 func _draw_whale() -> void:
-	if not active or _spine.size() < SPINE:
+	if (not active and not sleeping) or _spine.size() < SPINE:
 		return
 	var vp := get_viewport().get_visible_rect().size
 	var unit := vp.y / 720.0
-	var a := _fade
+	if _wake < 1.0:
+		_draw_sketch(1.0 - _wake, unit)
+	if _wake <= 0.0:
+		return
+	var a := _fade * _wake
 	var beat := pow(1.0 - Music.beat_phase(), 3.0)
 	var light := Color(1.0, 0.96, 0.86)
 	var gold := Palette.GOLD.lightened(0.45)  # luminous on the dark, still golden on the paper
@@ -194,6 +294,65 @@ func _draw_whale() -> void:
 		var k: float = m.t / m.life
 		_drawer.draw_circle(m.p, lerpf(5.0, 2.0, k) * unit, Color(light, (1.0 - k) * 0.6 * a))
 		_drawer.draw_circle(m.p, lerpf(2.0, 0.8, k) * unit, Color(gold, (1.0 - k) * 0.9 * a))
+
+
+## Asleep: a dotted outline that brightens with every star lit, its stars (out, or lit and glowing)
+## joined to each other, and a thread from each down to its barrier on the line, a spark climbing it.
+func _draw_sketch(g: float, unit: float) -> void:
+	var lit := 0
+	for b in _lit:
+		if b:
+			lit += 1
+	var pale := Color(0.88, 0.9, 1.0)
+	var gold := Palette.GOLD.lightened(0.45)
+	var outline := PackedVector2Array()
+	for i in SPINE:
+		outline.append(_spine[i] + _side(i) * _width[i])
+	for i in range(SPINE - 1, -1, -1):
+		outline.append(_spine[i] - _side(i) * _width[i])
+	outline.append(outline[0])
+	var line_a := (0.16 + 0.12 * lit) * g
+	for i in range(0, outline.size() - 1, 2):
+		_drawer.draw_line(outline[i], outline[i + 1], Color(pale.lerp(gold, lit / 5.0), line_a), 1.4 * unit, true)
+	_drawer.draw_circle(_point(0.07, -0.25), 2.5 * unit, Color(pale, line_a))
+	var pts: Array[Vector2] = []
+	for n in NODES:
+		pts.append(_point(n.x, n.y))
+	# the stars joined, star chart style; a lit pair in gold
+	for i in pts.size() - 1:
+		var both := _lit[i] and _lit[i + 1]
+		_dotted(pts[i], pts[i + 1], Color(gold if both else pale, (0.45 if both else 0.18) * g), unit)
+	for i in pts.size():
+		var np := pts[i]
+		if i < anchors.size():
+			_dotted(anchors[i], np, Color(gold if _lit[i] else pale, (0.3 if _lit[i] else 0.12) * g), unit)
+		if _lit[i]:
+			var tw := 0.75 + 0.25 * sin(_breath * 2.1 + i * 1.3)
+			_drawer.draw_circle(np, 11.0 * unit, Color(gold, 0.3 * tw * g))
+			_drawer.draw_circle(np, 3.6 * unit, Color(Color(1.0, 0.97, 0.88), 0.95 * g))
+			var pop: float = _pops.get(i, 1.0)
+			if pop < 1.0:
+				_drawer.draw_arc(np, lerpf(6.0, 46.0, 1.0 - pow(1.0 - pop, 3.0)) * unit, 0.0, TAU, 48,
+					Color(gold, (1.0 - pop) * 0.8 * g), 2.0 * unit, true)
+		else:
+			_drawer.draw_arc(np, 5.0 * unit, 0.0, TAU, 24, Color(pale, 0.45 * g), 1.2 * unit, true)
+	for s in _sparks:
+		var i: int = s.i
+		if i >= anchors.size():
+			continue
+		var k: float = s.t / SPARK_TIME
+		var at := anchors[i].lerp(pts[i], k * k * (3.0 - 2.0 * k))
+		_drawer.draw_circle(at, 10.0 * unit, Color(gold, 0.35 * g))
+		_drawer.draw_circle(at, 3.2 * unit, Color(Color(1.0, 0.97, 0.88), g))
+
+
+## A line of dots from a to b, a dot every ~16 px.
+func _dotted(a: Vector2, b: Vector2, col: Color, unit: float) -> void:
+	var d := a.distance_to(b)
+	var n := int(d / (16.0 * unit))
+	for k in n:
+		var p := a.lerp(b, (k + 0.5) / maxf(1.0, n))
+		_drawer.draw_circle(p, 1.3 * unit, col)
 
 
 ## Triangles from the first point: never fails like a polygon can when the shape folds.

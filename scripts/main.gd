@@ -416,6 +416,13 @@ func _process(delta: float) -> void:
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
 	droste.tip_screen = tip.get_global_transform_with_canvas().origin
+	if whale.sleeping:
+		# its threads run down to the dark's barriers, wherever they are on screen
+		var ct := get_viewport().get_canvas_transform()
+		var at := PackedVector2Array()
+		for i in CelestialWhale.NODES.size():
+			at.append(ct * path.gate_pos(BuildFlags.DARK_FROM + i))
+		whale.anchors = at
 	match mode:
 		Mode.INTRO, Mode.PLAY:
 			camera.k = 2.2
@@ -595,6 +602,8 @@ func _on_hit(damage: float, crit: bool, source: String) -> void:
 
 func _on_gate_broken(n: int) -> void:
 	_maybe_cinematic(n + 1)
+	if _dark and BuildFlags.is_dark(n):
+		whale.light(n - BuildFlags.DARK_FROM)  # what you connect gives life: one of its stars
 	if BuildFlags.DEMO and n == BuildFlags.DARK_FROM - 1:
 		# The colour of the zone comes back for a moment… then the dark.
 		get_tree().create_timer(EVENT_TIME * 0.7).timeout.connect(_enter_dark.bind(false))
@@ -882,6 +891,8 @@ func _enter_dark(immediate: bool) -> void:
 	darkness.invert_to(1.0, 0.5 if immediate else 4.0)
 	chaos.start(level, immediate)
 	crumble.start(level)
+	# The whale sleeps in the sky through the dark; each barrier broken here lights one of its stars.
+	whale.sleep(GameState.stage - BuildFlags.DARK_FROM)
 	if immediate:
 		landscape.break_to(0.5, 0.5)
 		return
@@ -1013,7 +1024,10 @@ func _on_chaos_settled() -> void:
 
 
 func _awaken() -> void:
-	whale.swim()
+	if whale.sleeping:
+		whale.wake()  # all its stars lit: it fills with light where it slept and swims on
+	else:
+		whale.swim()
 	get_tree().create_timer(4.0).timeout.connect(Narrator.say.bind(VoiceLines.DEMO_ENDING[1]))
 
 
