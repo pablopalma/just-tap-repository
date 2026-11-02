@@ -65,7 +65,18 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
   - Cuenta el tiempo como lo escucha el jugador: se descuenta la latencia de salida de audio (`Music.beat_at_tap`). La ventana es generosa, de ±20 % del tiempo, porque se trata de sentir la música y no de precisión.
   - Se oye y se ve: la nota del acento cae sobre el tiempo y sube un grado del acorde por cada tiempo de la racha, así que la racha toca una melodía (`Music.play_accent`). Desde el cuarto tiempo se suma el cristal. La punta muestra un aro tenue que se cierra en cada tiempo y un destello dorado en cada acento (`tip.gd`).
   - **Mantener presionado** (botón, dedo o espacio): después de 0,4 s toca solo dos veces por tiempo, ×1,6 cada una (`Main.HOLD_DELAY`, `GameState.HOLD_WORTH`). El brazo descansa y se avanza un poco más lento que tocando.
-  - Pistas: "toca con la música" desde la barrera 4 si todavía no hubo una racha de 3; "mantén presionado para seguir" desde la 6.
+  - **La lección (barreras 2 a 4, `Main.LESSON_*`).** Se enseña al principio para que nadie tenga que adivinarlo:
+    - La voz lo dice: "Listen. There's music under everything. Tap with it." (`beat_1`).
+    - La pista "toca con la música" queda fija durante toda la lección.
+    - El tiempo se oye: la zona 1 no tiene capa rítmica, así que suena un arpa suave en cada tiempo (`Music.pulse_on`).
+    - La punta lo marca: el aro es grueso y llega desde más lejos, y la punta brilla en dorado justo en cada tiempo.
+    - Termina con una racha de 4: la pista dice "así" y la voz "There. Can you hear it? That's you." (`beat_2`). Si no se logra, termina al pasar la barrera 4.
+    - Se pausa durante la cinemática de la barrera 3.
+    - Después, en una zona sin capa rítmica, el arpa vuelve mientras dura una racha de 2 o más.
+  - **Mientras dura la racha** se ve su valor a la izquierda de la punta, en dorado ("×2.4"), más grande cuanto más larga. Se apaga unos dos tiempos después del último acento.
+  - **Mantener presionado:** un arco se llena alrededor de la punta durante los 0,4 s, y desde la barrera 6 la voz lo ofrece una vez: "Tired? You can just hold. I'll keep going with you." (`hold_1`).
+  - Pistas fuera de la lección: "toca con la música" hasta la barrera 11 si todavía no hubo una racha de 3; "mantén presionado para seguir" desde la 6.
+  - Las líneas `beat_1`, `beat_2` y `hold_1` muestran el subtítulo mientras no estén grabadas (`docs/voces-elevenlabs.md`).
   - Medido con `tools/full_run_test.tscn -- <estilo>`, tiempo hasta la barrera 40:
 
     | Estilo | Tiempo | Toques |

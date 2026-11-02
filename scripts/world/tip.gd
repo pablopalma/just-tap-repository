@@ -16,6 +16,14 @@ var _run := 0
 ## tap with it (JUST_TAP_GODOT.md §1, "tocar con la música"). It shows once the player has tapped,
 ## and grows clearer while a run on the beat lasts.
 var _ring := 0.0
+## Main's lesson on the beat: the ring is drawn bold and the tip glows on every beat.
+var lesson := false
+var _bold := 0.0
+## Holding the button: an arc filling round the tip until holding starts to tap (0..1).
+var hold_k := 0.0
+## While a run lasts, what a tap on the beat is worth shows beside the tip ("×2.4").
+var font: Font
+var _since_accent := 99.0
 ## In a cinematic the tip leaves a trail of its last positions (world space), fading.
 var trail := false
 var _trail: Array[Vector2] = []
@@ -44,6 +52,8 @@ func _process(delta: float) -> void:
 	if g.running and not g.finished and not g.cinematic and g.total_taps > 0:
 		ring_to = 0.35 + 0.65 * minf(1.0, g.beat_streak / 4.0)
 	_ring = lerpf(_ring, ring_to, minf(1.0, delta * 2.0))
+	_bold = lerpf(_bold, 1.0 if lesson else 0.0, minf(1.0, delta * 3.0))
+	_since_accent += delta
 	position = path.pos_at(lit + jolt)
 	if trail:
 		_trail.push_front(position)
@@ -64,6 +74,7 @@ func kick(amount: float) -> void:
 func accent(run: int) -> void:
 	_gold = 1.0
 	_run = run
+	_since_accent = 0.0
 
 
 func _draw() -> void:
@@ -74,10 +85,19 @@ func _draw() -> void:
 	for i in range(1, _trail.size()):
 		var k := 1.0 - float(i) / TRAIL_LEN
 		draw_circle(_trail[i] - position, 3.5 * k, Color(c, 0.35 * k))
-	if _ring > 0.01:
-		var ph := Music.heard_phase()
-		var r := lerpf(40.0, 17.0, ph)
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(Palette.INK, 0.16 * _ring * smoothstep(0.0, 0.5, ph)), 1.0, true)
+	var ph := Music.heard_phase()
+	var ring := maxf(_ring, _bold)
+	if ring > 0.01:
+		var r := lerpf(lerpf(40.0, 56.0, _bold), 17.0, ph)
+		var a := lerpf(0.22, 0.6, _bold) * ring * smoothstep(0.0, 0.5, ph)
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(Palette.INK, a), lerpf(1.0, 2.0, _bold), true)
+	if _bold > 0.01:
+		# the beat itself: the tip glows as the ring arrives
+		var on := pow(1.0 - minf(1.0, fposmod(ph + 0.06, 1.0) / 0.3), 2.0)
+		draw_circle(Vector2.ZERO, 24.0, Color(Palette.GOLD, 0.3 * on * _bold))
+	if hold_k > 0.0:
+		var hc := Color(Palette.INK, 0.5 if hold_k < 1.0 else 0.3)
+		draw_arc(Vector2.ZERO, 28.0, -PI * 0.5, -PI * 0.5 + TAU * hold_k, 48, hc, 2.0, true)
 	if _gold > 0.0:
 		var e := 1.0 - _gold
 		var far := 30.0 + 4.0 * minf(_run, 8)
@@ -94,3 +114,14 @@ func _draw() -> void:
 	if not GameState.finished:
 		var f := 1.0 - GameState.progress()
 		draw_arc(Vector2.ZERO, 12.0, -PI * 0.5, -PI * 0.5 + TAU * f, 48, Color(Palette.INK, 0.5), 1.3, true)
+	# What the run is worth, beside the tip, while it lasts (it fades two beats or so after the last
+	# accent, and at once when the run breaks).
+	var shown := 1.0 - smoothstep(1.6, 2.4, _since_accent)
+	if font != null and GameState.beat_streak > 0 and shown > 0.0:
+		var worth := GameState.beat_worth(GameState.beat_streak)
+		var s := "×%s" % (str(int(worth)) if is_equal_approx(worth, roundf(worth)) else "%.1f" % worth)
+		# on the left, a little below: the barrier's own number sits on its right
+		var size := 18 + mini(GameState.beat_streak, 8)
+		var w := font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		View.text(self, font, View.screen(Vector2(-34.0 - w, 20.0)), s, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			size, Color(Palette.GOLD.darkened(0.3), 0.9 * shown))

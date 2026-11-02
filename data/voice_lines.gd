@@ -7,6 +7,12 @@ extends RefCounted
 const LINES := {
 	"00": {"en": "If you had a bad day… just tap.", "es": "Si tuviste un mal día… solo toca."},
 	"00b": {"en": "Welcome back. Where were we?", "es": "Volviste. ¿Dónde estábamos?"},
+	# tapping with the music (Main's lesson, barriers 2–4) and holding
+	"beat_1": {"en": "Listen. There's music under everything. Tap with it.",
+		"es": "Escucha. Hay música debajo de todo. Toca con ella."},
+	"beat_2": {"en": "There. Can you hear it? That's you.", "es": "Ahí está. ¿La escuchas? Eres tú."},
+	"hold_1": {"en": "Tired? You can just hold. I'll keep going with you.",
+		"es": "¿Te cansaste? Solo mantén presionado. Sigo contigo."},
 	# grey
 	"01": {"en": "Some days, everything turns grey.", "es": "Hay días en que todo se vuelve gris."},
 	"02": {"en": "It pushes back. That's alright.", "es": "Empuja de nuevo. Está bien."},

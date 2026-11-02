@@ -262,7 +262,7 @@ func tap(source := "tap", beat := -1, held := false) -> void:
 			beat_streak = beat_streak + 1 if gap >= 1 and gap <= BEAT_GAP else 1
 			_last_beat = beat
 			accent = beat_streak
-			worth = minf(BEAT_MAX, BEAT_MULT + BEAT_STEP * (beat_streak - 1))
+			worth = beat_worth(beat_streak)
 			d *= worth
 			beat_taps_at_gate += 1
 			best_streak_at_gate = maxi(best_streak_at_gate, beat_streak)
@@ -398,6 +398,11 @@ func _break_gate() -> void:
 	time_at_gate = 0.0
 	_reset_gate_counts()
 	_enter_stage()
+
+
+## What a tap on the beat is worth with a run of `run` beats (1 = the first on the beat).
+func beat_worth(run: int) -> float:
+	return minf(BEAT_MAX, BEAT_MULT + BEAT_STEP * (run - 1))
 
 
 ## A new barrier: its counters start again (a run on the beat carries on across barriers).

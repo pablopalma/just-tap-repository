@@ -12,6 +12,7 @@ const S := {
 	"hint_tree": {"es": "mejora el árbol", "en": "grow the tree"},
 	"hint_tree_inline": {"es": "toca el árbol", "en": "tap the tree"},
 	"hint_beat": {"es": "toca con la música", "en": "tap with the music"},
+	"hint_beat_ok": {"es": "así", "en": "like that"},
 	"hint_hold": {"es": "mantén presionado para seguir", "en": "hold to keep going"},
 	"story_yes": {"es": "cuéntame", "en": "tell me"},
 	"story_no": {"es": "seguir", "en": "keep going"},

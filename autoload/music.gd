@@ -49,6 +49,9 @@ var tension := 0.0
 var zone := 1
 var layers := 0
 var playing := false
+## The beat made audible: a soft harp on every beat, the bar's first a little louder. Main turns it
+## on while it teaches tapping with the music (zone 1 has no rhythmic layer of its own).
+var pulse_on := false
 
 var _bank := {}    # instrument -> {midi: AudioStream}
 var _range := {}   # instrument -> Vector2i(lowest, highest) MIDI
@@ -778,6 +781,10 @@ func _on_step() -> void:
 		_chord_idx = int(_step / float(STEPS_PER_CHORD)) % 4
 		_play_choir()
 	_accompany(_step)
+	if pulse_on and _step % 4 == 0 and not title_on:
+		var low := chord_note(0, tonic())
+		_play("harp", low, 0.034 if _step % 16 == 0 else 0.022)
+		shape_note.emit(low, false)
 	_step += 1
 
 

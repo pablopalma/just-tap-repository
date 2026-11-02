@@ -73,6 +73,17 @@ const HOLD_DELAY := 0.4
 var _holding := false
 var _hold_t := 0.0
 var _hold_half := 0
+## The lesson: from barrier LESSON_FROM to LESSON_TO the beat is taught so nobody has to guess it.
+## The voice says it, the hint says it, the beat is heard (Music.pulse_on: zone 1 has no rhythm of
+## its own) and the tip's beat ring is drawn bold. It ends with a run of LESSON_RUN, or after
+## LESSON_TO; then the beat is still heard while a run lasts in a zone with no rhythmic layer.
+const LESSON_FROM := 2
+const LESSON_TO := 4
+const LESSON_RUN := 4
+## Holding is offered once, from this barrier, if it has not been tried.
+const HOLD_LESSON_FROM := 6
+var lesson := false
+var _lesson_done := false
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -178,6 +189,7 @@ func _build() -> void:
 	tip.path = path
 	fx = _node("FX", "res://scripts/world/fx.gd")
 	fx.font = UIStyle.italic()
+	tip.font = fx.font
 	spark = _node("Spark", "res://scripts/world/spark.gd")
 	spark.tip = tip
 	spark.visible = false
@@ -298,6 +310,31 @@ func _unhandled_input(e: InputEvent) -> void:
 		_holding = true
 		_hold_t = 0.0
 		_hold_half = Music.half_beat()
+
+
+func _process_lesson() -> void:
+	var g := GameState
+	if not cinematics_enabled:
+		return  # a director (the trailer) shows the game its own way
+	var playing: bool = mode == Mode.PLAY and g.running and not g.finished and not g.cinematic \
+		and not _cine and not _now and not _story and not droste.is_playing()
+	if not _lesson_done and g.stage > LESSON_TO:
+		_lesson_done = true  # not learned yet: the HUD still hints it for a while (hud.gd)
+	var was := lesson
+	lesson = playing and not _lesson_done and g.stage >= LESSON_FROM
+	if lesson and not was:
+		Narrator.say("beat_1")
+	if lesson and g.beat_streak >= LESSON_RUN:
+		_lesson_done = true
+		lesson = false
+		hud.praise()
+		Narrator.say("beat_2")
+	if playing and g.stage >= HOLD_LESSON_FROM and not hud.hold_learned and g.taps_at_gate > 30:
+		Narrator.say("hold_1")
+	Music.pulse_on = lesson or (playing and Music.layers == 0 and g.beat_streak >= 2)
+	tip.lesson = lesson
+	hud.lesson = lesson
+	tip.hold_k = clampf(_hold_t / HOLD_DELAY, 0.0, 1.0) if _holding else 0.0
 
 
 ## While the tap that started it is still held: one soft tap on every half beat.
@@ -455,6 +492,7 @@ func _process(delta: float) -> void:
 	if _now:
 		_process_now(delta)
 	_process_hold(delta)
+	_process_lesson()
 	path_view.lit = tip.lit
 	tip.scale = Vector2.ONE * path.grow_at(tip.lit)  # grows towards the spiral's centre
 	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
