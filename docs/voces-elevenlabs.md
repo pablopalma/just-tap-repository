@@ -75,6 +75,29 @@ Las etiquetas que ya usás y suenan bien: `[softly]`, `[warmly]`, `[whispers]`, 
 [long pause] [warmly] But you're not alone in this.
 `
 
+### El ahora · cinemática al final de la oscuridad (barreras 43–45)
+La punta rompe sola las últimas tres barreras, una nota tras otra, y la cámara se aleja. Una línea por barrera: cada una tiene que durar menos de 5 s, porque la siguiente entra cuando cae la barrera. Grabadas el 2/11/2026.
+
+#### vo_now_1.mp3 · empieza la cinemática
+```
+[softly] Yesterday already happened. [pause] Tomorrow isn't here yet.
+```
+
+#### vo_now_2.mp3 · cae la barrera 43
+```
+[warmly] All we really have... [pause] is this moment.
+```
+
+#### vo_now_3.mp3 · cae la barrera 44
+```
+[breathes in] This tap. [short pause] This breath. [short pause] [softly] Right here.
+```
+
+#### vo_now_4.mp3 · cae la última (45), antes del mandala
+```
+[exhales] And right now... [pause] [warmly] it's enough.
+```
+
 ### vo_demo_letter.mp3 · la carta corta de la demo
 Misma voz. El texto en pantalla dice además cuántas veces tocó el jugador.
 `

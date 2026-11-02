@@ -31,6 +31,8 @@ var show_numbers := false
 var _hud_on := false
 var _ripple: Node2D
 var _caption_label: Label
+## Added to every bar in _at, _cut and _quick: a longer cut (trailer_v2.gd) plays this plan later.
+var offset_bars := 0.0
 
 
 func _ready() -> void:
@@ -143,17 +145,19 @@ func _plan() -> void:
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 
 func _at(bar: float, offset: float, method: String, arg) -> void:
-	_shots.append([bar * BAR + offset, method, arg])
+	_shots.append([(bar + offset_bars) * BAR + offset, method, arg])
 
 
 ## A cut on the bar: dip to paper just before it, come back just after.
 func _cut(bar: float) -> void:
+	bar += offset_bars
 	_shots.append([bar * BAR - CUT_OUT, "fade", [1.0, CUT_OUT]])
 	_shots.append([bar * BAR + 0.02, "fade", [0.0, CUT_IN]])
 
 
 ## A montage cut: a blink.
 func _quick(bar: float) -> void:
+	bar += offset_bars
 	_shots.append([bar * BAR - QUICK_OUT, "fade", [1.0, QUICK_OUT]])
 	_shots.append([bar * BAR + 0.02, "fade", [0.0, QUICK_IN]])
 

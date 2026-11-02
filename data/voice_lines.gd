@@ -35,6 +35,11 @@ const LINES := {
 	# The demo's ending (barrier 40): the dark comes in, then the short letter.
 	"demo_1": {"en": "Not everything comes back so easily.", "es": "No todo vuelve tan fácil."},
 	"demo_2": {"en": "But you're not alone in this.", "es": "Pero no estás solo en esto."},
+	# The "now" cinematic at the end of the demo's dark: one line per barrier, the last as it breaks.
+	"now_1": {"en": "Yesterday already happened. Tomorrow isn't here yet.", "es": "Ayer ya pasó. Mañana todavía no llegó."},
+	"now_2": {"en": "All we really have… is this moment.", "es": "Lo único que tenemos de verdad… es este momento."},
+	"now_3": {"en": "This tap. This breath. Right here.", "es": "Este toque. Esta respiración. Acá."},
+	"now_4": {"en": "And right now… it's enough.", "es": "Y ahora mismo… alcanza."},
 	"demo_letter": {"en": "Thank you for playing this far.", "es": "Gracias por jugar hasta acá."},
 	# The creator's letter at the very end (shown by Screens.Letter, not queued by the Narrator).
 	# The text on screen is Loc.LETTER, with the player's real tap count; the voice says it without
@@ -105,6 +110,7 @@ const ON_ZONE := {1: "03", 2: "06", 3: "09", 4: "12", 5: "15", 6: "18", 7: "21",
 const ON_STUCK := ["05", "11", "17", "23", "29"]
 
 const DEMO_ENDING := ["demo_1", "demo_2"]
+const NOW := ["now_1", "now_2", "now_3", "now_4"]
 const ENDING := ["30", "31", "made", "32"]
 const IDLE := ["idle1", "idle2", "idle3"]
 

@@ -58,6 +58,8 @@ var cinemas := {}
 var cinematic := false
 ## Cinematic hits break a barrier in about this many beats.
 const CINE_HITS := 7.0
+## The demo's "now" cinematic: the tip breaks each of the last barriers in exactly this many hits.
+const NOW_HITS := 8.0
 var finished := false
 ## False during the intro and the ending: taps and regeneration wait.
 var running := false
@@ -223,7 +225,10 @@ func tap(source := "tap") -> void:
 	if source == "auto":
 		d *= 0.6
 	d *= 1.0 + combo * 0.015 * lv("resonancia")
-	var crit := source != "cine" and randf() < 0.03 * lv("destello")
+	if source == "now":
+		# Its own steady pace, whatever your build: the music, not the player, sets it.
+		d = max_hp(stage) * 1.02 / NOW_HITS
+	var crit := source != "cine" and source != "now" and randf() < 0.03 * lv("destello")
 	if crit:
 		d *= 4.0
 	if source == "tap":

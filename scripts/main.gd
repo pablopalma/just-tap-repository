@@ -48,6 +48,13 @@ var _cine_t := 0.0
 var _cine_tail := -1.0
 var _cine_gate := 0
 var _cine_beat := 0.0
+## The demo's "now" cinematic (the end of the dark): the tip breaks the last barriers on its own, on
+## the beat, in one continuous run, while the voice talks about this moment.
+var _now := false
+var _now_t := 0.0
+var _now_beat := 0.0
+var _now_note := 0
+const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
 var landscape: Landscape
@@ -235,7 +242,7 @@ func _unhandled_input(e: InputEvent) -> void:
 	if not pressed:
 		return
 	get_viewport().set_input_as_handled()
-	if _cine:
+	if _cine or _now:
 		return  # in a cinematic the tip plays on its own
 	if mode == Mode.INTRO:
 		_start()
@@ -375,6 +382,8 @@ func _greet(returning: bool) -> void:
 func _process(delta: float) -> void:
 	if _cine:
 		_process_cinematic(delta)
+	if _now:
+		_process_now(delta)
 	path_view.lit = tip.lit
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
@@ -395,6 +404,12 @@ func _process(delta: float) -> void:
 				# Look down at what has been built, with the tip near the top of the view.
 				camera.target_pos = Vector2(0.0, tip.position.y + 1100.0)
 				camera.target_zoom = _base_zoom() * PANO_ZOOM
+			elif _now:
+				# Slowly back, until the landscape around this moment is in view.
+				var s := smoothstep(0.0, 20.0, _now_t)
+				camera.k = 0.7
+				camera.target_pos = Vector2(tip.position.x * 0.4, tip.position.y + lerpf(-50.0, 240.0, s))
+				camera.target_zoom = _base_zoom() * lerpf(1.12, 0.5, s)
 			elif _cine:
 				camera.k = 1.4
 				camera.target_pos = Vector2(tip.position.x * 0.6, tip.position.y - 50.0)
@@ -485,6 +500,10 @@ func _on_gate_broken(n: int) -> void:
 		get_tree().create_timer(EVENT_TIME * 0.7).timeout.connect(_enter_dark.bind(false))
 	elif _dark and n < BuildFlags.DEMO_LAST:
 		_dark_step(n)
+		if _now:
+			Narrator.say_now(VoiceLines.NOW[n - BuildFlags.now_from() + 1])
+		elif n + 1 == BuildFlags.now_from():
+			_maybe_now()
 	# Halfway through every zone, step back and look at what is being built.
 	if n % 10 == 5:
 		get_tree().create_timer(1.2).timeout.connect(_panorama)
@@ -760,12 +779,75 @@ func _enter_dark(immediate: bool) -> void:
 
 ## A barrier broken in the dark: it calms a little, but the line cracks where it broke.
 func _dark_step(n: int) -> void:
+	if _now:
+		camera.add_trauma(0.15)  # the quiet holds: no cracks, no chaos
+		return
 	var level := _dark_level()
 	chaos.calm(level)
 	crumble.intensity = level
 	darkness.to(lerpf(0.25, 0.5, level), 3.0)
 	fx.crack(path.gate_pos(n) + Vector2(0, 10), 200.0, 3.0)
 	camera.add_trauma(0.3)
+
+
+## Reaching the demo's last barriers in the dark plays the "now" cinematic, once per run.
+func _maybe_now() -> void:
+	if not cinematics_enabled or GameState.cinemas.has(BuildFlags.now_from()):
+		return
+	GameState.cinemas[BuildFlags.now_from()] = true
+	get_tree().create_timer(CINE_DELAY).timeout.connect(_begin_now)
+
+
+## Bars in, HUD out; the chaos quiets, and from here the tip goes on alone: one hit on every beat,
+## a rising arpeggio on every half beat, each barrier giving way in NOW_HITS hits with its figure
+## drawn whole. The voice says one line per barrier; the last one breaking ends the demo.
+func _begin_now() -> void:
+	if not _dark or GameState.finished or GameState.stage != BuildFlags.now_from() or _now:
+		return
+	_stop_cinematic(true)
+	_now = true
+	_now_t = 0.0
+	_now_beat = Music.beat_phase()
+	_now_note = 0
+	GameState.cinematic = true
+	cinema.show_bars(true)
+	subtitle.cinema = true
+	tip.trail = true
+	create_tween().tween_property(hud, "modulate:a", 0.0, 1.0)
+	# The noise of the dark falls away: only this moment is left.
+	chaos.calm(0.12)
+	crumble.intensity = 0.08
+	landscape.tremble = 0.0
+	landscape.break_to(0.2, 8.0)
+	darkness.to(0.2, 12.0)
+	Music.choir_swell()
+	Narrator.say_now(VoiceLines.NOW[0])
+
+
+func _process_now(delta: float) -> void:
+	_now_t += delta
+	if GameState.finished or not _dark:
+		return
+	var phase := Music.beat_phase()
+	var half := fmod(phase * 2.0, 1.0)
+	var prev_half := fmod(_now_beat * 2.0, 1.0)
+	if _now_t > NOW_START and half < prev_half:
+		# Every half beat a note of one long arpeggio that never stops between barriers…
+		Music.settle_note(_now_note % 10)
+		_now_note += 1
+		# …and on the beat itself, the tip hits.
+		if phase < _now_beat:
+			GameState.tap("now")
+			fx.ring(tip.position, Color(Palette.GOLD, 0.9), 54.0, 1.1)
+	_now_beat = phase
+
+
+func _end_now() -> void:
+	if not _now:
+		return
+	_now = false
+	GameState.cinematic = false
+	tip.trail = false
 
 
 func _on_quake(strength: float) -> void:
@@ -777,6 +859,9 @@ func _on_quake(strength: float) -> void:
 ## The demo's last barrier broke: the chaos finds its order, the cracks fill with gold, and
 ## something awakens.
 func _on_demo_finished() -> void:
+	if _now:
+		Narrator.say_now(VoiceLines.NOW[VoiceLines.NOW.size() - 1])
+	_end_now()
 	_demo_end = true
 	crumble.active = false  # what is already falling keeps falling
 	# Step back to take in the mandala around the tip.
@@ -827,6 +912,7 @@ func _on_whale_gone() -> void:
 
 
 func _clear_dark() -> void:
+	_end_now()
 	_dark = false
 	Music.dark = false
 	chaos.stop()

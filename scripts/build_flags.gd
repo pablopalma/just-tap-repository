@@ -8,6 +8,9 @@ const DEMO_LAST := 45
 ## The demo's dark stretch: from here to DEMO_LAST the world crumbles and the background is chaos,
 ## until the last barrier breaks and everything settles (docs/juego-completo.md §2).
 const DARK_FROM := 41
+## The last barriers of the dark break on their own, in one run, while the voice talks about this
+## moment (Main's "now" cinematic).
+const NOW_BARRIERS := 3
 
 ## Shown in the play data so balance can be compared between builds.
 const VERSION := "0.10.0-beta"
@@ -22,6 +25,11 @@ const STEAM_URL := ""
 
 static func is_dark(n: int) -> bool:
 	return DEMO and n >= DARK_FROM and n <= DEMO_LAST
+
+
+## The first barrier of the "now" cinematic.
+static func now_from() -> int:
+	return DEMO_LAST - NOW_BARRIERS + 1
 
 
 static func last_barrier() -> int:

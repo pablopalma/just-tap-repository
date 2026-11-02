@@ -494,6 +494,17 @@ func settle_note(i: int) -> void:
 	_schedule_deg(t, "harp" if i % 2 == 0 else "celesta", i, 12 if i < 6 else 24, 0.035)
 
 
+## One note of a melody that climbs (the trailer's crescendos): the i-th degree of the chord on the
+## next eighth, piano and glass in turns, as loud as vol. The line folds back down after 14 notes.
+func rising_note(i: int, vol: float) -> void:
+	if not playing:
+		return
+	var deg := i % 14
+	_schedule_deg(_grid_time(_s16() * 2.0), "piano" if i % 2 == 0 else "celesta", deg, 12 if deg < 7 else 24, vol)
+	if i % 4 == 3:
+		_schedule_deg(_grid_time(_s16() * 2.0), "glass", deg + 2, 24, vol * 0.5)
+
+
 ## Everything is in its place: a wide major chord, choir rising, glass falling like light.
 func resolve_chord() -> void:
 	if not playing:

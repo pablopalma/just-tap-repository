@@ -162,8 +162,8 @@ func _on_reborn() -> void:
 ## tapped for a while, a gentle reminder at most every 3 minutes.
 func _check_stuck_and_idle() -> void:
 	var g := GameState
-	if not g.running or g.finished:
-		return
+	if not g.running or g.finished or g.cinematic:
+		return  # in a cinematic the tip plays on its own: nobody is stuck or away
 	if g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
 		say(VoiceLines.ON_STUCK[Palette.chapter_of(g.stage)])
 	if g.clock - _last_tap > IDLE_AFTER and _idle_cool <= 0.0 and _queue.is_empty():
