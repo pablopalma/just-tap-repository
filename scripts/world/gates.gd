@@ -56,11 +56,11 @@ func _draw_current(p: Vector2) -> void:
 	_bar(p + Vector2(hole, -wv), p + Vector2(HALF, wv * 0.3), Palette.INK)
 	if font:
 		var dim := Color(Palette.INK, 0.65)
-		draw_string(font, p + Vector2(HALF + 12, 5), Fmt.num(maxf(0.0, GameState.hp)),
+		View.text(self, font, p + Vector2(HALF + 12, 5), Fmt.num(maxf(0.0, GameState.hp)),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, dim)
 		var r := GameState.regen(GameState.stage)
 		if r > 0.0:
-			draw_string(font, p + Vector2(HALF + 12, 22), "+%s/s" % Fmt.num(r),
+			View.text(self, font, p + Vector2(HALF + 12, 22), "+%s/s" % Fmt.num(r),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Palette.INK, 0.4))
 
 

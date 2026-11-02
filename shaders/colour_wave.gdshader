@@ -8,6 +8,7 @@ shader_type canvas_item;
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
 uniform vec2 cam_pos;
 uniform float cam_zoom = 1.0;
+uniform float cam_rot = 0.0;        // the view's angle (View.angle): screen turns back into world
 uniform vec2 view_size = vec2(1280.0, 720.0);
 uniform float now = 0.0;
 uniform float beat_hz = 1.0;
@@ -47,7 +48,8 @@ float lum(vec3 c) {
 }
 
 void fragment() {
-	vec2 world = cam_pos + (SCREEN_UV * view_size - view_size * 0.5) / cam_zoom;
+	vec2 s = (SCREEN_UV * view_size - view_size * 0.5) / cam_zoom;
+	vec2 world = cam_pos + vec2(s.x * cos(cam_rot) - s.y * sin(cam_rot), s.x * sin(cam_rot) + s.y * cos(cam_rot));
 
 	float reveal = 0.0;
 	float rim = 0.0;

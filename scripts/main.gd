@@ -24,6 +24,9 @@ var star
 var forks
 var fx
 var spark
+## Between zones: the Droste dive into the tip (scripts/world/droste.gd).
+var droste
+var _droste_zone := 0
 var camera
 var hud
 var tree_panel
@@ -166,6 +169,10 @@ func _build() -> void:
 	spark.tip = tip
 	spark.visible = false
 	spark.landed.connect(_on_spark_landed)
+	droste = load("res://scripts/world/droste.gd").new()
+	add_child(droste)
+	droste.turned.connect(_on_droste_turned)
+	droste.done.connect(_on_droste_done)
 	crumble = _node("Crumble", "res://scripts/world/crumble.gd")
 	crumble.path = path
 	crumble.quaked.connect(_on_quake)
@@ -277,6 +284,7 @@ func _start() -> void:
 	Music.start()
 	Music.stop_theme()
 	_demo_end = BuildFlags.DEMO and GameState.finished and GameState.stage >= BuildFlags.DEMO_LAST
+	_face_zone()  # a save inside a zone that runs its own way
 	# The voice greets once the line has started climbing.
 	get_tree().create_timer(2.5).timeout.connect(_greet.bind(SaveSystem.had_progress))
 	if GameState.finished:
@@ -402,14 +410,20 @@ func _process(delta: float) -> void:
 		_process_now(delta)
 	path_view.lit = tip.lit
 	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
-		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0
+		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0 and not droste.is_playing()
 	subtitle.high = inline_tree.active and inline_tree.is_narrow()
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
+	droste.tip_screen = tip.get_global_transform_with_canvas().origin
 	match mode:
 		Mode.INTRO, Mode.PLAY:
 			camera.k = 2.2
-			if star.is_active():
+			if droste.is_playing():
+				# Falling into the tip (and, turned, out into the next zone).
+				camera.k = 9.0
+				camera.target_pos = tip.position
+				camera.target_zoom = _base_zoom() * droste.zoom_mul()
+			elif star.is_active():
 				# The whole star in view.
 				camera.target_pos = star.center() + Vector2(0, -20)
 				camera.target_zoom = _base_zoom() * 0.72
@@ -494,8 +508,68 @@ func _process(delta: float) -> void:
 
 
 func _base_zoom() -> float:
+	# 640 along the line and 420 across it, whichever way the zone's line runs on screen.
 	var vs := get_viewport_rect().size
+	if absf(sin(camera.angle)) > 0.5:
+		vs = Vector2(vs.y, vs.x)
 	return minf(vs.y / 640.0, vs.x / 420.0)
+
+
+# --- The Droste dive between zones ----------------------------------------------
+
+## Which way zone z's line runs on screen (radians, the camera's angle). The line does not always
+## climb: inside the last zone, the next one runs its own way, like thoughts do. 0 is up, -PI/2 to
+## the right, PI/2 to the left, PI down. The dark (zone 5) and the last zone climb again, so the
+## endings look at the city upright.
+const ZONE_ANGLE := {1: 0.0, 2: -PI / 2.0, 3: -PI / 4.0, 4: PI / 2.0, 5: 0.0, 6: PI, 7: PI / 4.0,
+	8: -PI / 2.0, 9: -3.0 * PI / 4.0, 10: 0.0}
+## A director (the trailer) keeps the view upright, so its shots stay as they were framed.
+var turn_zones := true
+var _turn_tween: Tween
+
+
+func _zone_angle(z: int) -> float:
+	return ZONE_ANGLE.get(z, 0.0) if turn_zones else 0.0
+
+
+## Turns the view slowly, the short way round (where there is no dive to hide it: into the dark).
+func _turn_to(target: float, time: float) -> void:
+	if _turn_tween:
+		_turn_tween.kill()
+	var from: float = camera.angle
+	var to := from + wrapf(target - from, -PI, PI)
+	_turn_tween = create_tween()
+	_turn_tween.tween_property(camera, "angle", to, time).set_trans(Tween.TRANS_SINE)
+
+
+## The view the current barrier's zone is seen at, at once (a new game, a save, a jump).
+func _face_zone() -> void:
+	if _turn_tween:
+		_turn_tween.kill()
+	camera.angle = _zone_angle(Zones.of(GameState.stage))
+
+
+## Each zone is the line inside the last one: fall into the tip and come out in the next zone.
+func _begin_droste(z: int) -> void:
+	_droste_zone = z
+	droste.play()
+	camera.add_trauma(0.25)
+
+
+## The screen is all dot: turn the view to the next zone's direction, unseen.
+func _on_droste_turned() -> void:
+	camera.angle = _zone_angle(_droste_zone + 1)
+	camera.snap()
+
+
+func _on_droste_done() -> void:
+	var z := _droste_zone
+	var last := path.gate_pos(z * 10)
+	_summon_bird()
+	if not z in [2, 4, 6, 8]:
+		colour_wave.pass_wave(tip.position, Palette.chapter_color(maxi(1, Palette.chapter_of(z * 10))))
+		zone_title.show_title(Loc.t("zone_done") % Zones.ROMAN[z - 1], Loc.zone_name(z), Palette.INK)
+	fx.ring(last, Palette.INK, 220.0, 2.4)
 
 
 # --- Events -----------------------------------------------------------------
@@ -538,6 +612,12 @@ func _on_gate_broken(n: int) -> void:
 
 ## The camera pulls back to take in the zone's ten barriers.
 func _on_zone_completed(z: int) -> void:
+	if BuildFlags.DROSTE and cinematics_enabled and not BuildFlags.is_dark(z * 10 + 1):
+		_begin_droste(z)
+		return
+	# No dive (into the dark, or a director's cut): the world turns slowly to the next zone's way.
+	if absf(wrapf(_zone_angle(z + 1) - camera.angle, -PI, PI)) > 0.01:
+		_turn_to(_zone_angle(z + 1), EVENT_TIME)
 	cinema.show_bars(true)
 	var first := path.gate_pos((z - 1) * 10 + 1)
 	var last := path.gate_pos(z * 10)
@@ -725,6 +805,8 @@ func _dev_jump(n: int) -> void:
 	landscape.reset()
 	_clear_dark()
 	GameState.dev_jump(n)
+	_face_zone()
+	camera.snap()
 	GameState.running = true
 	mode = Mode.PLAY
 	_final_pending = -1.0
@@ -970,6 +1052,7 @@ func _restart() -> void:
 func _on_reborn() -> void:
 	_stop_cinematic(true)
 	_clear_dark()
+	_face_zone()
 	tip.lit = 0.0
 	gates.reset()
 	star.reset()

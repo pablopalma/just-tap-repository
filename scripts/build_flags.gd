@@ -12,6 +12,11 @@ const DARK_FROM := 41
 ## moment (Main's "now" cinematic).
 const NOW_BARRIERS := 3
 
+## Prototype: between zones the camera falls into the tip and comes out in the next zone (the Droste
+## dive, scripts/world/droste.gd), and some zones run their own way (Main.ZONE_ANGLE). False: the
+## old pull-back over the zone.
+const DROSTE := true
+
 ## The upgrade tree is drawn beside the line and bought by tapping it, without pausing
 ## (scripts/world/inline_tree.gd); false brings back the panel. The dev menu (F1) switches it.
 const TREE_INLINE := true

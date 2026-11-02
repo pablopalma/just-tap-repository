@@ -124,4 +124,4 @@ func _draw() -> void:
 	for f in _floats:
 		var k: float = f.t / f.life
 		var a := minf(1.0, (1.0 - k) * 2.0)
-		draw_string(font, f.pos, f.text, HORIZONTAL_ALIGNMENT_CENTER, -1, f.size, Color(f.color, a))
+		View.text(self, font, f.pos, f.text, HORIZONTAL_ALIGNMENT_CENTER, -1, f.size, Color(f.color, a))

@@ -55,6 +55,7 @@ func _ready() -> void:
 	if not show_numbers:
 		_main.fx.font = null
 	_main.cinematics_enabled = false  # the director decides every shot
+	_main.turn_zones = false  # and keeps the view upright, as the shots were framed
 	_ripple = Node2D.new()
 	_ripple.set_script(load("res://tools/tap_ripple.gd"))
 	_ripple.path = _main.path

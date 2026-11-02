@@ -38,8 +38,10 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 		var z: float = s.scale * (1.0 + (cam_zoom - 1.0) * f) * vp.y / 720.0
 		var center := (cam_pos + cam_offset) * f
 		cl.scale = Vector2(z, z)
-		cl.offset = vp * 0.5 - center * z
-		d.set_view(center, vp * 0.5 / z)
+		# Turned with the view (View.angle), around the middle of the screen.
+		cl.rotation = -View.angle
+		cl.offset = vp * 0.5 - (center * z).rotated(-View.angle)
+		d.set_view(center, View.size(vp) * 0.5 / z)
 		d.set_tint(tint)
 		d.modulate.a = 1.0 - 0.7 * focus
 

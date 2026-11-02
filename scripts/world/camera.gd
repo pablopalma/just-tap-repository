@@ -11,6 +11,8 @@ var target_pos := Vector2.ZERO
 var target_zoom := 1.0
 var k := 2.2
 var trauma := 0.0
+## Which way the world is seen (View.angle): the zone's own direction. The shake rolls around it.
+var angle := 0.0
 
 var _z := 1.0
 var _punch := 0.0
@@ -33,7 +35,8 @@ func _process(delta: float) -> void:
 	trauma = maxf(0.0, trauma - TRAUMA_DECAY * delta)
 	var s := trauma * trauma
 	offset = Vector2(_wave(1.0), _wave(2.0)) * MAX_OFFSET * s / maxf(0.2, _z)
-	rotation = _wave(3.0) * MAX_ROLL * s
+	rotation = angle + _wave(3.0) * MAX_ROLL * s
+	View.angle = angle
 
 
 ## 0..1; 0.1 is a nudge, 1 is the biggest moment.

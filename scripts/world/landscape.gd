@@ -115,14 +115,14 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 	_drawer.grand = g
 	_drawer.width_mul = maxf(1.0, zn / z)
 	scale = Vector2(z, z)
-	offset = vp * 0.5 - center * z
+	# Turned with the view (View.angle), around the middle of the screen, like the world itself.
+	offset = vp * 0.5 - (center * z).rotated(-View.angle)
+	rotation = -View.angle
 	if tremble > 0.0:
 		var a := tremble * tremble * 14.0 * vp.y / 720.0
 		offset += Vector2(sin(_t * 41.0) + sin(_t * 23.0), cos(_t * 37.0) + sin(_t * 19.0)) * a * 0.5
-		rotation = sin(_t * 17.0) * tremble * tremble * 0.006
-	else:
-		rotation = 0.0
-	_drawer.set_view(center, vp * 0.5 / z)
+		rotation += sin(_t * 17.0) * tremble * tremble * 0.006
+	_drawer.set_view(center, View.size(vp) * 0.5 / z)
 
 
 class Drawer extends Node2D:

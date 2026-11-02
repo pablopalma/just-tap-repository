@@ -36,6 +36,22 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
 
 ## 1. Visión y pilares
 
+**El norte (2/11/2026).** Just Tap es más una experiencia que un juego de números: todo lo que el jugador hace forma una gran obra de arte que representa sus pensamientos y su mundo interior. La línea no es una torre que se sube: es un recorrido hacia adentro. Cada decisión se mide contra esa idea.
+- **La historia:** el puntito es el alma de una niña (la de la portada) y la voz es su padre, o Dios, enseñándole la vida: emociones, momentos, que no está sola, que todo lo que tenemos es este momento.
+- **Hacia adentro:** entre zona y zona la cámara cae en la punta y sale en la zona siguiente, que es la línea dentro de la línea (el efecto Droste, `scripts/world/droste.gd`). Cada zona va hacia su propio lado: la línea no siempre sube (`Main.ZONE_ANGLE`, detrás de `BuildFlags.DROSTE`).
+
+  | Zona | Dirección | Zona | Dirección |
+  |---|---|---|---|
+  | 1 | Sube | 6 | Baja |
+  | 2 | Derecha | 7 | Diagonal, arriba a la izquierda |
+  | 3 | Diagonal, arriba a la derecha | 8 | Derecha |
+  | 4 | Izquierda | 9 | Diagonal, abajo |
+  | 5 | La oscuridad: sube | 10 | Sube, para el final |
+
+  Se gira toda la vista, y el paisaje, las capas del fondo y la ola de color giran con ella (`View.angle`); los textos del mundo se enderezan. A la oscuridad no se entra por la zambullida: el mundo gira despacio mientras cae. El tráiler mantiene la vista derecha (`Main.turn_zones`).
+- **Ideas pendientes (Pablo hará un documento por nivel con lo que pasa en cada uno):** caminos que no sean rectos, por ejemplo un espiral en el que la punta crece y crece mientras lo recorre y después vuelve a su tamaño; jugar con la escala y la forma de la línea en cada zona.
+- **El árbol es parte del dibujo:** brota de la línea en ramas, no se abre en un menú (§5).
+
 | Pilar | Qué significa en la práctica |
 |---|---|
 | **Just tap** | La única interacción del juego principal es tocar la pantalla. Todo lo demás (árbol) es secundario y se abre aparte. |

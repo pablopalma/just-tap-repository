@@ -97,5 +97,6 @@ func update_view(cam_pos: Vector2, cam_zoom: float, cam_offset: Vector2, vp: Vec
 	_mat.set_shader_parameter("drain", _drain)
 	_mat.set_shader_parameter("cam_pos", cam_pos + cam_offset)
 	_mat.set_shader_parameter("cam_zoom", cam_zoom)
+	_mat.set_shader_parameter("cam_rot", View.angle)
 	_mat.set_shader_parameter("view_size", vp)
 	_mat.set_shader_parameter("beat_hz", Zones.BPM[Music.zone - 1] / 60.0)

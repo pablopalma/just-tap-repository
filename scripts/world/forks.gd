@@ -138,7 +138,7 @@ func _draw() -> void:
 			draw_line(g + Vector2(-HALF, 0), g + Vector2(-hole, 0), Palette.INK, 2.4, true)
 			draw_line(g + Vector2(hole, 0), g + Vector2(HALF, 0), Palette.INK, 2.4, true)
 			if font:
-				draw_string(font, g + Vector2(HALF + 6, 4), Fmt.num(maxf(0.0, b.hp)), HORIZONTAL_ALIGNMENT_LEFT,
+				View.text(self, font, g + Vector2(HALF + 6, 4), Fmt.num(maxf(0.0, b.hp)), HORIZONTAL_ALIGNMENT_LEFT,
 					-1, 12, Color(Palette.INK, 0.55))
 		# its light, in the colour of its instrument
 		var lp := _branch_point(s, count, i, _t[i])

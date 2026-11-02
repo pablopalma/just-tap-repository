@@ -135,7 +135,7 @@ func lift() -> float:
 
 ## How far out a node can go on either side of the line, in world units.
 func _room() -> float:
-	var half_w := get_viewport_rect().size.x * 0.5 / camera.zoom.x
+	var half_w := View.size(get_viewport_rect().size).x * 0.5 / camera.zoom.x
 	return clampf(half_w - 40.0 / camera.zoom.x - absf(_anchor.x - camera.position.x), NEAR + 60.0, FAR)
 
 
@@ -339,4 +339,7 @@ func _draw() -> void:
 
 func _text(baseline_center: Vector2, text: String, size: int, color: Color) -> void:
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	draw_string(font, baseline_center - Vector2(w * 0.5, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	# Turned around its own centre so it reads upright whichever way the view is turned (View.angle).
+	draw_set_transform(baseline_center, View.angle)
+	draw_string(font, Vector2(-w * 0.5, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	draw_set_transform(Vector2.ZERO)
