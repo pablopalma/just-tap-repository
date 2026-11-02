@@ -67,6 +67,12 @@ var _now := false
 var _now_t := 0.0
 var _now_beat := 0.0
 var _now_note := 0
+## Holding the button (or space) down taps on its own, once every half beat, after HOLD_DELAY:
+## gentler than tapping, but the arm rests (JUST_TAP_GODOT.md §1, "tocar con la música").
+const HOLD_DELAY := 0.4
+var _holding := false
+var _hold_t := 0.0
+var _hold_half := 0
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -288,7 +294,26 @@ func _unhandled_input(e: InputEvent) -> void:
 	if mode == Mode.INTRO:
 		_start()
 	else:
-		GameState.tap("tap")
+		GameState.tap("tap", Music.beat_at_tap())
+		_holding = true
+		_hold_t = 0.0
+		_hold_half = Music.half_beat()
+
+
+## While the tap that started it is still held: one soft tap on every half beat.
+func _process_hold(delta: float) -> void:
+	if not _holding:
+		return
+	var down := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_key_pressed(KEY_SPACE)
+	if not down or mode != Mode.PLAY or _cine or _now or _story or droste.is_playing():
+		_holding = false
+		return
+	_hold_t += delta
+	var half := Music.half_beat()
+	if half != _hold_half:
+		_hold_half = half
+		if _hold_t >= HOLD_DELAY:
+			GameState.tap("tap", -1, true)
 
 
 ## The intro fades in 3 s, the spark comes down onto the tip, the HUD appears in 2 s and the line
@@ -429,6 +454,7 @@ func _process(delta: float) -> void:
 		_process_cinematic(delta)
 	if _now:
 		_process_now(delta)
+	_process_hold(delta)
 	path_view.lit = tip.lit
 	tip.scale = Vector2.ONE * path.grow_at(tip.lit)  # grows towards the spiral's centre
 	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
@@ -682,13 +708,18 @@ func _on_droste_done() -> void:
 # --- Events -----------------------------------------------------------------
 
 func _on_hit(damage: float, crit: bool, source: String) -> void:
-	tip.kick(6.0 if source == "auto" else 12.0)
+	var run := GameState.accent
+	tip.kick(6.0 if source == "auto" else (16.0 if run > 0 else 12.0))
+	if run > 0:
+		tip.accent(run)
 	if _dark and source == "tap":
 		crumble.tap(GameState.stage)
-	gates.hit(0.25 if source == "auto" else 0.6)
+	gates.hit(0.25 if source == "auto" else (0.9 if run > 0 else 0.6))
 	var p := path.gate_pos(GameState.stage) + Vector2(randf_range(-55, 55), randf_range(-26, -6))
 	if crit:
 		fx.float_text(p, Fmt.num(damage), Palette.chapter_color(maxi(1, Palette.chapter_of(GameState.stage))), 24)
+	elif run > 0:
+		fx.float_text(p, Fmt.num(damage), Palette.GOLD.darkened(0.25), 15 + mini(run, 8))
 	elif source != "auto":
 		fx.float_text(p, Fmt.num(damage), Color(Palette.INK, 0.8), 15)
 

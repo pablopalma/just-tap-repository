@@ -180,6 +180,8 @@ func _on_gate(n: int) -> void:
 		levels += int(GameState.up[id])
 	# Emitted before the barrier's counters reset, so they still describe this barrier.
 	event("gate", {"s": snappedf(GameState.time_at_gate, 0.1), "taps": GameState.taps_at_gate,
+		"beat": GameState.beat_taps_at_gate, "hold": GameState.hold_taps_at_gate,
+		"run": GameState.best_streak_at_gate,
 		"light": roundf(GameState.light), "lv": levels, "tree": _tree_opens,
 		"cine": GameState.cinematic}, n)
 	_tree_opens = 0

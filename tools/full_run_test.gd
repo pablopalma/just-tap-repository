@@ -32,6 +32,39 @@ func _ready() -> void:
 			_log("voz " + id))
 
 
+## How it taps, from the command line (`-- beat`): "mash" TAPS a second wherever they fall (the
+## default), "median" like the beta's median player (3.5 a second), "beat" once on every beat of
+## the music, "hold" only holding the button down.
+func _style() -> String:
+	for a in OS.get_cmdline_user_args():
+		if a in ["mash", "median", "beat", "hold"]:
+			return a
+	return "mash"
+
+
+var _last_beat := -100
+var _last_half := -100
+
+
+func _play(delta: float) -> void:
+	match _style():
+		"beat":
+			var k := Music.beat_at_tap()
+			if k >= 0 and k != _last_beat:
+				_last_beat = k
+				GameState.tap("tap", k)
+		"hold":
+			var h := Music.half_beat()
+			if h != _last_half:
+				_last_half = h
+				GameState.tap("tap", -1, true)
+		_:
+			_acc += delta * (3.5 if _style() == "median" else TAPS)
+			while _acc >= 1.0:
+				_acc -= 1.0
+				GameState.tap("tap", Music.beat_at_tap())
+
+
 func _log(s: String) -> void:
 	print("[%6.1f s] %s" % [_t, s])
 
@@ -69,14 +102,11 @@ func _process(delta: float) -> void:
 		if c is Screens.Letter and c._ready_to_leave:
 			c._leave()
 	if _main._end_shown:
-		_log("pantalla final. barrera %d, %d toques" % [GameState.stage, GameState.total_taps])
+		_log("pantalla final (%s). barrera %d, %d toques" % [_style(), GameState.stage, GameState.total_taps])
 		get_tree().quit()
 		return
 	if GameState.running and not GameState.finished and not _main._story:
-		_acc += delta * TAPS
-		while _acc >= 1.0:
-			_acc -= 1.0
-			GameState.tap("tap")
+		_play(delta)
 		_buy += delta
 		if _buy > 1.5:
 			_buy = 0.0

@@ -313,6 +313,54 @@ func beat_phase() -> float:
 	return fposmod((_time - _zone_origin) / (_s16() * 4.0), 1.0)
 
 
+## How far from a beat a tap still counts as on it, as a fraction of the beat (generous: this is
+## about feeling the music, not precision).
+const BEAT_WINDOW := 0.2
+## Between hearing the beat and the tap reaching the game, on top of the audio output's own delay.
+const HEARD_LAG := 0.03
+
+
+## The beat a tap falls on, by the music as the player hears it: its index, or -1 between beats.
+func beat_at_tap() -> int:
+	if not playing or title_on:
+		return -1
+	var beat := _s16() * 4.0
+	var heard := _heard_time()
+	var k := roundi(heard / beat)
+	return k if absf(heard - k * beat) <= BEAT_WINDOW * beat else -1
+
+
+## Like beat_phase(), but as the player hears it: what the tip's beat ring follows.
+func heard_phase() -> float:
+	return fposmod(_heard_time() / (_s16() * 4.0), 1.0)
+
+
+## Index of the current half beat: holding the button taps once on each.
+func half_beat() -> int:
+	return floori((_time - _zone_origin) / (_s16() * 2.0))
+
+
+func _heard_time() -> float:
+	return _time - _zone_origin - AudioServer.get_output_latency() - HEARD_LAG
+
+
+## A tap on the beat: its note lands on the beat itself (or at once, if the tap came after it),
+## a step higher for every beat of the run, so a run on the beat plays a melody; from the fourth,
+## glass doubles it an octave up.
+func play_accent(run: int) -> void:
+	if not playing:
+		return
+	var beat := _s16() * 4.0
+	var t := maxf(_time, _zone_origin + roundf((_time - _zone_origin) / beat) * beat)
+	var n := chord().size()
+	var midi := chord_note((run - 1) % (n * 2), tonic() + 12)
+	shape_note.emit(midi, true)
+	_schedule(t, "note", _tap_instrument(), midi, 0.065)
+	_schedule(t, "wind", "tap", midi, 0.045)
+	if run >= 4:
+		_schedule(t, "note", "glass", midi + 12, 0.028)
+
+
 func play_tap(progress: float, crit: bool) -> void:
 	if not playing:
 		return
@@ -634,6 +682,8 @@ func _on_hit(_damage: float, crit: bool, source: String) -> void:
 		play_auto()
 	elif not GameState.branches.is_empty():
 		play_trio(crit)
+	elif GameState.accent > 0:
+		play_accent(GameState.accent)
 	else:
 		play_tap(GameState.progress(), crit)
 

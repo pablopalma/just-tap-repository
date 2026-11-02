@@ -15,6 +15,9 @@ var _tree: Button
 var _dot: Label
 var _total_taps := 0
 var _cache := {}
+## Once a run on the beat (or a hold) has happened, its hint is not needed again this session.
+var _beat_learned := false
+var _hold_learned := false
 
 
 func _ready() -> void:
@@ -106,12 +109,18 @@ func _process(_delta: float) -> void:
 	_dot.add_theme_color_override("font_color", col)
 
 	var hint := ""
-	if g.running and not g.finished:
+	_beat_learned = _beat_learned or g.beat_streak >= 3
+	_hold_learned = _hold_learned or g.hold_taps_at_gate >= 4
+	if g.running and not g.finished and not g.cinematic:
 		if _total_taps < 3 and g.stage == 1:
 			hint = Loc.t("hint_tap")
 		elif g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
 			# beside the line there is nothing to open: the nodes are right there
 			hint = Loc.t("hint_tree" if _tree.visible else "hint_tree_inline")
+		elif not _beat_learned and g.stage >= 4 and g.stage < 12 and g.taps_at_gate > 15:
+			hint = Loc.t("hint_beat")
+		elif not _hold_learned and g.stage >= 6 and g.stage < 20 and g.taps_at_gate > 40:
+			hint = Loc.t("hint_hold")
 	_put_text(_hint, hint)
 
 

@@ -70,6 +70,28 @@ var last_hit_time := -100.0
 var time_at_gate := 0.0
 var taps_at_gate := 0
 
+## The beat (JUST_TAP_GODOT.md §1, "tocar con la música"): a tap on the music's beat hits BEAT_MULT
+## harder, BEAT_STEP more for every beat of a clean run, up to BEAT_MAX. A run allows rests of up
+## to BEAT_GAP beats (half time is fine); any tap off the beat, or a second one in the same beat,
+## ends it. So a calm player tapping with the music keeps up with one mashing, with far fewer taps.
+const BEAT_MULT := 2.0
+const BEAT_STEP := 0.375
+const BEAT_MAX := 5.0
+const BEAT_GAP := 2
+## Holding taps twice a beat, each worth this much: a little under a median player tapping by hand
+## (tools/full_run_test.tscn, `-- hold` against `-- median`).
+const HOLD_WORTH := 1.6
+## Accents keep the combo (resonancia) alive across a whole beat, not just COMBO_WINDOW.
+const BEAT_COMBO_WINDOW := 1.2
+var beat_streak := 0
+## During a hit's signal: the run's length if that tap fell on the beat, else 0.
+var accent := 0
+var _last_beat := -100
+## Per barrier, for telemetry: taps on the beat, taps from holding, the longest run.
+var beat_taps_at_gate := 0
+var hold_taps_at_gate := 0
+var best_streak_at_gate := 0
+
 var _combo_timer := 0.0
 var _auto_acc := 0.0
 var _echoes: Array[float] = []
@@ -215,7 +237,11 @@ func fork_count(n: int) -> int:
 
 # --- Tapping ---------------------------------------------------------------
 
-func tap(source := "tap") -> void:
+## `beat`: for a player's tap, the index of the music's beat it fell on (Music.beat_at_tap()), or
+## -1 between beats. `held`: a tap from holding the button down (steady, on the half beat), which
+## neither starts nor breaks a run.
+func tap(source := "tap", beat := -1, held := false) -> void:
+	accent = 0
 	if not running or finished:
 		return
 	# In a cinematic (or a story) only its own hits count: the pulse and the echoes wait, so its
@@ -223,6 +249,25 @@ func tap(source := "tap") -> void:
 	if cinematic and source != "cine" and source != "now":
 		return
 	var d := power()
+	# A tap on the beat is worth several taps: in damage, and in everything a tap brings (light,
+	# the chance of a flash or an echo, the combo), so tapping less, with the music, never falls behind.
+	var worth := 1.0
+	if source == "tap" and held:
+		hold_taps_at_gate += 1
+		worth = HOLD_WORTH
+		d *= worth
+	elif source == "tap":
+		if beat >= 0 and beat != _last_beat:
+			var gap := beat - _last_beat
+			beat_streak = beat_streak + 1 if gap >= 1 and gap <= BEAT_GAP else 1
+			_last_beat = beat
+			accent = beat_streak
+			worth = minf(BEAT_MAX, BEAT_MULT + BEAT_STEP * (beat_streak - 1))
+			d *= worth
+			beat_taps_at_gate += 1
+			best_streak_at_gate = maxi(best_streak_at_gate, beat_streak)
+		else:
+			beat_streak = 0
 	if source == "cine":
 		# The tip taps on its own, on the beat: about CINE_HITS hits per barrier, whatever your build.
 		d = maxf(d, max_hp(stage) * 1.25 / CINE_HITS)
@@ -232,18 +277,18 @@ func tap(source := "tap") -> void:
 	if source == "now":
 		# Its own steady pace, whatever your build: the music, not the player, sets it.
 		d = max_hp(stage) * 1.02 / NOW_HITS
-	var crit := source != "cine" and source != "now" and randf() < 0.03 * lv("destello")
+	var crit := source != "cine" and source != "now" and randf() < 0.03 * lv("destello") * worth
 	if crit:
 		d *= 4.0
 	if source == "tap":
-		combo = minf(COMBO_MAX, combo + 1.0)
-		_combo_timer = COMBO_WINDOW
+		combo = minf(COMBO_MAX, combo + worth)
+		_combo_timer = maxf(_combo_timer, BEAT_COMBO_WINDOW if accent > 0 else COMBO_WINDOW)
 		taps_at_gate += 1
 		total_taps += 1
-		if randf() < 0.06 * lv("eco"):
+		if randf() < 0.06 * lv("eco") * worth:
 			_echoes.append(ECHO_DELAY)
 	last_hit_time = clock
-	add_light(light_per_tap(stage) * (0.5 if source == "auto" else 1.0))
+	add_light(light_per_tap(stage) * (0.5 if source == "auto" else worth))
 	if not star.is_empty():
 		hit.emit(d, crit, source)
 		_hit_star(d)
@@ -351,8 +396,16 @@ func _break_gate() -> void:
 	stage += 1
 	hp = max_hp(stage)
 	time_at_gate = 0.0
-	taps_at_gate = 0
+	_reset_gate_counts()
 	_enter_stage()
+
+
+## A new barrier: its counters start again (a run on the beat carries on across barriers).
+func _reset_gate_counts() -> void:
+	taps_at_gate = 0
+	beat_taps_at_gate = 0
+	hold_taps_at_gate = 0
+	best_streak_at_gate = 0
 
 
 func add_light(v: float) -> void:
@@ -420,7 +473,7 @@ func rebirth() -> void:
 	_echoes.clear()
 	_auto_acc = 0.0
 	time_at_gate = 0.0
-	taps_at_gate = 0
+	_reset_gate_counts()
 	light_changed.emit(light)
 	_enter_stage()
 	reborn.emit()
@@ -442,7 +495,7 @@ func new_game() -> void:
 	_echoes.clear()
 	_auto_acc = 0.0
 	time_at_gate = 0.0
-	taps_at_gate = 0
+	_reset_gate_counts()
 	light_changed.emit(light)
 	_enter_stage()
 	progress_reset.emit()
@@ -457,7 +510,7 @@ func dev_jump(n: int) -> void:
 	combo = 0.0
 	_echoes.clear()
 	time_at_gate = 0.0
-	taps_at_gate = 0
+	_reset_gate_counts()
 	for k in VoiceLines.ON_REACH:
 		if k <= stage:
 			said[VoiceLines.ON_REACH[k]] = true

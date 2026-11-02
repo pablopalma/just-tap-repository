@@ -81,6 +81,20 @@ def report(rows):
     if done_times:
         say(f"- Tiempo hasta el final de la demo: mediana **{fmt_s(statistics.median(done_times))}**, "
             f"rápido {fmt_s(pct(done_times, 0.1))}, lento {fmt_s(pct(done_times, 0.9))}")
+    # Tapping with the music and holding (builds that send "beat" and "hold" with each barrier).
+    with_beat = [d for per in gate.values() for d in per.values() if "beat" in d]
+    if with_beat:
+        taps = sum(int(d.get("taps", 0)) for d in with_beat) or 1
+        beat = sum(int(d.get("beat", 0)) for d in with_beat)
+        hold = sum(int(d.get("hold", 0)) for d in with_beat)
+        best = defaultdict(int)
+        for per in gate.values():
+            for uid, d in per.items():
+                if "beat" in d:
+                    best[uid] = max(best[uid], int(d.get("run", 0)))
+        runs = list(best.values())
+        say(f"- Toques a tiempo: **{100 * beat / taps:.0f} %** · manteniendo: {100 * hold / taps:.0f} % · "
+            f"racha más larga por jugador (mediana): {statistics.median(runs) if runs else 0:.0f}")
 
     say("\n## Tiempo por barrera\n")
     say("Solo la primera vez que cada jugador la rompe. Las marcadas con ⚠ tardan más de "

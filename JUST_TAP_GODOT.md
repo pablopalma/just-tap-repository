@@ -60,6 +60,24 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
   - **Noche estrellada (hecha: zona 4, `Main.NIGHT_ZONE`, `scripts/world/night.gd`):** el mundo pasa a su negativo, de forma suave, con el cielo lleno de puntos blancos que titilan. Las barreras son estrellas: las que vienen se ven apagadas; al romper cada una se enciende con una nota clara (`Music.star_note`) y un destello que se abre en rayos y se asienta, y queda encendida. La noche empieza al salir de la zambullida de la barrera 30 y se funde con la oscuridad en la 40.
   - **Pausas para contar una historia:** el narrador frena y ofrece contar un recuerdo real de Pablo ("contame" / "seguir"). Mientras se cuenta, la escena se dibuja en tinta. La primera va entre las zonas 2 y 3 (`scripts/ui/story.gd`).
 - **El árbol es parte del dibujo:** brota de la línea en ramas, no se abre en un menú (§5).
+- **Tocar con la música (2/11/2026).** El toque sigue siendo el gesto, pero cambia lo que cuesta. La beta mostró que se toca mucho: los que llegan lejos hacen 3,5–5 toques por segundo y unos 2.000 en la demo, y un jugador en Reddit terminó con el brazo cansado. La intriga sostiene 10 minutos, pero no 2 horas: cada toque tiene que significar algo.
+  - **A tiempo:** un toque que cae en el tiempo de la música vale ×2, y cada tiempo seguido de la racha suma ×0,375, hasta ×5. Vale más en todo lo que da un toque: daño, luz, probabilidad de destello y de eco, y combo (`GameState.BEAT_*`). La racha admite silencios de hasta 2 tiempos, así que tocar a medio tiempo también sirve. Un toque fuera de tiempo, o un segundo toque en el mismo tiempo, corta la racha. Sin penalidad: ese toque vale lo normal.
+  - Cuenta el tiempo como lo escucha el jugador: se descuenta la latencia de salida de audio (`Music.beat_at_tap`). La ventana es generosa, de ±20 % del tiempo, porque se trata de sentir la música y no de precisión.
+  - Se oye y se ve: la nota del acento cae sobre el tiempo y sube un grado del acorde por cada tiempo de la racha, así que la racha toca una melodía (`Music.play_accent`). Desde el cuarto tiempo se suma el cristal. La punta muestra un aro tenue que se cierra en cada tiempo y un destello dorado en cada acento (`tip.gd`).
+  - **Mantener presionado** (botón, dedo o espacio): después de 0,4 s toca solo dos veces por tiempo, ×1,6 cada una (`Main.HOLD_DELAY`, `GameState.HOLD_WORTH`). El brazo descansa y se avanza un poco más lento que tocando.
+  - Pistas: "toca con la música" desde la barrera 4 si todavía no hubo una racha de 3; "mantén presionado para seguir" desde la 6.
+  - Medido con `tools/full_run_test.tscn -- <estilo>`, tiempo hasta la barrera 40:
+
+    | Estilo | Tiempo | Toques |
+    |---|---|---|
+    | A lo bruto (6 por segundo) | 6,8 min | unos 2.100 |
+    | Jugador mediano (3,5 por segundo) | 10,3 min | unos 2.000 |
+    | Un toque en cada tiempo | 8,2 min | unos 500 |
+    | Solo manteniendo | 12,8 min | — |
+
+    Tocar con la música le gana al jugador mediano con la cuarta parte de los toques.
+  - Telemetría: cada barrera manda `beat`, `hold` y `run` (racha más larga), y `tools/beta_report.py` los resume.
+  - **Alternativa para más adelante:** que tocar avance siempre fácil, nota a nota, formando la melodía, y que el árbol se necesite solo en ciertas paredes más duras.
 
 | Pilar | Qué significa en la práctica |
 |---|---|
@@ -442,7 +460,7 @@ Visual y audio **escuchan** señales; `GameState` no sabe nada de gráficos.
 - `ChapterData.tres` × 5: nombre, color, zona de inicio, línea de voz.
 
 ### 13.5 Input
-- `_unhandled_input`: `InputEventScreenTouch` (pressed) y `InputEventMouseButton` → `GameState.tap()`. Multitouch: cada dedo cuenta.
+- `_unhandled_input`: `InputEventScreenTouch` (pressed) y `InputEventMouseButton` → `GameState.tap("tap", Music.beat_at_tap())`. Multitouch: cada dedo cuenta. Mientras se mantiene presionado, `Main._process_hold` toca en cada medio tiempo (§1, "Tocar con la música").
 - Activar `input_devices/pointing/emulate_mouse_from_touch = false` para no duplicar.
 
 ---
