@@ -309,7 +309,8 @@ func _regen_special(delta: float) -> void:
 func _enter_stage() -> void:
 	star = {}
 	branches = []
-	if STAR_BARRIERS.has(stage) and not finished:
+	# (no star on the spiral: the line itself is the figure there)
+	if STAR_BARRIERS.has(stage) and not finished and not PathData.in_spiral(stage):
 		var spec: Array = STAR_BARRIERS[stage]
 		var lights: Array[Dictionary] = []
 		for i in int(spec[0]):

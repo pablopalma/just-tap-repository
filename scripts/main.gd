@@ -409,6 +409,7 @@ func _process(delta: float) -> void:
 	if _now:
 		_process_now(delta)
 	path_view.lit = tip.lit
+	tip.scale = Vector2.ONE * path.grow_at(tip.lit)  # grows towards the spiral's centre
 	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
 		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0 and not droste.is_playing()
 	subtitle.high = inline_tree.active and inline_tree.is_narrow()
@@ -447,6 +448,11 @@ func _process(delta: float) -> void:
 				camera.k = 1.4
 				camera.target_pos = Vector2(tip.position.x * 0.6, tip.position.y - 50.0)
 				camera.target_zoom = _base_zoom() * 1.18
+			elif path.on_spiral(tip.lit):
+				# On the spiral: right with the tip as it winds round, and a little back so the
+				# spiral shows, while the tip grows towards its centre.
+				camera.target_pos = tip.position
+				camera.target_zoom = _base_zoom() * 0.7
 			else:
 				camera.target_pos = Vector2(tip.position.x * 0.5, tip.position.y - 70.0 + inline_tree.lift())
 				camera.target_zoom = _base_zoom()
@@ -521,7 +527,8 @@ func _base_zoom() -> float:
 ## climb: inside the last zone, the next one runs its own way, like thoughts do. 0 is up, -PI/2 to
 ## the right, PI/2 to the left, PI down. The dark (zone 5) and the last zone climb again, so the
 ## endings look at the city upright.
-const ZONE_ANGLE := {1: 0.0, 2: -PI / 2.0, 3: -PI / 4.0, 4: PI / 2.0, 5: 0.0, 6: PI, 7: PI / 4.0,
+## Zone 3 is the spiral (PathData.SPIRAL_ZONE): it turns every way on its own, so it is seen upright.
+const ZONE_ANGLE := {1: 0.0, 2: -PI / 2.0, 3: 0.0, 4: PI / 2.0, 5: 0.0, 6: PI, 7: PI / 4.0,
 	8: -PI / 2.0, 9: -3.0 * PI / 4.0, 10: 0.0}
 ## A director (the trailer) keeps the view upright, so its shots stay as they were framed.
 var turn_zones := true

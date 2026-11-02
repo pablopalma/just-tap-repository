@@ -44,12 +44,17 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
   |---|---|---|---|
   | 1 | Sube | 6 | Baja |
   | 2 | Derecha | 7 | Diagonal, arriba a la izquierda |
-  | 3 | Diagonal, arriba a la derecha | 8 | Derecha |
+  | 3 | **El espiral** (abajo) | 8 | Derecha |
   | 4 | Izquierda | 9 | Diagonal, abajo |
   | 5 | La oscuridad: sube | 10 | Sube, para el final |
 
   Se gira toda la vista, y el paisaje, las capas del fondo y la ola de color giran con ella (`View.angle`); los textos del mundo se enderezan. A la oscuridad no se entra por la zambullida: el mundo gira despacio mientras cae. El tráiler mantiene la vista derecha (`Main.turn_zones`).
-- **Ideas pendientes (Pablo hará un documento por nivel con lo que pasa en cada uno):** caminos que no sean rectos, por ejemplo un espiral en el que la punta crece y crece mientras lo recorre y después vuelve a su tamaño; jugar con la escala y la forma de la línea en cada zona.
+- **El espiral (zona 3, `PathData.SPIRAL_ZONE`).** La línea de la zona es un doble espiral: entra enroscándose hasta el centro y sale por el brazo intercalado, sin cruzarse, y termina donde habría terminado la zona, así que el resto del mundo no se mueve.
+  - La punta crece a medida que se acerca al centro, hasta 4 veces su tamaño, y vuelve a su tamaño al salir (`PathData.grow_at`).
+  - La cámara la sigue de lleno y se aleja un poco para que se vea la forma.
+  - Las barreras se reparten a lo largo del espiral y quedan atravesadas sobre la curva (`PathData.gate_dir`).
+  - En esta zona no hay estrella: la figura es la línea misma.
+- **Pendiente (Pablo hará un documento por nivel con lo que pasa en cada uno):** más formas de camino y más juego con la escala, la forma y la dirección de la línea en cada zona.
 - **El árbol es parte del dibujo:** brota de la línea en ramas, no se abre en un menú (§5).
 
 | Pilar | Qué significa en la práctica |

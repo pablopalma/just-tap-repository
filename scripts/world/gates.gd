@@ -16,6 +16,8 @@ var _t := 0.0
 
 
 var _wobble := 0.0
+var _c := Vector2.ZERO   # the barrier being drawn
+var _rot := 0.0          # and how far it is turned to lie across the line
 
 
 func reset() -> void:
@@ -39,6 +41,9 @@ func _draw() -> void:
 	var s := GameState.stage
 	for n in range(maxi(1, s - BEHIND), mini(PathData.FINAL, s + AHEAD) + 1):
 		var p := path.gate_pos(n)
+		# Across the line, whichever way it runs there (the spiral turns it every way).
+		_c = p
+		_rot = path.gate_dir(n).angle() + PI * 0.5
 		if n < s or GameState.finished:
 			_draw_broken(p, n)
 		elif n == s:
@@ -82,10 +87,12 @@ func _draw_broken(p: Vector2, n: int) -> void:
 	draw_arc(p, 4.0, 0.0, TAU, 18, col, 1.2, true)
 
 
-## Bar with rounded ends.
+## Bar with rounded ends, turned across the line around the barrier being drawn.
 func _bar(a: Vector2, b: Vector2, col: Color) -> void:
 	if a.distance_to(b) < 0.5:
 		return
+	a = _c + (a - _c).rotated(_rot)
+	b = _c + (b - _c).rotated(_rot)
 	draw_line(a, b, col, WIDTH, true)
 	draw_circle(a, WIDTH * 0.5, col)
 	draw_circle(b, WIDTH * 0.5, col)
