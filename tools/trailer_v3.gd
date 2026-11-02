@@ -20,6 +20,14 @@ const PICKS := ["fuerza", "fuerza", "fuerza", "ganancia", "pulso", "fuerza", "fu
 var _words_view: Node2D
 var _story_node: Control
 var _dive_to := 0
+## "-- --novoice": the same cut without the narrator (and its subtitles), except in the story, for
+## montages over the title theme.
+var no_voice := "--novoice" in OS.get_cmdline_user_args()
+
+
+func _voice(id: String) -> void:
+	if not no_voice:
+		super._voice(id)
 
 
 func _ready() -> void:
@@ -175,7 +183,8 @@ func _words(_arg) -> void:
 
 ## The last stroke ends: the voice says it, and the music opens into its major chord.
 func _on_written() -> void:
-	Narrator.say_now("00")
+	if not no_voice:
+		Narrator.say_now("00")
 	Music.layers = 5
 	Music.resolve_chord()
 
