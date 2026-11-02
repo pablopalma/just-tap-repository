@@ -27,6 +27,9 @@ var spark
 var camera
 var hud
 var tree_panel
+## Prototype: the tree beside the line instead of the panel (BuildFlags.TREE_INLINE, F1 switches it).
+var inline_tree
+var tree_inline := BuildFlags.TREE_INLINE
 var zone_title: Screens.ZoneTitle
 var end_screen: Screens.EndScreen
 var intro: Screens.Intro
@@ -166,12 +169,18 @@ func _build() -> void:
 	crumble = _node("Crumble", "res://scripts/world/crumble.gd")
 	crumble.path = path
 	crumble.quaked.connect(_on_quake)
+	inline_tree = _node("InlineTree", "res://scripts/world/inline_tree.gd")
+	inline_tree.tip = tip
+	inline_tree.path = path
+	inline_tree.fx = fx
+	inline_tree.font = font
 
 	camera = Camera2D.new()
 	camera.set_script(load("res://scripts/world/camera.gd"))
 	add_child(camera)
 	camera.make_current()
 	spark.camera = camera
+	inline_tree.camera = camera
 
 	var ui_layer := CanvasLayer.new()
 	ui_layer.layer = 10
@@ -208,6 +217,7 @@ func _build() -> void:
 	ui.add_child(tree_panel)
 	hud.tree_pressed.connect(tree_panel.open_panel)
 	tree_panel.visibility_changed.connect(func() -> void: Telemetry.tree_visible(tree_panel.visible))
+	_set_tree_inline(tree_inline)
 	if OS.is_debug_build():
 		dev_menu = DevMenu.new()
 		dev_menu.action.connect(_on_dev)
@@ -245,6 +255,8 @@ func _unhandled_input(e: InputEvent) -> void:
 	if not pressed:
 		return
 	get_viewport().set_input_as_handled()
+	if not e is InputEventKey and inline_tree.try_tap(e.get("position")):
+		return  # a node of the tree: bought, never a hit
 	if _cine or _now:
 		return  # in a cinematic the tip plays on its own
 	if mode == Mode.INTRO:
@@ -389,6 +401,9 @@ func _process(delta: float) -> void:
 	if _now:
 		_process_now(delta)
 	path_view.lit = tip.lit
+	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
+		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0
+	subtitle.high = inline_tree.active and inline_tree.is_narrow()
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
 	match mode:
@@ -419,7 +434,7 @@ func _process(delta: float) -> void:
 				camera.target_pos = Vector2(tip.position.x * 0.6, tip.position.y - 50.0)
 				camera.target_zoom = _base_zoom() * 1.18
 			else:
-				camera.target_pos = Vector2(tip.position.x * 0.5, tip.position.y - 70.0)
+				camera.target_pos = Vector2(tip.position.x * 0.5, tip.position.y - 70.0 + inline_tree.lift())
 				camera.target_zoom = _base_zoom()
 		Mode.EVENT:
 			camera.k = 1.1
@@ -679,6 +694,16 @@ func _on_dev(id: String, arg: int) -> void:
 			colour_wave.reveal(camera.position, Palette.chapter_color(randi_range(1, 4)))
 		"lang":
 			SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es")
+		"tree_inline":
+			_set_tree_inline(not tree_inline)
+
+
+## With the tree beside the line, the HUD's tree button and the panel step aside.
+func _set_tree_inline(on: bool) -> void:
+	tree_inline = on
+	hud._tree.visible = not on
+	if on and tree_panel.visible:
+		tree_panel.close_panel()
 
 
 func _dev_jump(n: int) -> void:

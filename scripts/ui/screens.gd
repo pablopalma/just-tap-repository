@@ -18,6 +18,7 @@ class Intro extends Control:
 		_demo_labels[2].text = Loc.t("new_game")
 
 	const CONFIRM_TIME := 3.0
+	const MENU_WHITE := Color(0.985, 0.975, 0.955)
 
 	var _returning := false
 	var _title: Label
@@ -35,6 +36,12 @@ class Intro extends Control:
 		_returning = returning
 		set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 		mouse_filter = MOUSE_FILTER_IGNORE
+		# The menu is a blank white page; starting fades it away into the game (dismiss).
+		var page := ColorRect.new()
+		page.color = MENU_WHITE
+		page.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+		page.mouse_filter = MOUSE_FILTER_IGNORE
+		add_child(page)
 		var box := VBoxContainer.new()
 		box.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 		box.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -244,10 +251,18 @@ class Subtitle extends Control:
 			_label.add_theme_color_override("font_outline_color", Color(0.16, 0.15, 0.14, 0.0) if v else Color(Palette.PAPER, 0.85))
 			_place()
 
+	## Up near the top instead: on a narrow screen the tree lies under the tip, where the line would go.
+	var high := false:
+		set(v):
+			if v != high:
+				high = v
+				_place()
+
 	func _place() -> void:
 		var w := minf(size.x - 80.0, 820.0)
 		_label.size = Vector2(w, 80)
-		_label.position = Vector2((size.x - w) * 0.5, size.y * (0.905 if cinema else 0.72))
+		var y := 0.905 if cinema else (0.15 if high else 0.72)
+		_label.position = Vector2((size.x - w) * 0.5, size.y * y)
 
 	func show_line(text: String, duration: float) -> void:
 		_place()

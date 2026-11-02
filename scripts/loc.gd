@@ -10,6 +10,7 @@ const S := {
 	"voice": {"es": "voz", "en": "voice"},
 	"hint_tap": {"es": "tap", "en": "tap"},
 	"hint_tree": {"es": "mejorá el árbol", "en": "grow the tree"},
+	"hint_tree_inline": {"es": "tocá el árbol", "en": "tap the tree"},
 	"zone_label": {"es": "zona %s · %s", "en": "zone %s · %s"},
 	"zone_done": {"es": "zona %s completa", "en": "zone %s complete"},
 	"colour_back": {"es": "el color vuelve", "en": "the colour returns"},

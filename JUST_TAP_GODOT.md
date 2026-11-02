@@ -131,6 +131,14 @@ if randf() < 0.03 * lv("destello"): d *= 4       # crítico
 
 Forma de árbol que crece hacia arriba (como la línea). Posiciones en % del panel.
 
+**Desde el 2/11/2026 el árbol no es un panel: son ramas que brotan de la misma línea** (`scripts/world/inline_tree.gd`, `BuildFlags.TREE_INLINE`; F1 vuelve al panel para comparar). Abrir un menú para mejorar cortaba el ritmo; ahora se compra tocando los nodos mientras se juega, sin pausar.
+- Cada mejora es un nodo en la punta de su rama. La rama nace de la línea, o de la rama de la mejora que necesita, y brota dibujándose con una nota cuando la mejora se abre. Las que todavía no se abren se ven como un boceto punteado.
+- Las raíces salen del punto real de la línea a su altura (`PathData.pos_at`), así que siguen sus curvas y quiebres. Las ramas son cortas, para no tapar el fondo.
+- Cada nodo cuelga de un resorte: al subir la punta las ramas se quedan un poco atrás, se estiran y vuelven. Además se mecen con el viento, más en las puntas y más cuanto más rápido sube la línea.
+- Un toque sobre un nodo compra y nunca cuenta como golpe a la barrera. El margen es chico, para no comprar sin querer.
+- Dónde va cada rama está en `LAYOUT` dentro de `inline_tree.gd`. Las posiciones en % de la tabla de abajo quedan para el panel.
+- En celular el subtítulo sube cerca del borde superior, para no taparse con las ramas.
+
 | id | Nombre | Descripción | Requiere | base | growth | máx | Efecto (nivel l) | pos (x,y) |
 |---|---|---|---|---|---|---|---|---|
 | fuerza | Fuerza | Cuánto empuja cada tap | — | 10 | 1.33 | 400 | `(1+l)·1.075^l` daño | 50, 88 |

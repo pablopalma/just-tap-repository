@@ -1,24 +1,16 @@
 extends Node2D
-## Trailer v2's own scenes (tools/trailer_v2.gd), drawn over the game.
-## · play_tunnel(): the opening. An astral journey through a wormhole: a dark tube that bends and
-##   twists away, rushing past ever faster, the screen trembling, a rushing hum rising. It ends in a
-##   flash of light that gives way to the paper.
-## · play_words(): the close. On white, close up, the tip draws a line, a note for every half beat,
-##   louder and higher as it goes… and when it is done the camera pulls back: it has written
-##   "just tap". `written` fires when the last stroke ends (the voice comes in there).
-##   Then the camera falls back into the dot, and the dot turns out to be the tap on the raised
-##   finger of the girl on the cover: it pulls back over the whole illustration, the title on the left.
-##   `revealing` fires as the illustration appears (the title theme comes in there).
-## Lives in a CanvasLayer under the subtitles.
+## Trailer v2's close (tools/trailer_v2.gd), drawn over the game. play() fades it in on white:
+## close up, the tip draws a line, a note for every half beat, louder and higher as it goes… and when
+## it is done the camera pulls back: it has written "just tap". `written` fires when the last stroke
+## ends (the voice comes in there). Then the camera falls back into the dot, and the dot turns out to
+## be the tap on the raised finger of the girl on the cover: it pulls back over the whole
+## illustration, the title on the left. `revealing` fires as the illustration appears (the title
+## theme comes in there). Lives in a CanvasLayer under the subtitles.
 
 signal written
 signal revealing
 
-enum Show { NONE, TUNNEL, WORDS }
-
-const TUNNEL := 4.6         # seconds of the tunnel
-const FLASH := 0.5          # the light fills the screen, then gives way to the paper
-const WRITE_FROM := 0.5     # the words: seconds after play_words()
+const WRITE_FROM := 0.5     # seconds after play()
 const WRITE_TIME := 6.0
 const ZOOM_TIME := 3.2      # the pull back, once the words are written
 const WHITE := Color(0.985, 0.975, 0.955)
@@ -30,22 +22,13 @@ const REVEAL_TIME := 4.0
 const CARD_AT := 15.0       # the title on the left
 const ART_PATH := "res://Builds/capsule/art_land.png"
 const FINGER := Vector2(0.5452, 0.6731)   # her fingertip in art_land (key_art.py: person, person_s, tip)
-const RINGS := 44
-const FAR := 9.0
-const SIDES := 14           # lines along the tube
-const STREAKS := 70
-const RATE := 44100
 
-var _show := Show.NONE
+var _playing := false
 var _t := 0.0
-var _dist := 0.0            # how far down the wormhole
-var _rng := RandomNumberGenerator.new()
-var _streaks: Array = []    # {a, r, len, speed}
 var _strokes: Array[PackedVector2Array] = []   # the words, in drawing order (word units, y down)
 var _lens := PackedFloat32Array()
 var _ink_total := 0.0
 var _word_rect := Rect2()
-var _player: AudioStreamPlayer
 var _beat := 0.0
 var _note := 0
 var _done := false
@@ -54,34 +37,18 @@ var _art: Texture2D
 
 
 func _ready() -> void:
-	_rng.seed = 5
-	for i in STREAKS:
-		_streaks.append({"a": _rng.randf() * TAU, "r": _rng.randf(), "len": _rng.randf_range(0.04, 0.16),
-			"speed": _rng.randf_range(0.6, 1.4)})
 	_build_words()
 	# Builds/ is not imported (.gdignore): read the picture straight from the file.
 	var img := Image.load_from_file(ProjectSettings.globalize_path(ART_PATH))
 	if img != null and not img.is_empty():
 		_art = ImageTexture.create_from_image(img)
 	else:
-		push_warning("astral_intro: no key art at %s (python tools/key_art.py)" % ART_PATH)
-	_player = AudioStreamPlayer.new()
-	_player.stream = tunnel_sound(TUNNEL + 0.6)
-	_player.volume_db = -4.0
-	add_child(_player)
+		push_warning("trailer_words: no key art at %s (python tools/key_art.py)" % ART_PATH)
 	visible = false
 
 
-func play_tunnel() -> void:
-	_show = Show.TUNNEL
-	_t = 0.0
-	_dist = 0.0
-	visible = true
-	_player.play()
-
-
-func play_words() -> void:
-	_show = Show.WORDS
+func play() -> void:
+	_playing = true
 	_t = 0.0
 	_note = 0
 	_done = false
@@ -91,111 +58,28 @@ func play_words() -> void:
 
 
 func _process(delta: float) -> void:
-	if _show == Show.NONE:
+	if not _playing:
 		return
 	_t += delta
-	if _show == Show.TUNNEL:
-		var k := clampf(_t / TUNNEL, 0.0, 1.0)
-		_dist += delta * lerpf(1.2, 11.0, k * k)
-		for s in _streaks:
-			s.r += s.speed * delta * (0.4 + 3.5 * k * k)
-			if s.r > 1.2:
-				s.r = _rng.randf_range(0.0, 0.15)
-				s.a = _rng.randf() * TAU
-		if _t > TUNNEL + FLASH:
-			_show = Show.NONE
-			visible = false
-	else:
-		# While it writes: a note on every half beat, each a little higher and louder.
-		var w := (_t - WRITE_FROM) / WRITE_TIME
-		var phase := Music.beat_phase()
-		if w > 0.0 and w < 1.0 and fmod(phase * 2.0, 1.0) < fmod(_beat * 2.0, 1.0):
-			Music.rising_note(_note, lerpf(0.022, 0.06, w))
-			_note += 1
-		_beat = phase
-		if w >= 1.0 and not _done:
-			_done = true
-			written.emit()
-		if _t >= REVEAL_AT and not _revealed:
-			_revealed = true
-			revealing.emit()
+	# While it writes: a note on every half beat, each a little higher and louder.
+	var w := (_t - WRITE_FROM) / WRITE_TIME
+	var phase := Music.beat_phase()
+	if w > 0.0 and w < 1.0 and fmod(phase * 2.0, 1.0) < fmod(_beat * 2.0, 1.0):
+		Music.rising_note(_note, lerpf(0.022, 0.06, w))
+		_note += 1
+	_beat = phase
+	if w >= 1.0 and not _done:
+		_done = true
+		written.emit()
+	if _t >= REVEAL_AT and not _revealed:
+		_revealed = true
+		revealing.emit()
 	queue_redraw()
 
 
 func _draw() -> void:
-	var vs := get_viewport_rect().size
-	if _show == Show.TUNNEL:
-		_draw_tunnel(vs)
-	elif _show == Show.WORDS:
-		_draw_words(vs)
-
-
-# --- The wormhole -----------------------------------------------------------------------------------
-
-## Where the tube's centre is at depth d (in tube radii): it winds slowly, so the far end wanders.
-func _bend(d: float) -> Vector2:
-	return Vector2(sin(d * 0.37) * 1.1 + sin(d * 0.16 + 1.0) * 0.8, cos(d * 0.29) * 0.8 + sin(d * 0.11) * 0.5)
-
-
-func _draw_tunnel(vs: Vector2) -> void:
-	var k := clampf(_t / TUNNEL, 0.0, 1.0)
-	# The tremble grows with the speed.
-	var shake := Vector2(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1)) * (1.5 + 16.0 * k * k)
-	var c := vs * 0.5 + shake
-	var focal := vs.y * 0.42
-	draw_rect(Rect2(Vector2.ZERO, vs), Color(0.03, 0.028, 0.05))
-	var here := _bend(_dist)
-	var step := FAR / RINGS
-	var first := ceilf(_dist / step) * step
-	# Every ring of the tube, far to near: [screen centre, screen radius, depth along the tube, z].
-	var rings: Array = []
-	for i in range(RINGS - 1, -1, -1):
-		var d := first + i * step
-		var z := d - _dist
-		if z < 0.08:
-			continue
-		var s := focal / z
-		rings.append([c + (_bend(d) - here) * s, s, d, z])
-	# the light at the far end
-	var end_c: Vector2 = rings[0][0] if not rings.is_empty() else c
-	for i in 9:
-		var f := 1.0 - i / 9.0
-		draw_circle(end_c, vs.y * (0.02 + 0.32 * f) * (0.5 + 0.9 * k), Color(0.95, 0.9, 1.0, 0.04 * (0.4 + k)))
-	# The walls: rings that breathe and twist, and lines running along the tube.
-	var walls: Array = []   # per ring, its points
-	for r in rings:
-		var pts := PackedVector2Array()
-		var d: float = r[2]
-		var twist := d * 0.45 + _t * 0.6
-		for j in SIDES * 4 + 1:
-			var a := TAU * j / (SIDES * 4) + twist
-			var wob := 1.0 + 0.07 * sin(a * 5.0 + d * 2.3 + _t * 2.0)
-			pts.append(r[0] + Vector2.from_angle(a) * r[1] * wob)
-		walls.append(pts)
-		var z: float = r[3]
-		var a_ring := clampf((FAR - z) / 3.0, 0.0, 1.0) * clampf(z / 0.6, 0.0, 1.0)
-		var near := clampf(1.0 - z / FAR, 0.0, 1.0)
-		var col := Color(0.42, 0.36, 0.85).lerp(Color(0.75, 0.95, 1.0), near)
-		draw_polyline(pts, Color(col, 0.5 * a_ring), clampf(0.8 + 2.0 * near, 0.8, 3.0), true)
-	for j in SIDES:
-		var line := PackedVector2Array()
-		for w: PackedVector2Array in walls:
-			line.append(w[j * 4])
-		if line.size() >= 2:
-			draw_polyline(line, Color(0.7, 0.75, 1.0, 0.16 + 0.1 * k), 1.2, true)
-	# streaks of speed
-	var reach := vs.length() * 0.6
-	for st in _streaks:
-		var r0: float = st.r * reach
-		var r1: float = r0 + st.len * reach * (0.3 + 2.0 * k)
-		var dir := Vector2.from_angle(st.a)
-		draw_line(end_c + dir * r0, end_c + dir * r1, Color(1.0, 0.97, 0.95, 0.06 + 0.3 * k * st.r), 1.5, true)
-	# the flash: light fills everything, then the paper shows through
-	if _t > TUNNEL - 0.5:
-		var f := clampf((_t - (TUNNEL - 0.5)) / 0.5, 0.0, 1.0)
-		var paper := clampf((_t - TUNNEL) / FLASH, 0.0, 1.0)
-		draw_rect(Rect2(Vector2.ZERO, vs), Color(WHITE.lerp(Palette.PAPER, paper), f * f))
-
+	if _playing:
+		_draw_words(get_viewport_rect().size)
 
 # --- The words --------------------------------------------------------------------------------------
 
@@ -381,69 +265,3 @@ func _smooth(pts: Array, x: float) -> PackedVector2Array:
 				+ (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3))
 	out.append(v[v.size() - 1])
 	return out
-
-
-# --- The sound --------------------------------------------------------------------------------------
-
-## Going very fast through the wormhole: rushing air through a resonant filter that sweeps up
-## (fiii…), fluttering faster and faster (ff-ff-ff), over a low hum that rises an octave; at the end
-## it all drops away in a long falling whoosh (…fuuu) into the light.
-static func tunnel_sound(length: float) -> AudioStreamWAV:
-	var n := int(length * RATE)
-	var out := PackedFloat32Array()
-	out.resize(n)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 71
-	var low := 0.0
-	var band := 0.0
-	var low2 := 0.0
-	var band2 := 0.0
-	var ph1 := 0.0
-	var ph2 := 0.0
-	var ph3 := 0.0
-	var flut := 0.0
-	var hum_lp := 0.0
-	var end := TUNNEL / length   # where the fall begins, 0..1
-	for i in n:
-		var t := float(i) / n
-		var rise := clampf(t / end, 0.0, 1.0)
-		var fall := clampf((t - end) / (1.0 - end), 0.0, 1.0)
-		var white := rng.randf_range(-1.0, 1.0)
-		# the air: a resonant band sweeping up, then falling fast at the end
-		var fc := lerpf(350.0, 3800.0, pow(rise, 1.6)) * lerpf(1.0, 0.18, pow(fall, 0.6))
-		var f := 2.0 * sin(PI * fc / RATE)
-		var hp := white - low - 0.35 * band
-		band += f * hp
-		low += f * band
-		# a second, lower band for body
-		var f2 := 2.0 * sin(PI * fc * 0.37 / RATE)
-		var hp2 := white - low2 - 0.6 * band2
-		band2 += f2 * hp2
-		low2 += f2 * band2
-		var air := band * 0.55 + band2 * 0.45
-		# flutter: the air beats faster and faster
-		var rate := lerpf(5.0, 28.0, rise * rise) * lerpf(1.0, 0.4, fall)
-		flut += TAU * rate / RATE
-		var beat := 0.65 + 0.35 * sin(flut)
-		# the hum: two detuned saws and their octave, rising, under a soft low-pass
-		var hz := 52.0 * pow(2.0, rise * 1.0) * lerpf(1.0, 0.7, fall)
-		ph1 = fmod(ph1 + hz / RATE, 1.0)
-		ph2 = fmod(ph2 + hz * 1.012 / RATE, 1.0)
-		ph3 = fmod(ph3 + hz * 2.0 / RATE, 1.0)
-		var saw := (ph1 * 2.0 - 1.0) + (ph2 * 2.0 - 1.0) + 0.5 * (ph3 * 2.0 - 1.0)
-		hum_lp += (saw - hum_lp) * 0.04
-		var env := smoothstep(0.0, 0.12, t) * (0.35 + 0.65 * rise) * (1.0 - smoothstep(0.55, 1.0, fall))
-		out[i] = (air * beat * 1.4 + hum_lp * 0.22) * env
-	var peak := 0.0001
-	for s in out:
-		peak = maxf(peak, absf(s))
-	var data := PackedByteArray()
-	data.resize(n * 2)
-	for i in n:
-		data.encode_s16(i * 2, int(clampf(out[i] / peak * 0.9, -1.0, 1.0) * 32767.0))
-	var w := AudioStreamWAV.new()
-	w.format = AudioStreamWAV.FORMAT_16_BITS
-	w.mix_rate = RATE
-	w.stereo = false
-	w.data = data
-	return w

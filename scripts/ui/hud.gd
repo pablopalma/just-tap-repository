@@ -110,7 +110,8 @@ func _process(_delta: float) -> void:
 		if _total_taps < 3 and g.stage == 1:
 			hint = Loc.t("hint_tap")
 		elif g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
-			hint = Loc.t("hint_tree")
+			# beside the line there is nothing to open: the nodes are right there
+			hint = Loc.t("hint_tree" if _tree.visible else "hint_tree_inline")
 	_put_text(_hint, hint)
 
 

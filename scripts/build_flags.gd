@@ -12,6 +12,10 @@ const DARK_FROM := 41
 ## moment (Main's "now" cinematic).
 const NOW_BARRIERS := 3
 
+## The upgrade tree is drawn beside the line and bought by tapping it, without pausing
+## (scripts/world/inline_tree.gd); false brings back the panel. The dev menu (F1) switches it.
+const TREE_INLINE := true
+
 ## Shown in the play data so balance can be compared between builds.
 const VERSION := "0.10.0-beta"
 

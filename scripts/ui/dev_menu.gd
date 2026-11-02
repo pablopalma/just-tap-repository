@@ -78,6 +78,9 @@ func _init() -> void:
 	_button(box, "Solo la carta", "letter", 0)
 	_button(box, "Pantalla de cierre (renacer)", "end", 0)
 
+	_title(box, "Prototipos")
+	_button(box, "Árbol al costado / en panel", "tree_inline", 0)
+
 	_title(box, "Ayudas")
 	_button(box, "Romper la barrera actual", "break", 0)
 	_button(box, "Daño ×10 (otra vez = ×100…)", "damage", 10)

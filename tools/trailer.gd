@@ -81,8 +81,9 @@ func _plan() -> void:
 	# Act 2 · you learn. The next barrier will not give: small numbers, the line barely moves.
 	_at(4.5, 0.0, "damage", 0.2)
 	_at(4.85, 0.0, "voice", "05")  # "It's heavy, isn't it? Grow a little. Then try again."
-	# "Grow a little": the tree opens bare and the build grows node by node, every one unlocking the next.
-	_at(5.9, 0.0, "taps", 0.0)
+	# "Grow a little": the build grows node by node, every one unlocking the next. With the tree's
+	# branches growing out of the line the game never stops: the tip keeps tapping meanwhile.
+	_at(5.9, 0.0, "taps", 1.5 if BuildFlags.TREE_INLINE else 0.0)
 	_at(5.9, 0.0, "tree_open", {})
 	var picks := ["fuerza", "fuerza", "fuerza", "ganancia", "pulso", "fuerza", "fuerza", "ganancia",
 		"ganancia", "pulso", "pulso", "resonancia", "resonancia", "corrosion", "eco", "destello",
@@ -97,6 +98,7 @@ func _plan() -> void:
 	_at(8.2, 0.0, "voice", "tr_06")  # 2.4 bars long: it has to end before the forks
 	# the line forks into three, braided, each branch with its own barrier (full game, after the demo)
 	_cut(11.1)
+	_at(11.1, 0.0, "tree_view", false)  # from here on, the shots without the branches
 	_at(11.1, 0.0, "hud", false)
 	_at(11.1, 0.0, "numbers", false)
 	_at(11.1, 0.0, "jump", 51)
@@ -224,7 +226,15 @@ func _buy(id: String) -> void:
 func _pick(id: String) -> void:
 	if not GameState.can_buy(id):
 		push_warning("trailer: cannot buy %s" % id)
-	_main.tree_panel._buy(id)
+	if _main.tree_inline:
+		_main.inline_tree._choose(id)  # its node pops on its branch, as a tap on it would
+	else:
+		_main.tree_panel._buy(id)
+
+
+## The tree's branches beside the line, shown or not.
+func _tree_view(on: bool) -> void:
+	_main.tree_inline = on
 
 
 ## The damage numbers over the barriers.
@@ -282,12 +292,14 @@ func _tree_open(up: Dictionary) -> void:
 	GameState.seen = {}
 	# Bare (the trailer buys it node by node), it gets light for the whole build.
 	GameState.light = maxf(GameState.light, 4000.0 if up.is_empty() else 5000.0)
-	_main.tree_panel.open_panel()
+	if not _main.tree_inline:
+		_main.tree_panel.open_panel()
 
 
 ## keep: the levels stay (the pulse goes on tapping by itself).
 func _tree_close(keep: bool) -> void:
-	_main.tree_panel.visible = false
+	if not _main.tree_inline:
+		_main.tree_panel.visible = false
 	if not keep:
 		GameState.up = {}
 
