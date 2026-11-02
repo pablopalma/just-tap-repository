@@ -9,7 +9,9 @@ signal finished(told: bool)
 
 const LINES := ["story1_1", "story1_2", "story1_3"]
 const FIRST_LINE := 2.2     # seconds after "tell me"
-const SUN_AT := 0.45        # the sun comes through when the second line starts (by line, not seconds)
+const SUN_LINE := "story1_2"  # the sun comes through as this line starts
+## The lines it tells (a director, the trailer, can tell just one).
+var lines: Array = LINES.duplicate()
 const PAPER := Color(0.97, 0.955, 0.93)
 
 var _scene: Control
@@ -87,13 +89,13 @@ func _process(delta: float) -> void:
 	if not _telling or _ending:
 		return
 	_t += delta
-	if _line_i < LINES.size() and _t >= _next:
-		Narrator.say_now(LINES[_line_i])
-		if _line_i == 1:
+	if _line_i < lines.size() and _t >= _next:
+		Narrator.say_now(lines[_line_i])
+		if lines[_line_i] == SUN_LINE:
 			_sun_t = _t
-		_next = _t + _length(LINES[_line_i])
+		_next = _t + _length(lines[_line_i])
 		_line_i += 1
-	elif _line_i >= LINES.size() and _t >= _next:
+	elif _line_i >= lines.size() and _t >= _next:
 		_end(true)
 	_scene.queue_redraw()
 

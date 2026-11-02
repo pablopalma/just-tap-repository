@@ -32,6 +32,8 @@ var _story := false
 ## The starry night (scripts/world/night.gd): zone NIGHT_ZONE, just before the dark.
 var night
 const NIGHT_ZONE := 4
+## Beings asleep along the way that wake when their barriers break (scripts/world/creature.gd).
+var creatures: Array = []
 var camera
 var hud
 var tree_panel
@@ -183,6 +185,13 @@ func _build() -> void:
 	night.first = (NIGHT_ZONE - 1) * 10 + 1
 	night.last = NIGHT_ZONE * 10
 	add_child(night)
+	# What you connect gives life: a firefly in the first zone, a deer of stars in the night (the
+	# whale, in the dark, is the third).
+	creatures = [
+		_creature("firefly", [3, 5, 7, 9], Vector2(0.8, 0.3), 0.1),
+		_creature("deer", [31, 33, 35, 37, 39], Vector2(0.24, 0.32), 0.19),
+	]
+	creatures[1].inverted = true  # it lives in the night, under the world's negative
 	crumble = _node("Crumble", "res://scripts/world/crumble.gd")
 	crumble.path = path
 	crumble.quaked.connect(_on_quake)
@@ -328,6 +337,8 @@ func _new_game() -> void:
 	landscape.reset()
 	fx.clear()
 	washes.clear()
+	for c in creatures:
+		c.reset()
 	_start()
 
 
@@ -427,6 +438,7 @@ func _process(delta: float) -> void:
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
 	droste.tip_screen = tip.get_global_transform_with_canvas().origin
+	_tend_creatures()
 	if whale.sleeping:
 		# its threads run down to the dark's barriers, wherever they are on screen
 		var ct := get_viewport().get_canvas_transform()
@@ -616,6 +628,30 @@ func _on_droste_turned() -> void:
 	_night_on(_droste_zone + 1 == NIGHT_ZONE, 0.0)
 
 
+func _creature(kind: String, bars: Array, home: Vector2, size: float) -> Node:
+	var c = load("res://scripts/world/creature.gd").new()
+	c.kind = kind
+	c.path = path
+	c.tip = tip
+	c.barriers.assign(bars)
+	c.home = home
+	c.size = size
+	add_child(c)
+	return c
+
+
+## Each being falls asleep on the screen as the player comes near its barriers.
+func _tend_creatures() -> void:
+	for c in creatures:
+		var first: int = c.barriers[0]
+		var last: int = c.barriers[c.barriers.size() - 1]
+		var near: bool = GameState.stage >= first - 2 and GameState.stage <= last
+		if c.kind == "deer" and not night.is_on():
+			continue  # a constellation: it only shows in the night sky
+		if near and turn_zones and mode == Mode.PLAY and not GameState.finished and c._state == 0:
+			c.sleep(GameState.stage)
+
+
 ## The night: the world in its negative, gently, and the sky full of stars. A director keeps the
 ## classic look (turn_zones).
 func _night_on(on: bool, time: float) -> void:
@@ -663,6 +699,8 @@ func _on_gate_broken(n: int) -> void:
 		whale.light(n - BuildFlags.DARK_FROM)  # what you connect gives life: one of its stars
 	if night.is_on():
 		night.light(n)  # at night the barriers are stars
+	for c in creatures:
+		c.light(n)
 	if BuildFlags.DEMO and n == BuildFlags.DARK_FROM - 1:
 		# The colour of the zone comes back for a moment… then the dark.
 		get_tree().create_timer(EVENT_TIME * 0.7).timeout.connect(_enter_dark.bind(false))
@@ -1110,6 +1148,8 @@ func _on_whale_gone() -> void:
 func _clear_dark() -> void:
 	_end_now()
 	night.reset()
+	for c in creatures:
+		c.reset()
 	_dark = false
 	Music.dark = false
 	chaos.stop()

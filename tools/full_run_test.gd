@@ -53,6 +53,9 @@ func _process(delta: float) -> void:
 	_once("now", _main._now, "cinemática del ahora")
 	_once("wake", _main.whale.active and not _main.whale.sleeping, "la ballena despierta")
 	_once("letter", _main._letter_shown, "la carta")
+	for c in _main.creatures:
+		_once(c.kind + "_sleep", c._state == 1, c.kind + " dormido")
+		_once(c.kind + "_wake", c._state == 2, c.kind + " despierta")
 	if _main._story:
 		_once("story", true, "pausa: historia")
 		for c in _main.subtitle.get_parent().get_children():

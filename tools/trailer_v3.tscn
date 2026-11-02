@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/trailer_v3.gd" id="1"]
+
+[node name="TrailerV3" type="Node"]
+script = ExtResource("1")
