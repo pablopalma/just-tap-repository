@@ -6,6 +6,8 @@ extends "res://tools/trailer.gd"
 ##   note higher, until the zone gives way.
 ## · Everything fades to white; close up, the tip draws a line with a note on every half beat,
 ##   louder and higher… the camera pulls back: it has written "just tap", and the voice says it.
+## · The camera falls into the dot: it is the tap on the raised finger of the girl on the cover. It
+##   pulls back over the whole illustration, under the title theme; the title settles on the left.
 ## Record it with tools/make_trailer_v2.ps1; trailer v1 is untouched.
 
 const INTRO_BARS := 1.6
@@ -13,6 +15,8 @@ const INTRO_BARS := 1.6
 const RUN_CUT := 24.8
 const RUN_FROM := 21  # zone 3, in colour: no star until 27, no zone end on the way
 const RUN_GAPS := [0.5, 0.42, 0.35, 0.3, 0.26, 0.22]
+## Where the title theme comes in at the end (seconds into title_theme.ogg): its warm, full part.
+const THEME_FROM := 84.0
 const WHITE_AFTER := 0.8   # bars from the last break to the fade to white
 
 const Astral := preload("res://tools/astral_intro.gd")
@@ -29,6 +33,7 @@ func _ready() -> void:
 	_astral.set_script(Astral)
 	layer.add_child(_astral)
 	_astral.written.connect(_on_written)
+	_astral.revealing.connect(_on_revealing)
 	# The score waits under the wormhole's own sound.
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(Music.MUSIC_BUS), -40.0)
 	_astral.play_tunnel()
@@ -67,7 +72,7 @@ func _plan() -> void:
 	_at(white + 0.3, 0.05, "fade", [0.0, 0.25])
 	_at(white + 1.0, 0.0, "layers", 3)
 	_at(white + 1.7, 0.0, "layers", 4)
-	length_bars = white + 0.3 + 12.4 / BAR
+	length_bars = white + 0.3 + 20.0 / BAR
 	_shots.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 
 
@@ -110,3 +115,13 @@ func _on_written() -> void:
 	Narrator.say_now("00")
 	Music.layers = 5
 	Music.resolve_chord()
+
+
+## The cover appears: the game's music fades and the title theme comes in, already in its full part.
+func _on_revealing() -> void:
+	var bus := AudioServer.get_bus_index(Music.MUSIC_BUS)
+	create_tween().tween_method(func(v: float) -> void: AudioServer.set_bus_volume_db(bus, v),
+		AudioServer.get_bus_volume_db(bus), -40.0, 2.5)
+	Music.play_theme()
+	if Music._title != null:
+		Music._title.seek(THEME_FROM)
