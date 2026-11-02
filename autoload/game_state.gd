@@ -218,6 +218,10 @@ func fork_count(n: int) -> int:
 func tap(source := "tap") -> void:
 	if not running or finished:
 		return
+	# In a cinematic (or a story) only its own hits count: the pulse and the echoes wait, so its
+	# pace (and the voice over it) stays the same whatever the build.
+	if cinematic and source != "cine" and source != "now":
+		return
 	var d := power()
 	if source == "cine":
 		# The tip taps on its own, on the beat: about CINE_HITS hits per barrier, whatever your build.

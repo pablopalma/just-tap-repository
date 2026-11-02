@@ -29,6 +29,9 @@ var droste
 var _droste_zone := 0
 ## The voice has stopped the game to tell a story (scripts/ui/story.gd).
 var _story := false
+## The starry night (scripts/world/night.gd): zone NIGHT_ZONE, just before the dark.
+var night
+const NIGHT_ZONE := 4
 var camera
 var hud
 var tree_panel
@@ -175,6 +178,11 @@ func _build() -> void:
 	add_child(droste)
 	droste.turned.connect(_on_droste_turned)
 	droste.done.connect(_on_droste_done)
+	night = load("res://scripts/world/night.gd").new()
+	night.path = path
+	night.first = (NIGHT_ZONE - 1) * 10 + 1
+	night.last = NIGHT_ZONE * 10
+	add_child(night)
 	crumble = _node("Crumble", "res://scripts/world/crumble.gd")
 	crumble.path = path
 	crumble.quaked.connect(_on_quake)
@@ -564,6 +572,8 @@ func _face_zone() -> void:
 	if _turn_tween:
 		_turn_tween.kill()
 	camera.angle = _zone_angle(Zones.of(GameState.stage))
+	night.light_up_to(GameState.stage)
+	_night_on(Zones.of(GameState.stage) == NIGHT_ZONE and not BuildFlags.is_dark(GameState.stage), 0.0)
 
 
 ## Between these two zones the voice stops and offers a story (scripts/ui/story.gd), once per run;
@@ -598,10 +608,29 @@ func _begin_droste(z: int) -> void:
 	camera.add_trauma(0.25)
 
 
-## The screen is all dot: turn the view to the next zone's direction, unseen.
+## The screen is all dot: turn the view to the next zone's direction, unseen (and, coming out
+## into the night, the night is already there).
 func _on_droste_turned() -> void:
 	camera.angle = _zone_angle(_droste_zone + 1)
 	camera.snap()
+	_night_on(_droste_zone + 1 == NIGHT_ZONE, 0.0)
+
+
+## The night: the world in its negative, gently, and the sky full of stars. A director keeps the
+## classic look (turn_zones).
+func _night_on(on: bool, time: float) -> void:
+	on = on and turn_zones
+	if on == night.is_on():
+		return
+	night.set_on(on, time)
+	if _dark:
+		return  # the dark keeps its own darkness
+	if time <= 0.0:
+		darkness.amount = 0.12 if on else 0.0
+		darkness.invert = 1.0 if on else 0.0
+	else:
+		darkness.to(0.12 if on else 0.0, time)
+		darkness.invert_to(1.0 if on else 0.0, time)
 
 
 func _on_droste_done() -> void:
@@ -632,6 +661,8 @@ func _on_gate_broken(n: int) -> void:
 	_maybe_cinematic(n + 1)
 	if _dark and BuildFlags.is_dark(n):
 		whale.light(n - BuildFlags.DARK_FROM)  # what you connect gives life: one of its stars
+	if night.is_on():
+		night.light(n)  # at night the barriers are stars
 	if BuildFlags.DEMO and n == BuildFlags.DARK_FROM - 1:
 		# The colour of the zone comes back for a moment… then the dark.
 		get_tree().create_timer(EVENT_TIME * 0.7).timeout.connect(_enter_dark.bind(false))
@@ -924,6 +955,7 @@ func _enter_dark(immediate: bool) -> void:
 	crumble.start(level)
 	# The whale sleeps in the sky through the dark; each barrier broken here lights one of its stars.
 	whale.sleep(GameState.stage - BuildFlags.DARK_FROM)
+	night.set_on(false, 0.5 if immediate else 6.0)  # the night deepens into the dark
 	if immediate:
 		landscape.break_to(0.5, 0.5)
 		return
@@ -1077,6 +1109,7 @@ func _on_whale_gone() -> void:
 
 func _clear_dark() -> void:
 	_end_now()
+	night.reset()
 	_dark = false
 	Music.dark = false
 	chaos.stop()

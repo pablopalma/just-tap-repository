@@ -562,6 +562,17 @@ func settle_note(i: int) -> void:
 	_schedule_deg(t, "harp" if i % 2 == 0 else "celesta", i, 12 if i < 6 else 24, 0.035)
 
 
+## The night's barriers are stars (scripts/world/night.gd): each lights with a clear bell, a high
+## chord tone in the celesta over glass, and a harp just after it, climbing star by star.
+func star_note(i: int) -> void:
+	if not playing:
+		return
+	var t := _grid_time(_s16() * 2.0)
+	_schedule_deg(t, "celesta", 4 + i % 6, 24, 0.07)
+	_schedule_deg(t, "glass", 6 + i % 6, 24, 0.045)
+	_schedule_deg(t + _s16() * 2.0, "harp", 2 + i % 6, 12, 0.04)
+
+
 ## One note of a melody that climbs (the trailer's crescendos): the i-th degree of the chord on the
 ## next eighth, piano and glass in turns, as loud as vol. The line folds back down after 14 notes.
 func rising_note(i: int, vol: float) -> void:

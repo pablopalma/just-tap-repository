@@ -57,7 +57,7 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
 - **Pendiente (Pablo hará un documento por nivel con lo que pasa en cada uno):** más formas de camino y más juego con la escala, la forma y la dirección de la línea en cada zona.
 - **Ideas de niveles, por acomodar:**
   - **Lo que conectás da vida:** en cada zona, una criatura dormida (un boceto con estrellas apagadas) que despierta cuando sus barreras se rompen. Ya está hecha la ballena en la oscuridad (`CelestialWhale.sleep/light/wake`). Otras posibles: una luciérnaga, el ave, un caracol o nautilus en el espiral, un ciervo.
-  - **Noche estrellada:** un nivel de noche, con todo el fondo oscuro lleno de puntos blancos. Las barreras son estrellas: al romper cada una se enciende con una nota bien marcada y un destello lindo y fluido.
+  - **Noche estrellada (hecha: zona 4, `Main.NIGHT_ZONE`, `scripts/world/night.gd`):** el mundo pasa a su negativo, de forma suave, con el cielo lleno de puntos blancos que titilan. Las barreras son estrellas: las que vienen se ven apagadas; al romper cada una se enciende con una nota clara (`Music.star_note`) y un destello que se abre en rayos y se asienta, y queda encendida. La noche empieza al salir de la zambullida de la barrera 30 y se funde con la oscuridad en la 40.
   - **Pausas para contar una historia:** el narrador frena y ofrece contar un recuerdo real de Pablo ("contame" / "seguir"). Mientras se cuenta, la escena se dibuja en tinta. La primera va entre las zonas 2 y 3 (`scripts/ui/story.gd`).
 - **El árbol es parte del dibujo:** brota de la línea en ramas, no se abre en un menú (§5).
 

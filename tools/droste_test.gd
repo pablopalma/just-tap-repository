@@ -43,5 +43,5 @@ func _process(delta: float) -> void:
 			_acc -= 1.0
 			GameState.tap("tap")
 	if _t > length:
-		print("DROSTE stage=%d angle=%.2f" % [GameState.stage, _main.camera.angle])
+		print("DROSTE stage=%d angle=%.2f night=%s lit=%s vis=%s" % [GameState.stage, _main.camera.angle, _main.night._a, _main.night._lit, _main.night.visible])
 		get_tree().quit()
