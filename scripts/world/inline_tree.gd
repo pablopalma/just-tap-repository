@@ -98,7 +98,20 @@ func _process(delta: float) -> void:
 	for id in _nudge.keys():
 		_nudge[id] = maxf(0.0, _nudge[id] - delta * 3.0)
 	_info_t = maxf(0.0, _info_t - delta)
+	_hover()
 	queue_redraw()
+
+
+## On a computer, the mouse over a node shows what it does now and what its next level gives (on a
+## phone, touching it does: _choose).
+func _hover() -> void:
+	var m := get_global_mouse_position()
+	var reach := maxf(_r * 1.1, 20.0 / camera.zoom.x)
+	for id in Upgrades.ORDER:
+		if int(_shown.get(id, 0)) >= 2 and m.distance_to(_point(id)) < reach:
+			_info_id = id
+			_info_t = maxf(_info_t, 0.6)
+			return
 
 
 ## Branches sprout the first time their state goes up, each with a celesta note, one after another;
