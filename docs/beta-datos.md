@@ -19,7 +19,13 @@ Si se cambia el script, hay que publicar una **nueva versión** de la misma impl
 
 ## Qué se registra
 
-Cada fila de la hoja `events` es un evento: `received, uid, session, version, platform, lang, t, event, barrier, data`. `t` son los segundos desde que se abrió el juego en esa sesión; `data` es un JSON corto.
+Cada fila de la hoja `events` es un evento: `received, uid, session, version, platform, lang, t, event, barrier, data, time`.
+- `t`: los segundos desde que se abrió el juego en esa sesión.
+- `data`: un JSON corto.
+- `received`: cuándo llegó la tanda de eventos. El juego manda una tanda cada 30 s, así que varios eventos comparten esa hora.
+- `time` (desde el 2/11/2026): el momento exacto de cada evento, hasta el segundo, según el reloj del jugador. Las builds anteriores no lo mandan, y en ese caso se usa la hora de llegada.
+
+Para ver los segundos: seleccioná la columna y elegí *Formato → Número → Fecha y hora*.
 
 | Evento | Cuándo | `data` |
 |---|---|---|

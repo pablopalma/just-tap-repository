@@ -73,7 +73,10 @@ func set_enabled(on: bool) -> void:
 func event(e: String, d := {}, n := -1) -> void:
 	if not active():
 		return
-	var ev := {"e": e, "t": snappedf(_now(), 0.1), "n": GameState.stage if n < 0 else n, "d": d}
+	# "at": the moment it happened (Unix seconds, the player's clock), so the sheet can show each
+	# event at its own time, not the time its batch arrived.
+	var ev := {"e": e, "t": snappedf(_now(), 0.1), "n": GameState.stage if n < 0 else n, "d": d,
+		"at": int(Time.get_unix_time_from_system())}
 	if OS.has_feature("web"):
 		# The page holds web events and sends them itself (see _install_web_hook).
 		JavaScriptBridge.eval("window.__jtMeta = %s; window.__jtPush(%s);" % [_meta(), JSON.stringify(ev)])

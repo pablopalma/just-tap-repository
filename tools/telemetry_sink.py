@@ -12,7 +12,7 @@ import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-COLUMNS = ["received", "uid", "session", "version", "platform", "lang", "t", "event", "barrier", "data"]
+COLUMNS = ["received", "uid", "session", "version", "platform", "lang", "t", "event", "barrier", "data", "time"]
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8770
 OUT = sys.argv[2] if len(sys.argv) > 2 else "telemetry_test.csv"
 
@@ -37,8 +37,10 @@ class Sink(BaseHTTPRequestHandler):
             if new:
                 w.writerow(COLUMNS)
             for x in b.get("ev", []):
+                at = x.get("at")
+                when = datetime.datetime.fromtimestamp(at).isoformat(timespec="seconds") if at else now
                 w.writerow([now, b.get("uid"), b.get("sid"), b.get("v"), b.get("plat"), b.get("lang"),
-                            x.get("t"), x.get("e"), x.get("n"), json.dumps(x.get("d", {}))])
+                            x.get("t"), x.get("e"), x.get("n"), json.dumps(x.get("d", {})), when])
                 print(f"{b.get('plat')} {x.get('e'):9} n={x.get('n')} {json.dumps(x.get('d', {}))}", flush=True)
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
