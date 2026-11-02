@@ -3,7 +3,7 @@ extends Node
 ## voice asks, answers "tell me"; the memory draws itself, then the dive into zone 3.
 ## Record it: godot --path . --write-movie out.avi --fixed-fps 30 res://tools/story_test.tscn
 
-const LENGTH := 36.0
+const LENGTH := 44.0
 
 var _main: Node
 var _t := 0.0

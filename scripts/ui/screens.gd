@@ -236,20 +236,35 @@ class Subtitle extends Control:
 		mouse_filter = MOUSE_FILTER_IGNORE
 		_label = UIStyle.label("", 26, true, Palette.INK)
 		_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_label.add_theme_constant_override("outline_size", 8)
-		_label.add_theme_color_override("font_outline_color", Color(Palette.PAPER, 0.85))
 		add_child(_label)
 		_label.modulate.a = 0.0
+		_style()
 		resized.connect(_place)
 
 	## In a cinematic the subtitles move down into the bottom bar, in paper colour.
 	var cinema := false:
 		set(v):
 			cinema = v
-			_label.add_theme_color_override("font_color", Palette.PAPER if v else Palette.INK)
-			_label.add_theme_color_override("font_outline_color", Color(0.16, 0.15, 0.14, 0.0) if v else Color(Palette.PAPER, 0.85))
+			_style()
 			_place()
+
+	## Over the world the words sit on a soft band of paper, just as wide as they are, so nothing
+	## drawn behind them (the line, the branches, a figure) gets in the way of reading. In the
+	## cinematic bars they need none: paper on the dark bar.
+	func _style() -> void:
+		var band := StyleBoxFlat.new()
+		band.bg_color = Color(0, 0, 0, 0) if cinema else Color(Palette.PAPER, 0.86)
+		band.set_corner_radius_all(18)
+		band.content_margin_left = PAD.x
+		band.content_margin_right = PAD.x
+		band.content_margin_top = PAD.y
+		band.content_margin_bottom = PAD.y
+		_label.add_theme_stylebox_override("normal", band)
+		_label.add_theme_color_override("font_color", Palette.PAPER if cinema else Palette.INK)
+
+	const PAD := Vector2(22, 7)
 
 	## Up near the top instead: on a narrow screen the tree lies under the tip, where the line would go.
 	var high := false:
@@ -259,14 +274,20 @@ class Subtitle extends Control:
 				_place()
 
 	func _place() -> void:
-		var w := minf(size.x - 80.0, 820.0)
-		_label.size = Vector2(w, 80)
+		var most := minf(size.x - 80.0, 820.0)
+		# as wide as the words (and the band's margins), up to two lines' worth
+		var font := _label.get_theme_font("font")
+		var fs := _label.get_theme_font_size("font_size")
+		var w := most
+		if font and _label.text != "":
+			w = minf(most, font.get_string_size(_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD.x * 2.0 + 4.0)
+		_label.size = Vector2(w, 0)
 		var y := 0.905 if cinema else (0.15 if high else 0.72)
 		_label.position = Vector2((size.x - w) * 0.5, size.y * y)
 
 	func show_line(text: String, duration: float) -> void:
-		_place()
 		_label.text = text
+		_place()
 		if _tween:
 			_tween.kill()
 		_tween = create_tween()
