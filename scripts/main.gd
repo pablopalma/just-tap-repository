@@ -624,6 +624,7 @@ func _offer_story(z: int) -> void:
 	GameState.cinemas[STORY_KEY] = true
 	_story = true
 	GameState.cinematic = true  # the barrier does not heal while we talk
+	Narrator.hold = true  # what the zone's end queued waits for the answer (and the story)
 	create_tween().tween_property(hud, "modulate:a", 0.0, 1.0)
 	var s = load("res://scripts/ui/story.gd").new()
 	s.finished.connect(_on_story_done.bind(z))
@@ -635,6 +636,7 @@ func _offer_story(z: int) -> void:
 func _on_story_done(_told: bool, z: int) -> void:
 	_story = false
 	GameState.cinematic = false
+	Narrator.hold = false
 	create_tween().tween_property(hud, "modulate:a", 1.0, 1.2)
 	_begin_droste(z)
 
@@ -715,7 +717,7 @@ func _on_hit(damage: float, crit: bool, source: String) -> void:
 	if _dark and source == "tap":
 		crumble.tap(GameState.stage)
 	gates.hit(0.25 if source == "auto" else (0.9 if run > 0 else 0.6))
-	var p := path.gate_pos(GameState.stage) + Vector2(randf_range(-55, 55), randf_range(-26, -6))
+	var p := path.gate_pos(GameState.stage) + View.screen(Vector2(randf_range(-55, 55), randf_range(-26, -6)))
 	if crit:
 		fx.float_text(p, Fmt.num(damage), Palette.chapter_color(maxi(1, Palette.chapter_of(GameState.stage))), 24)
 	elif run > 0:
@@ -748,7 +750,7 @@ func _on_gate_broken(n: int) -> void:
 	var col := Palette.paint_col(Zones.of(n), n)
 	washes.aura(p, col)
 	fx.aura(p, col)
-	fx.float_text(p + Vector2(0, -30), "+◆ " + Fmt.num(GameState.reward(n)),
+	fx.float_text(p + View.screen(Vector2(0, -30)), "+◆ " + Fmt.num(GameState.reward(n)),
 		Palette.chapter_color(Palette.chapter_of(n)).darkened(0.2), 20, 1.8)
 	hud.pulse()
 	landscape.build_piece(n)

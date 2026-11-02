@@ -24,7 +24,8 @@ func clear() -> void:
 func float_text(pos: Vector2, text: String, color: Color, size := 15, life := 1.1) -> void:
 	if _floats.size() >= MAX_FLOATS:
 		_floats.pop_front()
-	_floats.append({"pos": pos, "vel": Vector2(randf_range(-12, 12), -48), "text": text,
+	# rises on screen, whichever way the view is turned
+	_floats.append({"pos": pos, "vel": View.screen(Vector2(randf_range(-12, 12), -48)), "text": text,
 		"color": color, "size": size, "t": 0.0, "life": life})
 
 

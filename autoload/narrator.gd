@@ -21,6 +21,8 @@ var _last_tap := 0.0
 var _duck_tween: Tween
 ## Off while a director (the trailer) decides exactly when each line is said.
 var auto := true
+## While a story asks and is told (Main), queued lines wait: only say_now speaks. They play after.
+var hold := false
 ## How far the music ducks under the voice, and which buses duck (the trailer ducks more of them).
 var duck_db := DUCK_DB
 var duck_buses: Array[StringName] = [&"Music"]
@@ -70,7 +72,7 @@ func say(id: String, once := true) -> void:
 func _process(delta: float) -> void:
 	_cooldown = maxf(0.0, _cooldown - delta)
 	_idle_cool = maxf(0.0, _idle_cool - delta)
-	if not _queue.is_empty() and _cooldown <= 0.0 and not _player.playing:
+	if not hold and not _queue.is_empty() and _cooldown <= 0.0 and not _player.playing:
 		_speak(_queue.pop_front())
 	_check_stuck_and_idle()
 

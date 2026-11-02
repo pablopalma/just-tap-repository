@@ -257,7 +257,7 @@ func _choose(id: String) -> void:
 	if GameState.buy(id):
 		_pop[id] = 1.0
 		if fx:
-			fx.float_text(_point(id) + Vector2(0, -_r - 6), "%s %d" % [Loc.upgrade_name(id), GameState.lv(id)],
+			fx.float_text(_point(id) + View.screen(Vector2(0, -_r - 6)), "%s %d" % [Loc.upgrade_name(id), GameState.lv(id)],
 				_col().darkened(0.15), 15)
 	else:
 		_nudge[id] = 1.0
@@ -311,7 +311,7 @@ func _draw() -> void:
 		var pop := sin(float(_pop.get(id, 0.0)) * PI) * 0.22
 		var r := _r * (1.0 + pop)
 		var sweep := TAU * (1.0 - pow(1.0 - k, 3.0))
-		var below := c + Vector2(0, r + name_size + 1)
+		var below := c + View.screen(Vector2(0, r + name_size + 1))
 		if st == 1:
 			# a closed bud
 			draw_arc(c, r * 0.6, -PI * 0.5, -PI * 0.5 + sweep, 24, Color(Palette.INK, 0.35), line_w, true)
@@ -328,10 +328,10 @@ func _draw() -> void:
 		var rim := col.darkened(0.15) if buyable else Color(Palette.INK, 0.85)
 		draw_arc(c, r * (1.0 + (0.05 * beat if buyable else 0.0)), -PI * 0.5, -PI * 0.5 + sweep, 40, rim,
 			line_w * (1.9 + 1.0 * beat if buyable else 1.0), true)
-		_text(c + Vector2(0, r * 0.36), str(GameState.lv(id)), int(r), Color(Palette.PAPER if maxed else Palette.INK, k))
+		_text(c + View.screen(Vector2(0, r * 0.36)), str(GameState.lv(id)), int(r), Color(Palette.PAPER if maxed else Palette.INK, k))
 		_text(below, Loc.upgrade_name(id), name_size, Color(Palette.INK, 0.8 * k))
 		var price := Loc.t("max") if maxed else "◆ " + Fmt.num(GameState.cost(id))
-		_text(below + Vector2(0, price_size + 2), price, price_size,
+		_text(below + View.screen(Vector2(0, price_size + 2)), price, price_size,
 			Color(col.darkened(0.2), k) if buyable else Color(Palette.INK, 0.45 * k))
 
 	# What the last touched node does, for a moment, under it.
@@ -346,7 +346,7 @@ func _draw() -> void:
 			text = "%s · %s" % [Loc.upgrade_name(_info_id), Upgrades.effect_text(_info_id, l)]
 		else:
 			text = "%s  →  %s" % [Upgrades.effect_text(_info_id, l), Upgrades.effect_text(_info_id, l + 1)]
-		var at := _point(_info_id) + Vector2(0, _r + name_size + price_size * 2 + 10)
+		var at := _point(_info_id) + View.screen(Vector2(0, _r + name_size + price_size * 2 + 10))
 		_text(at, text, price_size, Color(Palette.INK, 0.7 * a))
 
 

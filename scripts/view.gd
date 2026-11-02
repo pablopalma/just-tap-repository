@@ -16,6 +16,12 @@ static func size(vs: Vector2) -> Vector2:
 	return Vector2(vs.x * c + vs.y * s, vs.x * s + vs.y * c)
 
 
+## An offset of `v` as seen on screen, in the world's own axes: text laid out "below" or "above"
+## something stays below or above it on screen whatever the angle.
+static func screen(v: Vector2) -> Vector2:
+	return v.rotated(angle)
+
+
 ## draw_string, upright on screen whatever the angle. `at` is where the text starts (its baseline).
 static func text(ci: CanvasItem, font: Font, at: Vector2, s: String, align: HorizontalAlignment,
 		width: float, size_px: int, col: Color) -> void:
