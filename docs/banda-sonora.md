@@ -19,18 +19,17 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | # | Tema | Momento del juego | Tono · tempo | Estado |
 |---|---|---|---|---|
 | 1 | **Just Tap** (tema principal) | título y pantalla final | 80 BPM | ✅ grabado (`title_theme.ogg`) |
-| 2 | Semilla | zona 1 | do · 64 | pendiente |
-| 3 | Raíz | zona 2 | re · 66, 4/4 | canción en el juego (§9.7) |
-| 4 | Tallo (vals) | zona 3 | si menor · 88, 3/4 | canción en el juego (§9.7) |
-| 5 | Esperando a papá | la historia (entre zonas 2 y 3) | — | pendiente: piano solo, como un recuerdo |
-| 6 | Hoja | zona 4 | la · 70 | pendiente |
+| 2 | **Gray Morning** (semilla) | zona 1, barreras 1–10 | do · 64 | pendiente: prompt abajo |
+| 3 | **Roots** (raíz) | zona 2 | re · 66, 4/4 | canción generada en el juego (§9.7); prompt abajo |
+| 4 | **Growing Waltz** (tallo) | zona 3 | si menor · 88, 3/4 | canción generada en el juego (§9.7); prompt abajo |
+| 5 | **Waiting for Dad** | la historia (entre zonas 2 y 3) | re · 60 | pendiente: prompt abajo |
+| 6 | **Under the Stars** (la noche) | zona 4, la noche estrellada | la menor · 70 | pendiente: prompt abajo |
 | 7 | **Light After the Dark** (la oscuridad) | barreras 41–45 de la demo | si♭ mayor · 72 | ✅ grabado (`dark_theme.ogg`, máster en `Builds/music_source/`) |
-| 8 | El ahora | la cinemática del final de la oscuridad | sol# mayor · 72 | puede ser el final del tema 7 |
-| 9 | La carta | la carta del creador | — | pendiente |
+| 8 | **You Made All of This** (la carta) | la carta del final de la demo | do · 66 | pendiente: prompt abajo |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |
 | — | Capítulos del juego completo | Gris, Rojo, Verde, Azul, **Tinta**, Amarillo (`docs/juego-completo.md` §3) | — | un tema por capítulo, o agrupar las zonas de cada uno |
 
-**Para la demo alcanzan 4 o 5 temas** (1, 3, 4, 5 y 7). Ese álbum corto se puede sacar con la demo como *"Just Tap — Demo Soundtrack"*, gratis o a precio simbólico, para juntar seguidores. El álbum completo sale con el juego en Steam.
+**La demo usa 8 temas** (1 a 8): ya están 2 (el título y la oscuridad) y faltan 6. El ahora queda dentro de *Light After the Dark*. Ese álbum corto se puede sacar con la demo como *"Just Tap — Demo Soundtrack"*, gratis o a precio simbólico, para juntar seguidores. El álbum completo sale con el juego en Steam.
 
 ## Prompt de ElevenLabs · La oscuridad
 
@@ -49,6 +48,48 @@ Mood arc: darkness, fragility, then quiet hope, then light. Minimal, emotional, 
 ```
 
 Secciones: *Darkness* 0:00–0:30 · *Crack of light* 0:30–0:55 · *Into the light* 0:55–1:30.
+
+## Prompts de ElevenLabs · el resto de la demo
+
+Cómo usarlos: modelo de música, **instrumental**, duración 2:30 a 3:00. Generar 3 o 4 tomas y quedarse con la que tenga el pulso más claro. ElevenLabs suele respetar el tempo pero no siempre la tonalidad; no importa, porque el juego mide en la grabación las notas de cada compás y los toques las siguen (como en la oscuridad). **El tempo sí tiene que ser exacto**: si una toma sale a otro tempo, descartarla.
+
+Para que el jugador toque encima, las zonas tienen que tener **un pulso claro y parejo** (un ostinato, un arpegio o un bajo que marque los tiempos) y **dejar lugar arriba**: la melodía principal en registro medio, sin solos agudos que tapen las notas de los toques.
+
+### 2 · Gray Morning (zona 1, semilla)
+```
+Instrumental, 64 BPM, 4/4, key of C major (chords Am – F – C – G, two bars each). No vocals, no drums, no percussion.
+A gray, quiet morning after a bad night. Soft felt piano playing a steady, gentle pulse of repeated notes on every beat, very sparse, with long sustain pedal. A low, warm pad underneath, barely there. After a while a simple, hesitant melody appears in the middle register, a few notes at a time with lots of silence between them, as if someone is just waking up. In the second half a delicate harp joins with slow broken chords and the melody grows a little warmer and more confident, like a small seed of hope. Minimal, intimate, numb but tender, lo-fi warmth, close and soft. Seamless and loopable, no big ending.
+```
+
+### 3 · Roots (zona 2, raíz)
+```
+Instrumental, 66 BPM, 4/4, key of D major / B minor (chords Bm – F#m – G – D, two bars each). No vocals, no drums.
+Earthy and grounded. First half: a half-time feel, a deep warm bass note on the first beat of each bar and a harp playing three slow notes per bar, with space to breathe; a soft wooden flute plays a low, singable melody that walks down step by step and climbs back. Second half (the chorus): the harp and bass start rocking in a 3-3-2 rhythm (dotted, swaying) with small sixteenth-note pushes, the flute melody rises an octave, and gentle celesta and glass bells double it like soft chimes. Warm, folk-like, rooted, hopeful, steady pulse. Seamless and loopable.
+```
+
+### 4 · Growing Waltz (zona 3, tallo)
+```
+Instrumental waltz, 88 BPM, 3/4 time, key of B minor (chords Bm – A – D – Em, two bars each). No vocals, no drums.
+Something growing upward. A harp plays a gentle waltz accompaniment: a soft bass note on beat one and light chords on beats two and three, very clear and steady. A celesta plays a graceful, slightly bittersweet melody over it. In the second half the harp flows in running eighth notes between the chords, the melody climbs higher, and sparkling glass bells double it an octave up. Delicate, music-box-like but warm, a little melancholic turning hopeful, like a stem reaching for the light. Seamless and loopable.
+```
+
+### 5 · Waiting for Dad (la historia)
+```
+Instrumental solo piano, 60 BPM, 4/4, key of D major. No vocals, no drums, no other instruments except a very faint warm pad.
+A childhood memory: a child lying on the sidewalk outside their house on a summer afternoon, waiting for their dad, watching sunlight slip through the leaves of a tree. Slow, tender, nostalgic solo piano with soft felt tone and long pedal, gentle broken chords in the low and middle register, and a simple lullaby-like melody that appears only now and then, leaving lots of space, because a narrator will be speaking over it. Warm, golden, peaceful, a little bittersweet, nothing dramatic. Quiet throughout, no climax, ends softly on a held D major chord.
+```
+
+### 6 · Under the Stars (zona 4, la noche estrellada)
+```
+Instrumental, 70 BPM, 4/4, key of A minor (chords Am7 – Fmaj7 – Dm7 – Em7, two bars each). No vocals, no drums.
+A clear night sky, stars lighting up one by one. A harp plays a steady, flowing arpeggio in eighth notes that marks every beat. Celesta and glass bells play sparse, high, twinkling notes like stars appearing, and a soft choir pad breathes underneath. A calm, wondering melody on celesta. In the second half the texture grows: more bells, a gentle flute counter-melody, the choir opens up, full of wonder. In the last part a slight unease creeps in, the harmony gets darker and lower, as if clouds are covering the stars. Dreamy, spacious, magical, reverb-rich but clear. Seamless and loopable.
+```
+
+### 8 · You Made All of This (la carta)
+```
+Instrumental, 66 BPM, 4/4, key of C major. No vocals, no drums.
+A heartfelt letter from the person who made this game to the player. Soft solo piano begins alone, warm and close, simple chords and a gentle melody, leaving space for a narrator's voice over it. Slowly, warm strings enter underneath, then a soft harp, and celesta bells sparkle on the melody near the end. It grows into a quiet, tender, grateful climax, never loud or epic, like a hug, then settles back to solo piano and ends on a long, open C major chord. Emotional, hopeful, intimate, sincere. About 2 minutes 30 seconds.
+```
 
 ## Pendiente de decidir
 
