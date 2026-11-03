@@ -24,7 +24,7 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | 4 | Tallo (vals) | zona 3 | si menor · 88, 3/4 | canción en el juego (§9.7) |
 | 5 | Esperando a papá | la historia (entre zonas 2 y 3) | — | pendiente: piano solo, como un recuerdo |
 | 6 | Hoja | zona 4 | la · 70 | pendiente |
-| 7 | **La oscuridad** | barreras 41–45 de la demo, de menor a mayor | sol# menor → mayor · 72 | canción en el juego (§9.7); prompt de ElevenLabs listo |
+| 7 | **Light After the Dark** (la oscuridad) | barreras 41–45 de la demo | si♭ mayor · 72 | ✅ grabado (`dark_theme.ogg`, máster en `Builds/music_source/`) |
 | 8 | El ahora | la cinemática del final de la oscuridad | sol# mayor · 72 | puede ser el final del tema 7 |
 | 9 | La carta | la carta del creador | — | pendiente |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |

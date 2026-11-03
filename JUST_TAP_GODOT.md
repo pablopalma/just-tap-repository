@@ -393,6 +393,12 @@ Las capas de §9.4 suenan igual en todas las zonas: solo cambian el tono, el tem
 
 Al final, el acorde mayor de la resolución sigue siendo la misma raíz, así que la vuelta al tono de la zona se siente como volver a casa (V → I).
 
+**El tema grabado** (*Light After the Dark*, `audio/music/dark_theme.ogg`, 3 min, ElevenLabs; datos en `Songs.DARK_THEME`): si el archivo está, suena en la oscuridad en lugar de la canción generada, que queda como respaldo.
+- **El pulso va con el tema**: tiene el mismo tempo que la zona (72 BPM), así que al entrar la grilla se corre a sus pulsos (el primero cae a los 0,766 s). Las notas de luz y los toques caen con él.
+- **Los toques suenan en su tonalidad**: el tema está casi todo en si bemol y pasa por la bemol y sol bemol. Para cada compás se midió la pentatónica mayor que mejor encaja (`keys`), y los toques, las campanas y los choques del caos usan esas notas.
+- **Toma brillo al salir**: un filtro pasa bajos lo apaga en la 41 (700 Hz), se abre en la 42 y queda abierto del todo desde la 43.
+- **En el ahora** (barrera 43) salta a su clímax (146 s), con fundido y en frases enteras para no perder el pulso. Así, la vuelta a si bemol del final cae sobre la resolución; después se apaga en 6 s.
+
 Pendiente: las otras zonas y las situaciones (historia, el final), si el prototipo funciona.
 
 ### 9.6 Catálogo de sonidos

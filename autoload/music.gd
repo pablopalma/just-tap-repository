@@ -90,6 +90,10 @@ var dark := false:
 		if v == dark:
 			return
 		dark = v
+		if dark and not _dark_theme.is_empty() and playing:
+			_start_dark_theme()
+		elif not dark and dark_track:
+			_stop_dark_theme()
 		if dark:
 			for p in _choir_players:
 				if p.playing:
@@ -126,6 +130,18 @@ var _title: AudioStreamPlayer
 var _title_tween: Tween
 ## The recorded theme is sounding: the game's own accompaniment and choir rest under it.
 var title_on := false
+## The dark's recorded theme (Songs.DARK_THEME): while it plays, the beat grid sits on its beats, the
+## taps' notes come from its key bar by bar, a low-pass filter opens on it as the light comes, and at
+## the "now" it jumps ahead to its climax. Two players, to cross-fade the jump.
+const DARK_THEME_BUS := &"DarkTheme"
+const DARK_THEME_DB := -13.5  # the file is at -15.6 LUFS, like the title theme at TITLE_DB
+const PENTATONIC := [0, 2, 4, 7, 9]
+var dark_track := false
+var _dark_theme: Array[AudioStreamPlayer] = []
+var _dark_i := 0
+var _dark_filter: AudioEffectLowPassFilter
+var _dark_origin := 0.0   # clock time of the track's start
+var _dark_jumped := false
 
 var _time := 0.0
 var _next_step_time := 0.0
@@ -188,6 +204,8 @@ func _ready() -> void:
 		_title.stream = stream
 		_title.bus = TITLE_BUS
 		add_child(_title)
+	if ResourceLoader.exists(Songs.DARK_THEME.path):
+		_setup_dark_theme()
 	_atmos = {"whoosh": Atmosphere.whoosh(), "swell": Atmosphere.swell(), "cry": Atmosphere.cry(), "boom": Atmosphere.boom()}
 	for i in 2:
 		var p := AudioStreamPlayer.new()
@@ -213,6 +231,9 @@ func _process(delta: float) -> void:
 	if _choir_filter:
 		_choir_filter.cutoff_hz = lerpf(900.0, 6500.0, tension)
 	AudioServer.set_bus_volume_db(_choir_bus, _choir_swell)
+	if _dark_filter:
+		var cut := 700.0 * pow(28.0, clampf(dark_light / 0.5, 0.0, 1.0))
+		_dark_filter.cutoff_hz = lerpf(_dark_filter.cutoff_hz, cut, minf(1.0, delta * 0.8))
 	if not playing:
 		return
 	_time += delta
@@ -292,7 +313,7 @@ func lock(z: int, layer_count: int) -> void:
 func set_enabled(on: bool) -> void:
 	SaveSystem.music_on = on
 	AudioServer.set_bus_mute(_music_bus, not on)
-	for b in [DISTANT_BUS, BIRD_BODY_BUS, BIRD_VOICE_BUS, CELESTIAL_BUS, TITLE_BUS]:
+	for b in [DISTANT_BUS, BIRD_BODY_BUS, BIRD_VOICE_BUS, CELESTIAL_BUS, TITLE_BUS, DARK_THEME_BUS]:
 		var d := AudioServer.get_bus_index(b)
 		if d != -1:
 			AudioServer.set_bus_mute(d, not on)
@@ -303,12 +324,16 @@ func is_enabled() -> bool:
 
 
 func chord() -> Array:
+	if dark_track:
+		return PENTATONIC
 	if dark:
 		return Songs.DARK.steps[_dark_step].chords[_chord_idx]
 	return Zones.PROGRESSIONS[zone - 1][_chord_idx]
 
 
 func tonic() -> int:
+	if dark_track:
+		return 44 + posmod(_dark_key() - 8, 12)
 	return Zones.TONIC[zone - 1] - (DARK_DROP if dark else 0)
 
 
@@ -367,7 +392,7 @@ func play_accent(run: int) -> void:
 	var n := chord().size()
 	var midi := chord_note((run - 1) % (n * 2), tonic() + 12)
 	var song := _song()
-	if not song.is_empty() or dark:
+	if not song.is_empty() or (dark and not dark_track):
 		# the song's melody, note by note: each chord starts its phrase again
 		var at := int(_step / float(_chord_steps()))
 		if _accent_chord != at:
@@ -808,6 +833,8 @@ func _on_step() -> void:
 		var from := BuildFlags.DARK_FROM
 		dark_light = clampf(float(GameState.stage - from) / float(BuildFlags.DEMO_LAST - from), 0.0, 1.0)
 		_dark_step = _dark_step_for(dark_light)
+		if dark_track and not _dark_jumped and _dark_step >= 2:
+			_dark_jump()
 	_accompany(_step)
 	if pulse_on and _step % 4 == 0 and not title_on:
 		var low := chord_note(0, tonic())
@@ -830,6 +857,8 @@ func _accompany(s: int) -> void:
 	var lay := mini(layers, 1) if dark else layers
 	var c := chord()
 	var root := tonic() + int(c[0])
+	if dark_track:
+		return
 	if dark:
 		_play_dark_step(s)
 		return
@@ -914,6 +943,87 @@ func _play_dark_step(s: int) -> void:
 		shape_note.emit(midi, false)
 		if _bells_now({}):
 			_bell(midi)
+
+
+func _setup_dark_theme() -> void:
+	var bus := AudioServer.get_bus_index(DARK_THEME_BUS)
+	if bus == -1:
+		AudioServer.add_bus()
+		bus = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(bus, DARK_THEME_BUS)
+		AudioServer.set_bus_send(bus, &"Master")
+		var lp := AudioEffectLowPassFilter.new()
+		lp.cutoff_hz = 700.0
+		AudioServer.add_bus_effect(bus, lp)
+	_dark_filter = AudioServer.get_bus_effect(bus, 0) as AudioEffectLowPassFilter
+	var stream: AudioStream = load(Songs.DARK_THEME.path)
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
+	for i in 2:
+		var p := AudioStreamPlayer.new()
+		p.stream = stream
+		p.bus = DARK_THEME_BUS
+		add_child(p)
+		_dark_theme.append(p)
+
+
+## The dark begins: the theme fades in from its start, filtered, and the beat grid moves onto its
+## beats (the dark zone's tempo is the theme's, so only the phase changes).
+func _start_dark_theme() -> void:
+	dark_track = true
+	_dark_jumped = false
+	_dark_filter.cutoff_hz = 700.0
+	var p := _dark_theme[_dark_i]
+	p.volume_db = -40.0
+	p.play(0.0)
+	create_tween().tween_property(p, "volume_db", DARK_THEME_DB, 3.0).set_trans(Tween.TRANS_SINE)
+	_dark_origin = _time
+	_zone_origin = _time + float(Songs.DARK_THEME.beat0)
+	_next_step_time = _zone_origin
+	_step = 0
+	_slot_use.clear()
+
+
+func _stop_dark_theme() -> void:
+	dark_track = false
+	for p in _dark_theme:
+		if p.playing:
+			var tw := create_tween()
+			tw.tween_property(p, "volume_db", -60.0, 6.0)
+			tw.tween_callback(p.stop)
+
+
+## Where the theme is (s), from the clock.
+func _dark_pos() -> float:
+	var length := _dark_theme[0].stream.get_length()
+	return fposmod(_time - _dark_origin, length)
+
+
+## The key of the bar the theme is in (pitch class of its pentatonic).
+func _dark_key() -> int:
+	var keys: Array = Songs.DARK_THEME.keys
+	var bar := floori((_dark_pos() - float(Songs.DARK_THEME.beat0)) / (_s16() * 16.0))
+	return int(keys[clampi(bar, 0, keys.size() - 1)])
+
+
+## The "now": the theme cross-fades ahead to its climax, by whole two-bar phrases so the beat grid
+## stays on it.
+func _dark_jump() -> void:
+	_dark_jumped = true
+	var phrase := _s16() * 32.0
+	var shift := roundf((float(Songs.DARK_THEME.climax) - _dark_pos()) / phrase) * phrase
+	if shift <= 0.0:
+		return
+	var old := _dark_theme[_dark_i]
+	_dark_i = 1 - _dark_i
+	var p := _dark_theme[_dark_i]
+	p.volume_db = -40.0
+	p.play(_dark_pos() + shift + AudioServer.get_time_to_next_mix())
+	_dark_origin -= shift
+	create_tween().tween_property(p, "volume_db", DARK_THEME_DB, 2.0).set_trans(Tween.TRANS_SINE)
+	var tw := create_tween()
+	tw.tween_property(old, "volume_db", -60.0, 2.5)
+	tw.tween_callback(old.stop)
 
 
 func _dark_step_for(light: float) -> int:
@@ -1022,6 +1132,8 @@ func _play_theme_step(s: int) -> void:
 
 func _play_choir() -> void:
 	if title_on:
+		return
+	if dark_track:
 		return
 	if dark:
 		# The low pedal: the chord's root held in the bass and the deep wind, a fifth under it.

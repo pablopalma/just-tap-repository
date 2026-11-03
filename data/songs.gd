@@ -102,6 +102,20 @@ const DARK := {
 }
 
 
+## The dark's recorded theme ("Light After the Dark", audio/music/dark_theme.ogg, 3 min at 72 BPM,
+## the dark zone's tempo, mostly in B-flat): played in the dark instead of DARK when the file is there.
+## beat0: its first beat (s). keys: for each bar from beat0, the pitch class (C = 0) of the major
+## pentatonic that fits it best, measured from the recording; the taps' notes come from it. climax:
+## where it jumps at the "now" (barrier 43), so its return home lands on the resolution.
+const DARK_THEME := {
+	"path": "res://audio/music/dark_theme.ogg",
+	"beat0": 0.766,
+	"climax": 146.0,
+	"keys": [8, 1, 10, 10, 3, 1, 10, 1, 8, 10, 10, 1, 3, 10, 10, 3, 3, 10, 10, 10, 3, 1, 10, 1, 8, 6,
+		6, 6, 6, 8, 10, 10, 3, 10, 10, 3, 3, 8, 10, 3, 3, 10, 10, 8, 8, 6, 6, 6, 8, 8, 10, 10, 3],
+}
+
+
 ## False plays every zone the old way (to compare, tools/song_test.gd).
 static var on := true
 
