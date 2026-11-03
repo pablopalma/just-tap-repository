@@ -16,6 +16,9 @@ var _last_beat := -100
 func _ready() -> void:
 	SaveSystem.enabled = false
 	SaveSystem.voice_on = false
+	if "en" in OS.get_cmdline_user_args():
+		SaveSystem.lang = "en"  # for an English trailer
+		SaveSystem.had_progress = false
 	GameState.new_game()
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)

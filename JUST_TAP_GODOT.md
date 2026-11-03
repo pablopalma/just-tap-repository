@@ -38,6 +38,7 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
 
 **El norte (2/11/2026).** Just Tap es más una experiencia que un juego de números: todo lo que el jugador hace forma una gran obra de arte que representa sus pensamientos y su mundo interior. La línea no es una torre que se sube: es un recorrido hacia adentro. Cada decisión se mide contra esa idea.
 - **La historia:** el puntito es el alma de una niña (la de la portada) y la voz es su padre, o Dios, enseñándole la vida: emociones, momentos, que no está sola, que todo lo que tenemos es este momento.
+- **Todo está conectado (3/11/2026).** Los animales gigantes que aparecen en el camino (la ballena, y los que vengan) muestran que todos somos parte del todo. **El final del juego: el puntito es un ser que vuelve a su padre, el todo, el absoluto, que es el narrador.**
 - **Hacia adentro:** entre zona y zona la cámara cae en la punta y sale en la zona siguiente, que es la línea dentro de la línea (el efecto Droste, `scripts/world/droste.gd`). Cada zona va hacia su propio lado: la línea no siempre sube (`Main.ZONE_ANGLE`, detrás de `BuildFlags.DROSTE`).
 
   | Zona | Dirección | Zona | Dirección |
