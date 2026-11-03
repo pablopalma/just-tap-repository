@@ -6,6 +6,8 @@ extends Node
 signal note_played(midi: int, instrument: String)
 ## A note worth seeing (§7.4): taps and the accompaniment. bright = a high glassy one (a circle).
 signal shape_note(midi: int, bright: bool)
+## A light of a star or a fork sang its note in the orchestra (play_orchestra), as it sounds.
+signal orchestra_note(light: int)
 
 const VOICES := 24
 const REF_VOL := 0.05
@@ -41,6 +43,11 @@ const BRIGHT_CEILING := 93
 
 ## Each branch of a fork plays its own instrument.
 const BRANCH_INSTRUMENTS := ["piano", "harp", "celesta"]
+## The lights of a star or a fork are an orchestra (play_orchestra): each one a voice, from the
+## lowest to the brightest, [instrument, octave from the tonic]. The first lights hold the ground,
+## the later ones sparkle on top.
+const ORCHESTRA := [["harp", 0], ["piano", 12], ["celesta", 12], ["harp", 12], ["glass", 24], ["celesta", 24], ["flute", 12]]
+var _orch_turn := 0
 
 const ARP_PATTERN := [0, 1, 2, 3, 4, 3, 2, 1]
 const COUNTER_PATTERN := [2, 1, 3, 2, 4, 3, 1, 2]
@@ -449,9 +456,61 @@ func play_milestone(level: int) -> void:
 
 
 ## A degree of whatever chord (or key) sounds when it plays, on the music's own voices.
-func _note_deg(t: float, inst: String, deg: int, octave_offset: int, vol: float) -> void:
+func _note_deg(t: float, inst: String, deg: int, octave_offset: int, vol: float, light := -1) -> void:
 	_queue.append({"t": t, "kind": "deg", "what": inst, "deg": deg, "base": octave_offset, "vol": vol,
-		"bird": false})
+		"bird": false, "light": light})
+
+
+## How many lights the tip is now: a star's or a fork's, or 0.
+func _lights() -> int:
+	if not GameState.star.is_empty():
+		return GameState.star.lights.size()
+	return GameState.branches.size()
+
+
+## A star or a fork: its lights play together, each its own voice (ORCHESTRA), and each one glows as
+## its note sounds (orchestra_note). A tap off the beat: one light answers, in turn, softly. A tap on
+## the beat (run > 0): the lights play across the beat as a broken chord, rising and falling in turns,
+## more of them the longer the run, and all at once, a chord, on the bar's first beat.
+func play_orchestra(count: int, run: int) -> void:
+	if not playing:
+		return
+	var s16 := _s16()
+	var beat := s16 * 4.0
+	if run <= 0:
+		var k := _next_slot()
+		var used: int = _slot_use.get(k, 0)
+		if used >= 2:
+			return
+		_slot_use[k] = used + 1
+		var i := _orch_turn % count
+		_orch_turn += 1
+		var v: Array = ORCHESTRA[i % ORCHESTRA.size()]
+		_note_deg(_slot_time(k), v[0], i * 2, int(v[1]), 0.03, i)
+		return
+	var t0 := maxf(_time, _zone_origin + roundf((_time - _zone_origin) / beat) * beat)
+	var voices := clampi(run + 1, 2, count)
+	var metre := int(Songs.TRACKS[track].metre) if track != "" else 4
+	var down := _beat_in_bar(t0) == 0
+	var shift := int(run / float(metre)) % 3   # the chord moves on every bar
+	var rising := run % 2 == 1
+	var gap := s16 * 4.0 / maxf(4.0, voices)
+	for j in voices:
+		var i := j if rising else voices - 1 - j
+		var v: Array = ORCHESTRA[i % ORCHESTRA.size()]
+		var t := t0 + (0.012 * j if down else gap * j)
+		var vol := (0.034 if i == 0 else 0.028) * (1.15 if down else 1.0) * randf_range(0.9, 1.06)
+		_note_deg(t, v[0], i * 2 + shift, int(v[1]), vol, i)
+
+
+## Which beat of its bar a time falls on (0 the first): the theme's bars, or the zone's 4/4.
+func _beat_in_bar(t: float) -> int:
+	var beat := _s16() * 4.0
+	if track != "":
+		var tr: Dictionary = Songs.TRACKS[track]
+		var at := _track_pos() + (t - _time)
+		return posmod(roundi((at - float(tr.bar0)) / beat), int(tr.metre))
+	return posmod(roundi((t - _zone_origin) / beat), 4)
 
 
 func play_tap(progress: float, crit: bool) -> void:
@@ -773,34 +832,12 @@ func set_bird_pan(pan: float) -> void:
 func _on_hit(_damage: float, crit: bool, source: String) -> void:
 	if source == "auto":
 		play_auto()
-	elif not GameState.branches.is_empty():
-		play_trio(crit)
+	elif _lights() > 0:
+		play_orchestra(_lights(), GameState.accent)
 	elif GameState.accent > 0:
 		play_accent(GameState.accent)
 	else:
 		play_tap(GameState.progress(), crit)
-
-
-## Forked: each branch is an instrument (piano, harp, celesta) and plays its own note, higher the
-## more broken its barrier — three branches moving out of step sound like a trio.
-func play_trio(crit: bool) -> void:
-	if not playing:
-		return
-	var k := _next_slot()
-	var used: int = _slot_use.get(k, 0)
-	if used >= 2:
-		return
-	_slot_use[k] = used + 1
-	var t := _slot_time(k)
-	var n := chord().size()
-	for i in GameState.branches.size():
-		var b: Dictionary = GameState.branches[i]
-		if b.done:
-			continue
-		var deg := roundi(GameState.branch_progress(b) * (n * 2 - 1)) + i
-		_schedule_deg(t, BRANCH_INSTRUMENTS[i % BRANCH_INSTRUMENTS.size()], deg + used, 12, 0.035)
-	if crit:
-		_schedule(t, "note", "glass", chord_note(4, tonic() + 24), 0.04)
 
 
 ## A branch reached its barrier's end: two notes of its own instrument.
@@ -1316,6 +1353,8 @@ func _fire(q: Dictionary) -> void:
 			create_tween().tween_property(p, "pitch_scale", q.pitch * q.glide, q.glide_time)
 		return
 	_route = q.get("pool", "")
+	if q.get("light", -1) >= 0:
+		orchestra_note.emit(q.light)
 	if q.kind == "deg":
 		var midi := chord_note(q.deg, tonic() + q.base)
 		while midi > BRIGHT_CEILING:

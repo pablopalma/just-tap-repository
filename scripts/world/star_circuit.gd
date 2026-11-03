@@ -24,12 +24,17 @@ var _t := 0.0
 var _u: Array[float] = []          # where each light is along its circuit
 var _climax := -1.0                # seconds into the final spin, or -1
 var _done: Array[Dictionary] = []  # finished stars: {center, n, k, rot}
+## Each light glows as it sings its note in the orchestra (Music.orchestra_note), fading.
+var _glow: Array[float] = []
 
 
 func _ready() -> void:
 	GameState.special_changed.connect(_on_special)
 	GameState.star_light_broke.connect(_on_light_broke)
 	GameState.star_completed.connect(_on_completed)
+	Music.orchestra_note.connect(func(i: int) -> void:
+		if _active and i < _glow.size():
+			_glow[i] = 1.0)
 
 
 func reset() -> void:
@@ -57,6 +62,8 @@ func _on_special() -> void:
 	_active = true
 	_n = int(GameState.star.n)
 	_k = int(GameState.star.k)
+	_glow.resize(_n)
+	_glow.fill(0.0)
 	_center = path.gate_pos(n)
 	_rot = 0.0
 	_t = 0.0
@@ -82,6 +89,8 @@ func _on_completed(_n_barrier: int) -> void:
 
 
 func _process(delta: float) -> void:
+	for i in _glow.size():
+		_glow[i] = maxf(0.0, _glow[i] - delta * 2.5)
 	for s in _done:
 		s.rot += 0.05 * delta
 	if not _active:
@@ -200,6 +209,10 @@ func _draw_star(c: Vector2, n: int, k: int, rot: float, us: Array, prog: float, 
 				draw_line(p - half, p + half, bar, 2.2, true)
 		# the light itself
 		var lp := _at(c, n, k, i, u, rot)
+		var gl: float = _glow[i] if i < _glow.size() else 0.0
+		if gl > 0.0:
+			draw_circle(lp, 13.0 + 14.0 * gl, Color(gold, 0.35 * gl))
+			draw_arc(lp, 10.0 + 22.0 * (1.0 - gl), 0.0, TAU, 32, Color(gold, 0.7 * gl), 1.6, true)
 		draw_circle(lp, 13.0, Color(gold, 0.12))
 		draw_circle(lp, 7.0, Color(gold, 0.3))
 		draw_circle(lp, 3.6, Palette.INK)

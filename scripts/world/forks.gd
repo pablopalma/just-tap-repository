@@ -18,12 +18,17 @@ var font: Font
 var _stage := -1
 var _t: Array[float] = []      # each branch light's position along its branch (0..1)
 var _behind := 0.0             # how long one branch has been waiting on a slow one
+## Each light glows as it sings its note in the orchestra (Music.orchestra_note), fading.
+var _glow: Array[float] = []
 
 
 func _ready() -> void:
 	GameState.special_changed.connect(_on_special)
 	GameState.branch_broke.connect(func(i: int) -> void: Music.play_branch_done(i))
 	GameState.gate_broken.connect(_on_gate_broken)
+	Music.orchestra_note.connect(func(i: int) -> void:
+		if i < _glow.size():
+			_glow[i] = 1.0)
 
 
 func reset() -> void:
@@ -54,8 +59,10 @@ func _on_special() -> void:
 	var first := n == GameState.FORK_FROM or (count == 3 and n == GameState.FORK_THREE)
 	_stage = n
 	_t.clear()
+	_glow.clear()
 	for i in count:
 		_t.append(0.0)
+		_glow.append(0.0)
 	_behind = 0.0
 	if first:
 		split_burst.emit(path.gate_pos(n - 1), count)
@@ -75,6 +82,8 @@ func _process(delta: float) -> void:
 		if GameState.stage > GameState.FORK_FROM and GameState.stage <= GameState.FORK_TO + 6:
 			queue_redraw()
 		return
+	for i in _glow.size():
+		_glow[i] = maxf(0.0, _glow[i] - delta * 2.5)
 	var done := 0
 	var slowest := 1.0
 	for i in branches.size():
@@ -143,6 +152,10 @@ func _draw() -> void:
 		# its light, in the colour of its instrument
 		var lp := _branch_point(s, count, i, _t[i])
 		var tint: Color = [Palette.chapter_color(2), Palette.GOLD, Palette.chapter_color(3)][i % INSTRUMENT_COLORS]
+		var gl: float = _glow[i] if i < _glow.size() else 0.0
+		if gl > 0.0:
+			draw_circle(lp, 14.0 + 14.0 * gl, Color(tint, 0.35 * gl))
+			draw_arc(lp, 10.0 + 22.0 * (1.0 - gl), 0.0, TAU, 32, Color(tint, 0.7 * gl), 1.6, true)
 		draw_circle(lp, 14.0, Color(tint, 0.14))
 		draw_circle(lp, 7.0, Color(tint, 0.35))
 		draw_circle(lp, 4.0, Palette.INK)
