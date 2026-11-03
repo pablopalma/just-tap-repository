@@ -21,7 +21,10 @@ Una espiral que se hunde, como una escalera caracol o un remolino, vista desde a
 - **Dónde:** la noche (la tinta, el quiebre) del juego completo, o el camino de vuelta al todo del final, cayendo hacia la luz del centro.
 - **Cómo:** sin pasar a 3D. Cada punto de la espiral tiene una profundidad, y según ella se dibuja más chico, más al centro y más tenue (un túnel en 2D). Se mantiene la tinta y el papel, la música, el pulso y el árbol.
 - **Para que se sienta:** una vuelta por compás, así el giro va con la música; la luz del fondo crece con cada barrera; la cámara gira suave con la pelotita.
-- **Primer paso:** un prototipo corto para sentirlo antes de decidir dónde va.
+- **Prototipos (3/11/2026):**
+  - `tools/spiral_down.tscn`: el pozo con escalera caracol, la pelotita baja rompiendo barreras con toques, y el final (rayos desde el fondo, la bajada sola, el brillo amarillo y el paso al escenario siguiente).
+  - `tools/spiral_rhythm.tscn` (**el elegido**): un tramo de ritmo, sin árbol ni barreras que romper. La pelotita baja sola con la música y llega a cada línea en un pulso; si tocás al llegar, la línea se abre en dorado y suena la nota siguiente de una melodía. Fallar no castiga (la nota no suena). Lo acertado llena la luz del fondo. Detrás se forma **un ave gigante de estrellas**: cada nota traza una línea a su estrella siguiente, y en el desenlace queda entera, abre el ojo y bate las alas. Pensado como uno de los niveles desenlace del juego.
+  - Para ajustar: el ave más grande, abrazando el pozo; elegir la criatura y la melodía según la historia del capítulo.
 
 ### El final
 El puntito es un ser que vuelve a su padre, el todo, el absoluto, que es el narrador.
