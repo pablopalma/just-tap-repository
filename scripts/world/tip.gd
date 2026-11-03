@@ -2,6 +2,8 @@ extends Node2D
 ## The tip of the line (§6.2): climbs to just below the current barrier and jolts forward on each hit.
 
 const STOP_SHORT := 16.0
+const NOTES := 3
+const NOTE_GAP := 64.0
 
 var path: PathData
 var lit := 0.0
@@ -77,6 +79,29 @@ func accent(run: int) -> void:
 	_since_accent = 0.0
 
 
+## The beat as notes of light climbing the line: one per beat, NOTE_GAP apart, each reaching the
+## tip as its beat sounds, so a player sees the next few coming and taps as one arrives.
+func _draw_notes(ph: float, ring: float) -> void:
+	var gap := lerpf(NOTE_GAP, NOTE_GAP * 1.25, _bold)
+	for k in NOTES:
+		var d := (k + 1.0 - ph) * gap
+		var at := lit + jolt - d
+		if at < 0.0:
+			continue
+		var p := path.pos_at(at) - position
+		var near := 1.0 - d / (gap * NOTES)
+		var a := ring * lerpf(0.35, 0.85, _bold) * smoothstep(0.0, 0.35, near)
+		var r := lerpf(3.0, 5.5, near) * lerpf(1.0, 1.3, _bold)
+		var col := Palette.INK.lerp(Palette.GOLD.darkened(0.2), smoothstep(0.55, 0.9, near) * maxf(_bold, 0.5))
+		draw_circle(p, r * 2.2, Color(col, a * 0.18))
+		draw_circle(p, r, Color(col, a))
+	# the moment of the beat: the note lands in the tip and opens a small ring
+	var land := 1.0 - minf(1.0, ph / 0.25)
+	if land > 0.0:
+		draw_arc(Vector2.ZERO, lerpf(12.0, 26.0, 1.0 - land), 0.0, TAU, 40,
+			Color(Palette.GOLD.darkened(0.2), 0.5 * land * ring), 1.5, true)
+
+
 func _draw() -> void:
 	# While a star or a fork runs, the tip is its lights; it comes back as one when they rejoin.
 	if not GameState.star.is_empty() or not GameState.branches.is_empty():
@@ -88,9 +113,7 @@ func _draw() -> void:
 	var ph := Music.heard_phase()
 	var ring := maxf(_ring, _bold)
 	if ring > 0.01:
-		var r := lerpf(lerpf(40.0, 56.0, _bold), 17.0, ph)
-		var a := lerpf(0.22, 0.6, _bold) * ring * smoothstep(0.0, 0.5, ph)
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(Palette.INK, a), lerpf(1.0, 2.0, _bold), true)
+		_draw_notes(ph, ring)
 	if _bold > 0.01:
 		# the beat itself: the tip glows as the ring arrives
 		var on := pow(1.0 - minf(1.0, fposmod(ph + 0.06, 1.0) / 0.3), 2.0)
