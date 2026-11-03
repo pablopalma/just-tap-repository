@@ -11,7 +11,6 @@ signal action(id: String, arg: int)
 const PROTOS := [
 	["El monumento: la Madre", "res://tools/monument.tscn", []],
 	["El monumento, desde la cima", "res://tools/monument.tscn", ["end"]],
-	["El monumento, en rojo", "res://tools/monument.tscn", ["rojo"]],
 	["La espiral de ritmo (ave de estrellas)", "res://tools/spiral_rhythm.tscn", []],
 	["La espiral hacia abajo", "res://tools/spiral_down.tscn", []],
 	["La espiral, desde el fondo", "res://tools/spiral_down.tscn", ["end"]],

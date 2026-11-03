@@ -135,17 +135,23 @@ const HAND := Vector2(0.49, 0.38)
 const STAND_SHARDS := 56
 const RADIAL := 20           # points each piece is reshaped with as it flies into its new place
 
-## The two looks: a blue night under the moon, or the red chapter's dusk.
+## The two looks: the red chapter's dusk, where the climb begins, and the blue night under the moon it
+## turns into as the light climbs (_night, 0..1; `-- rojo` keeps the dusk, `-- azul` the night).
 const LOOKS := {
 	"azul": {"sky_top": Color("#16223d"), "sky_low": Color("#4d6f9f"), "moon": Color("#f4f0de"),
 		"far": Color("#6f90bd"), "mid": Color("#3b5784"), "stone": Color("#2c446c"), "rim": Color("#9cbbe0"),
-		"near": Color("#0c1424"), "line": Color("#eae6d6")},
+		"near": Color("#0c1424"), "line": Color("#eae6d6"), "rays": Color("#cfdcff")},
 	"rojo": {"sky_top": Color("#e8a597"), "sky_low": Color("#f7dccf"), "moon": Color("#fff8f2"),
 		"far": Color("#e07a6e"), "mid": Color("#b03c35"), "stone": Color("#7d1f1f"), "rim": Color("#f0a090"),
-		"near": Color("#3a0b0b"), "line": Color("#fff3ea")},
+		"near": Color("#3a0b0b"), "line": Color("#fff3ea"), "rays": Color("#ffc98a")},
 }
 
 var _look: Dictionary
+var _night := 0.0
+var _night_pin := -1.0
+var _sky_grad: Gradient
+var _stars_node: Node2D
+var _sky_stars: Array[Vector3] = []
 var _stone := PackedVector2Array()
 var _hair := PackedVector2Array()     # her hair, as a polygon
 var _path := PackedVector2Array()     # the climb, a point every 4 px
@@ -202,13 +208,21 @@ var _speak := 0.0                     # 0..1, while she holds the light and spea
 var _last_fig := PackedVector2Array()
 var _last_veil := PackedVector2Array()
 var _last_cam := Vector2.ZERO
-var _layers: Array[Dictionary] = []   # {node, k}: the planes behind and in front of her
+var _layers: Array[Dictionary] = []
+## The air: volumetric fog between the planes and in front of her, god rays behind and in front.
+var _fog_far: ColorRect
+var _fog_mid: ColorRect
+var _fog_front: ColorRect
+var _rays_back: ColorRect
+var _rays_front: ColorRect   # {node, k}: the planes behind and in front of her
 
 
 func _ready() -> void:
 	var args: Array = Array(OS.get_cmdline_user_args()) + DevMenu.proto_args
 	_auto = "auto" in args
-	_look = LOOKS.rojo if "rojo" in args else LOOKS.azul
+	_night_pin = 0.0 if "rojo" in args else (1.0 if "azul" in args else -1.0)
+	_night = maxf(_night_pin, 0.0)
+	_tint()
 	_lang = "en" if "en" in args else ("es" if "es" in args else SaveSystem.lang)
 	_font = load(UIStyle.ITALIC)
 	SaveSystem.enabled = false
@@ -269,6 +283,16 @@ func _ready() -> void:
 		n.draw.connect(spec[1].bind(n))
 		add_child(n)
 		_layers.append({"node": n, "k": spec[0]})
+	# the air, in depth order: fog over the far ruins, fog over the near ones, the rays behind her;
+	# in front of her a low mist and fainter rays, so the light is in the air around her too
+	_fog_far = _volume("res://shaders/volumetric_fog.gdshader", -2)
+	_fog_mid = _volume("res://shaders/volumetric_fog.gdshader", -1)
+	_rays_back = _volume("res://shaders/godrays.gdshader", -1)
+	_fog_front = _volume("res://shaders/volumetric_fog.gdshader", 1)
+	_rays_front = _volume("res://shaders/godrays.gdshader", 1)
+	_fog_mid.material.set_shader_parameter("seed", 3.0)
+	_fog_front.material.set_shader_parameter("seed", 7.0)
+	_rays_front.material.set_shader_parameter("seed", 11.0)
 	z_index = 0
 	for i in 160:
 		_specks.append({"p": Vector2(_rng.randf() * 1280.0, _rng.randf() * 720.0), "v": Vector2(_rng.randf_range(8, 30), _rng.randf_range(-6, 10)),
@@ -348,6 +372,7 @@ func _build_sky() -> void:
 	var g := Gradient.new()
 	g.set_color(0, _look.sky_top)
 	g.set_color(1, _look.sky_low)
+	_sky_grad = g
 	var tex := GradientTexture2D.new()
 	tex.gradient = g
 	tex.fill_from = Vector2(0, 0)
@@ -359,7 +384,37 @@ func _build_sky() -> void:
 	var bg := CanvasLayer.new()
 	bg.layer = -5
 	bg.add_child(rect)
+	_stars_node = Node2D.new()
+	_stars_node.draw.connect(_draw_sky_stars)
+	bg.add_child(_stars_node)
 	add_child(bg)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	for i in 140:
+		_sky_stars.append(Vector3(rng.randf(), pow(rng.randf(), 1.6) * 0.7, rng.randf() * TAU))
+
+
+## The colours now: dusk turning to night.
+func _tint() -> void:
+	var out := {}
+	for key in LOOKS.rojo:
+		out[key] = (LOOKS.rojo[key] as Color).lerp(LOOKS.azul[key], _night)
+	_look = out
+	if _sky_grad:
+		_sky_grad.set_color(0, _look.sky_top)
+		_sky_grad.set_color(1, _look.sky_low)
+
+
+## Stars coming out as the night falls, twinkling.
+func _draw_sky_stars() -> void:
+	var a := smoothstep(0.45, 0.95, _night)
+	if a <= 0.0:
+		return
+	var vp := get_viewport_rect().size
+	for st in _sky_stars:
+		var tw := 0.6 + 0.4 * sin(_t * 1.7 + st.z * 3.0)
+		var p := Vector2(st.x * vp.x, st.y * vp.y)
+		_stars_node.draw_circle(p, 1.0 + 1.2 * fposmod(st.z, 1.0), Color(1.0, 0.97, 0.9, 0.7 * a * tw))
 
 
 ## The outline from index a to b, pushed outward by LINE_OFF.
@@ -455,14 +510,19 @@ func _pieces(outline: PackedVector2Array, dark: PackedVector2Array, count: int, 
 			# or the veil darker still
 			var top := -box.position.y
 			var light := clampf(0.4 + c.x / H * 0.8 - (c.y / top + 0.4) * 0.6, 0.0, 1.0)
-			var col: Color = _look.stone.lerp(_look.rim, 0.06 + 0.22 * light + _rng.randf_range(-0.015, 0.015))
-			if Geometry2D.is_point_in_polygon(c, dark):
-				col = _look.stone.darkened(0.25).lerp(_look.rim, 0.04 + 0.1 * light)
-			out.append({"poly": local, "c": c, "crack": 0.0, "col": col, "v": Vector2.ZERO, "w": 0.0,
+			var shade := Vector3(light, 1.0 if Geometry2D.is_point_in_polygon(c, dark) else 0.0, _rng.randf_range(-0.015, 0.015))
+			out.append({"poly": local, "c": c, "crack": 0.0, "col": shade, "v": Vector2.ZERO, "w": 0.0,
 				"rot": 0.0, "off": Vector2.ZERO, "delay": 0.0, "glint": 0.0, "home_at": 0.0, "from_off": Vector2.ZERO,
 				"from_rot": 0.0, "home": false, "m": 0.0, "pr": PackedVector2Array(), "to_c": c,
-				"to_pr": PackedVector2Array(), "to_col": col})
+				"to_pr": PackedVector2Array(), "to_col": shade})
 	return out
+
+
+## A piece's stone in the light of the moment: (how lit, hair or veil, a touch of its own).
+func _stone_col(shade: Vector3) -> Color:
+	if shade.y > 0.5:
+		return _look.stone.darkened(0.25).lerp(_look.rim, 0.04 + 0.1 * shade.x)
+	return _look.stone.lerp(_look.rim, 0.06 + 0.22 * shade.x + shade.z)
 
 
 ## The part of `poly` nearer to `a` than to `b`.
@@ -528,6 +588,10 @@ func _crack_from(p: Vector2, dust: float) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	var dusk := smoothstep(0.03, 0.97, _s / _path_len) if _ending < 0.0 and not _at_crown else 1.0
+	_night = _night_pin if _night_pin >= 0.0 else maxf(_night, dusk)
+	_tint()
+	_stars_node.queue_redraw()
 	_gust = 0.5 + 0.5 * sin(_t * 0.37) * sin(_t * 0.23 + 1.0)
 	_kick *= exp(-8.0 * delta)
 	for r in _rings:
@@ -602,6 +666,7 @@ func _frame(delta: float, snap: bool) -> void:
 		l.node.scale = Vector2.ONE * s
 		l.node.position = _cam.position * (1.0 - s)
 		l.node.queue_redraw()
+	_update_air(vp, zoom)
 	# the flakes in the air drift with the wind and a little with the camera
 	var moved := (_cam.position - _last_cam) * zoom
 	_last_cam = _cam.position
@@ -918,13 +983,100 @@ func _lp(k: float, p: Vector2) -> Vector2:
 
 func _draw_moon(n: Node2D) -> void:
 	var k := 0.12
-	var c := _lp(k, Vector2(0.0, -0.62) * H)
-	var r := 0.5 * H / k
-	for i in 18:
-		var f := i / 17.0
-		n.draw_circle(c, r * lerpf(2.2, 1.02, f), Color(_look.moon, 0.025 + 0.02 * f))
-	n.draw_circle(c, r, _look.moon)
-	n.draw_arc(c, r * 1.06, 0.0, TAU, 128, Color(_look.moon, 0.35), r * 0.006, true)
+	# the sun, big and warm, sinking behind the ruins to the right as she is climbed
+	var sun_a := 1.0 - smoothstep(0.75, 0.92, _night)
+	if sun_a > 0.0:
+		var c := _lp(k, _sun_at())
+		var r := 0.46 * H / k
+		var warm := Color("#fff1d8").lerp(Color("#ff9a5c"), smoothstep(0.2, 0.8, _night))
+		for i in 18:
+			var f := i / 17.0
+			n.draw_circle(c, r * lerpf(2.6, 1.02, f), Color(warm, (0.03 + 0.025 * f) * sun_a))
+		n.draw_circle(c, r, Color(warm, sun_a))
+	# the moon, rising behind her head as the dark comes
+	var moon_a := smoothstep(0.45, 0.9, _night)
+	if moon_a > 0.0:
+		var c := _lp(k, _moon_at())
+		var r := 0.5 * H / k
+		var col: Color = LOOKS.azul.moon
+		for i in 18:
+			var f := i / 17.0
+			n.draw_circle(c, r * lerpf(2.2, 1.02, f), Color(col, (0.025 + 0.02 * f) * moon_a))
+		n.draw_circle(c, r, Color(col, moon_a))
+		n.draw_arc(c, r * 1.06, 0.0, TAU, 128, Color(col, 0.35 * moon_a), r * 0.006, true)
+
+
+## Where the sun and the moon are, as seen at the whole view (units of H, y down).
+func _sun_at() -> Vector2:
+	var e := smoothstep(0.0, 0.85, _night)
+	return Vector2(lerpf(0.05, 0.55, e), lerpf(-0.6, 0.25, e)) * H
+
+
+func _moon_at() -> Vector2:
+	return Vector2(0.0, lerpf(-0.3, -0.62, smoothstep(0.45, 1.0, _night))) * H
+
+
+## Where a point of the sky plane is now, in her space (the plane is shrunk and moved by its depth).
+func _sky_world(p: Vector2) -> Vector2:
+	var n: Node2D = _layers[0].node
+	return n.position + n.scale * _lp(0.12, p)
+
+
+## A rect over the view with a shader, at depth z (its place among the planes).
+func _volume(shader: String, z: int) -> ColorRect:
+	var r := ColorRect.new()
+	r.z_index = z
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := ShaderMaterial.new()
+	m.shader = load(shader)
+	r.material = m
+	add_child(r)
+	return r
+
+
+## The fog and the rays follow the view; the rays come from the sun, then the moon; each plane's
+## fog sits on that plane's ground and drifts with it.
+func _update_air(vp: Vector2, zoom: float) -> void:
+	var view := vp / zoom
+	var corner := _cam.position + _cam.offset - view * 0.5
+	var uv := func(w: Vector2) -> Vector2: return (w - corner) / view
+	for r: ColorRect in [_fog_far, _fog_mid, _rays_back, _fog_front, _rays_front]:
+		r.position = corner
+		r.size = view
+		(r.material as ShaderMaterial).set_shader_parameter("aspect", vp.x / vp.y)
+	var sun_i := 1.0 - smoothstep(0.6, 0.9, _night)
+	var moon_i := smoothstep(0.55, 1.0, _night) * 0.75
+	var src := _sky_world(_sun_at()) if sun_i >= moon_i else _sky_world(_moon_at())
+	var light: Vector2 = uv.call(src)
+	var ray_col: Color = _look.rays
+	for pair in [[_rays_back, 1.8], [_rays_front, 0.55]]:
+		var m: ShaderMaterial = pair[0].material
+		m.set_shader_parameter("origin", light)
+		m.set_shader_parameter("color", ray_col)
+		m.set_shader_parameter("intensity", float(pair[1]) * maxf(sun_i, moon_i))
+	# fog: far and thick and pale; nearer, thinner; in front, a low mist at her feet
+	var planes := [[_fog_far, 1, 0.02, 0.8, 0.5, 0.16, 1.6], [_fog_mid, 2, 0.03, 0.65, 0.34, 0.08, 2.2],
+		[_fog_front, -1, 0.0, 0.45, 0.16, 0.0, 3.0]]
+	for spec in planes:
+		var m: ShaderMaterial = (spec[0] as ColorRect).material
+		var ground: Vector2
+		var k := 1.0
+		if int(spec[1]) >= 0:
+			var layer: Dictionary = _layers[int(spec[1])]
+			k = layer.k
+			ground = layer.node.position + layer.node.scale * _lp(k, Vector2(0, float(spec[2]) * H))
+		else:
+			ground = Vector2(0, 0)
+		m.set_shader_parameter("ground", (uv.call(ground) as Vector2).y)
+		m.set_shader_parameter("density", float(spec[3]))
+		m.set_shader_parameter("thickness", float(spec[4]))
+		m.set_shader_parameter("base", float(spec[5]))
+		m.set_shader_parameter("scale", float(spec[6]))
+		m.set_shader_parameter("scroll", _cam.position / H * k * float(spec[6]) * Vector2(1.0, 0.3))
+		m.set_shader_parameter("light", light)
+		m.set_shader_parameter("color", _look.sky_low.lerp(_look.far, 0.25).lerp(_look.mid, 0.25 * (1.0 if int(spec[1]) == -1 else 0.0)))
+		m.set_shader_parameter("lit", ray_col.lerp(_look.moon, 0.4))
+		m.set_shader_parameter("drift", Vector2(0.03 + 0.03 * _gust * _alive, 0.0) * (1.0 + 0.5 * k))
 
 
 ## Far ruins: towers, domes and arches, pale in the haze, then a band of fog at their feet.
@@ -940,7 +1092,6 @@ func _draw_far(n: Node2D) -> void:
 		var h := rng.randf_range(0.25, 0.75)
 		var w := rng.randf_range(0.12, 0.26)
 		_ruin(n, k, Vector2(x, 0.02) * H, w * H, h * H, col, _look.sky_low.lerp(_look.moon, 0.3), rng)
-	_fog(n, k, 0.02 * H, 0.22 * H, _look.sky_low)
 
 
 ## Near ruins: bigger, darker, broken; fog at their feet too.
@@ -963,7 +1114,6 @@ func _draw_mid(n: Node2D) -> void:
 	g.append(_lp(k, Vector2(5.0, 1.5) * H))
 	g.append(_lp(k, Vector2(-5.0, 1.5) * H))
 	n.draw_colored_polygon(g, _look.mid.darkened(0.2))
-	_fog(n, k, 0.03 * H, 0.12 * H, _look.sky_low.lerp(_look.mid, 0.3))
 
 
 ## In front of everything, close: dark rubble and a broken column, sliding past as the camera moves.
@@ -1034,14 +1184,6 @@ func _ruin(n: Node2D, k: float, base: Vector2, w: float, h: float, col: Color, w
 			n.draw_colored_polygon(win, Color(window, 0.55))
 
 
-## Haze at a plane's feet: what is behind it fades into the sky.
-func _fog(n: Node2D, k: float, y: float, depth: float, col: Color) -> void:
-	for i in 10:
-		var f := i / 9.0
-		var y0 := y - depth * (1.0 - f)
-		n.draw_rect(Rect2(_lp(k, Vector2(-6.0 * H, y0)), Vector2(12.0 * H / k, depth * 0.12 / k)), Color(col, 0.07 + 0.05 * f))
-
-
 ## The Mother's words, warm gold, under everything, fading in and out.
 func _draw_subs() -> void:
 	if _whole_t < 0.0:
@@ -1106,7 +1248,7 @@ func _draw() -> void:
 		if sh.m > 0.0 and sh.m < 1.0:
 			poly = Geometry2D.convex_hull(poly)   # turning from one shape into the other: keep it whole
 			poly.remove_at(poly.size() - 1)
-		var col: Color = sh.col.lerp(sh.to_col, sh.m)
+		var col: Color = _stone_col(sh.col).lerp(_stone_col(sh.to_col), sh.m)
 		if _alive >= 1.0:
 			continue
 		draw_colored_polygon(poly, Color(col, 1.0 - _alive * _alive))
