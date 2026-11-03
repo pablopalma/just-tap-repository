@@ -66,12 +66,19 @@ func _init() -> void:
 		_leaves.append(Vector3(0.64 + cos(a) * d * 1.3, 0.28 + sin(a) * d * 0.7, rng.randf_range(0.045, 0.085)))
 
 
+## When the question was asked (Time.get_ticks_msec), for the play data: how long it took to answer.
+var _asked_ms := 0
+
+
 func _ready() -> void:
 	Narrator.say_now("story_ask")
+	_asked_ms = Time.get_ticks_msec()
+	Telemetry.event("story", {"step": "offer"})
 
 
 ## "tell me": the world goes to paper, the theme plays, and the memory draws itself line by line.
 func _tell() -> void:
+	Telemetry.event("story", {"step": "yes", "wait": snappedf((Time.get_ticks_msec() - _asked_ms) / 1000.0, 0.1)})
 	_telling = true
 	_t = 0.0
 	_next = FIRST_LINE
@@ -114,6 +121,13 @@ func _end(told: bool) -> void:
 	if _ending:
 		return
 	_ending = true
+	# the play data: "no" (said no to the question), "left" (stopped it partway) or "done" (heard it
+	# all), with how long and how many lines
+	var step := "no"
+	if _telling:
+		step = "done" if _line_i >= lines.size() else "left"
+	Telemetry.event("story", {"step": step, "s": snappedf(_t, 0.1), "lines": _line_i, "of": lines.size(),
+		"wait": snappedf((Time.get_ticks_msec() - _asked_ms) / 1000.0, 0.1)})
 	if told:
 		Music.stop_feature()
 	var tw := create_tween()

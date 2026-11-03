@@ -99,14 +99,19 @@ def report(rows):
     say("\n## Tiempo por barrera\n")
     say("Solo la primera vez que cada jugador la rompe. Las marcadas con ⚠ tardan más de "
         f"{SLOW:.0f} s en la mediana o más de {2 * SLOW:.0f} s para uno de cada cuatro.\n")
-    say("| Barrera | Jugadores | Mediana | 75 % | Máx. | Toques (mediana) | Abrió el árbol | Cinemática |")
+    say("| Barrera | Jugadores | Mediana | 75 % | Máx. | Toques (mediana) | Compró en el árbol | Cinemática |")
     say("|---:|---:|---:|---:|---:|---:|---:|---:|")
     slow = []
+    # The tree lives beside the line now (no panel to open): who bought something at each barrier.
+    bought_at = defaultdict(set)
+    for r in rows:
+        if r["event"] == "buy":
+            bought_at[r["n"]].add(r["uid"])
     for n in sorted(gate):
         per = gate[n]
         s = [float(d.get("s", 0)) for d in per.values()]
         taps = [int(d.get("taps", 0)) for d in per.values()]
-        tree = sum(1 for d in per.values() if int(d.get("tree", 0)) > 0)
+        tree = sum(1 for uid in per if uid in bought_at[n])
         cine = sum(1 for d in per.values() if d.get("cine"))
         med, p75 = statistics.median(s), pct(s, 0.75)
         flag = " ⚠" if med > SLOW or p75 > 2 * SLOW else ""
@@ -156,6 +161,28 @@ def report(rows):
     trees = [float(r["d"].get("s", 0)) for r in rows if r["event"] == "tree"]
     if trees:
         say(f"\nVeces que abren el árbol: {len(trees)} · tiempo adentro: mediana {fmt_s(statistics.median(trees))}")
+
+    # The story (builds that send "story" events): offered, accepted, heard to the end.
+    story = [r for r in rows if r["event"] == "story"]
+    if story:
+        steps = defaultdict(set)
+        heard = []
+        waits = []
+        for r in story:
+            st = r["d"].get("step", "")
+            steps[st].add(r["uid"])
+            if st in ("done", "left"):
+                heard.append(float(r["d"].get("s", 0)))
+            if st == "yes":
+                waits.append(float(r["d"].get("wait", 0)))
+        offered = len(steps["offer"]) or 1
+        say("\n## La historia\n")
+        say(f"- Se les ofreció a: **{len(steps['offer'])}** · dijeron que sí: **{len(steps['yes'])}** "
+            f"({100 * len(steps['yes']) / offered:.0f} %) · dijeron que no: {len(steps['no'])}")
+        say(f"- La escucharon entera: **{len(steps['done'])}** · la cortaron a la mitad: {len(steps['left'])}"
+            + (f" · tiempo escuchando (mediana): {fmt_s(statistics.median(heard))}" if heard else ""))
+        if waits:
+            say(f"- Tardaron en contestar (mediana): {fmt_s(statistics.median(waits))}")
 
     say("\n## Para revisar\n")
     if slow:

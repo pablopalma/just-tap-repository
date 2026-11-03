@@ -22,11 +22,14 @@ const DROSTE := true
 const TREE_INLINE := true
 
 ## Shown in the play data so balance can be compared between builds.
-const VERSION := "0.15.2-beta"
+const VERSION := "0.16.0-beta"
 
 ## Google Apps Script web app that receives the beta play data (docs/beta-datos.md). Empty: nothing
 ## is recorded and the title screen does not offer the switch.
 const TELEMETRY_URL := "https://script.google.com/macros/s/AKfycbymBcAgdGNKFZroeHRA1b4oxmpAjul-0zDKcY0jI_1buBkDJThyapyx0orRLs3kvG9W/exec"
+
+## The game's itch.io page: the demo's end asks for a rating there.
+const ITCH_URL := "https://floppykey.itch.io/just-tap"
 
 ## Store page for the wishlist button. Empty hides the button until the page exists.
 const STEAM_URL := ""

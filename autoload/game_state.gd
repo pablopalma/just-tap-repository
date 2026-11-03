@@ -156,12 +156,23 @@ const INTRO_UNTIL := 7
 var chapter_hp := [8.0, 10.0, 7.0, 1.0, 1.0]
 
 
+## The opening flows (3/11/2026): the play data and a player's video showed barrier 4 as the first
+## wall (82 taps after three of a few seconds) and the most players leaving there. Barriers up to
+## FLOW_UNTIL take FLOW_LOW of their life, then it rises evenly to the full curve at FLOW_FULL.
+const FLOW_LOW := 0.3
+const FLOW_UNTIL := 7
+const FLOW_FULL := 14
+
+
 func max_hp(n: int) -> float:
 	var base := float(n) if n <= 12 else 12.0 * pow(1.15, n - 12) + (n - 12) * 3
 	var early := lerpf(EARLY_BOOST, 1.0, clampf((n - 1) / float(EARLY_UNTIL - 1), 0.0, 1.0))
 	# The very first barriers fall in a handful of taps (§2): the first impression is reward.
 	var intro := lerpf(INTRO_START, 1.0, clampf((n - 1) / float(INTRO_UNTIL - 1), 0.0, 1.0))
-	return maxf(1.0, roundf(base * early * intro * chapter_hp[clampi(int((n - 1) / 20.0), 0, 4)]))
+	var flow := lerpf(FLOW_LOW, 1.0, clampf(float(n - FLOW_UNTIL) / (FLOW_FULL - FLOW_UNTIL), 0.0, 1.0))
+	if n <= 2:
+		flow = [1.0, 0.55][n - 1]   # the first two keep a few taps each: the lesson starts on them
+	return maxf(1.0, roundf(base * early * intro * flow * chapter_hp[clampi(int((n - 1) / 20.0), 0, 4)]))
 
 
 ## Fraction of max HP regenerated per second. Gentler than the design doc's 0.025·(n−7): the demo's

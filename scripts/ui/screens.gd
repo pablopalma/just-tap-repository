@@ -501,6 +501,8 @@ class EndScreen extends Control:
 		_demo_labels[0].text = Loc.t("demo_end")
 		_demo_labels[1].text = Loc.t("wishlist")
 		_demo_labels[2].text = Loc.t("new_game")
+		_demo_labels[3].text = Loc.t("rate_line")
+		_demo_labels[4].text = Loc.t("rate")
 
 	## demo: "the demo ends here", a wishlist button (when there is a store page) and start over.
 	func _init(demo := false) -> void:
@@ -525,7 +527,7 @@ class EndScreen extends Control:
 		box.set_anchors_and_offsets_preset(PRESET_CENTER_BOTTOM)
 		box.offset_left = -240
 		box.offset_right = 240
-		box.offset_top = -170
+		box.offset_top = -210
 		box.offset_bottom = -40
 		box.alignment = BoxContainer.ALIGNMENT_CENTER
 		add_child(box)
@@ -536,10 +538,19 @@ class EndScreen extends Control:
 			var sub := UIStyle.label(Loc.t("demo_end"), 19, true, Color(Palette.INK, 0.75))
 			sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			box.add_child(sub)
+			# a rating on itch is what makes itch show the game to more people
+			var rate_line := UIStyle.label(Loc.t("rate_line"), 16, true, Color(Palette.INK, 0.65))
+			rate_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			box.add_child(rate_line)
 			var row := HBoxContainer.new()
 			row.alignment = BoxContainer.ALIGNMENT_CENTER
 			row.add_theme_constant_override("separation", 40)
 			box.add_child(row)
+			var rate := UIStyle.button(Loc.t("rate"), 22)
+			rate.pressed.connect(func() -> void:
+				Telemetry.event("rate_click")
+				OS.shell_open(BuildFlags.ITCH_URL))
+			row.add_child(rate)
 			var wish := UIStyle.button(Loc.t("wishlist"), 22)
 			wish.visible = BuildFlags.STEAM_URL != ""
 			wish.pressed.connect(func() -> void: OS.shell_open(BuildFlags.STEAM_URL))
@@ -550,7 +561,8 @@ class EndScreen extends Control:
 			row.add_child(again)
 			PadFocus.offer(again)
 			PadFocus.offer(wish)
-			_demo_labels = [sub, wish, again]
+			PadFocus.offer(rate)
+			_demo_labels = [sub, wish, again, rate_line, rate]
 			SaveSystem.lang_changed.connect(_relabel_demo)
 		else:
 			var b := UIStyle.button(Loc.t("rebirth"), 22)

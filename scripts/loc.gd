@@ -31,6 +31,8 @@ const S := {
 	"max": {"es": "máximo", "en": "max"},
 	"demo_end": {"es": "La demo termina aquí. El resto del día te espera.", "en": "The demo ends here. The rest of the day is waiting."},
 	"wishlist": {"es": "agregar a deseados en Steam", "en": "wishlist on Steam"},
+	"rate_line": {"es": "Si te gustó, una valoración en itch me ayuda muchísimo.", "en": "If you enjoyed it, a rating on itch helps more than you know."},
+	"rate": {"es": "valorar en itch", "en": "rate it on itch"},
 	"continue_tap": {"es": "toca para seguir", "en": "tap to continue"},
 	"data_on": {"es": "beta · datos de juego anónimos: sí", "en": "beta · anonymous play data: on"},
 	"data_off": {"es": "beta · datos de juego anónimos: no", "en": "beta · anonymous play data: off"},
