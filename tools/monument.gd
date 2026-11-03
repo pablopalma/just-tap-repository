@@ -206,10 +206,10 @@ var _layers: Array[Dictionary] = []   # {node, k}: the planes behind and in fron
 
 
 func _ready() -> void:
-	var args := OS.get_cmdline_user_args()
+	var args: Array = Array(OS.get_cmdline_user_args()) + DevMenu.proto_args
 	_auto = "auto" in args
 	_look = LOOKS.rojo if "rojo" in args else LOOKS.azul
-	_lang = "en" if "en" in args else "es"
+	_lang = "en" if "en" in args else ("es" if "es" in args else SaveSystem.lang)
 	_font = load(UIStyle.ITALIC)
 	SaveSystem.enabled = false
 	Music.zone = 1
@@ -624,6 +624,9 @@ func _focus() -> Vector2:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and e.keycode == KEY_ESCAPE:
+		DevMenu.back_to_game(get_tree())
+		return
 	var pressed: bool = (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
 		or (e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_SPACE) \
 		or (e is InputEventJoypadButton and e.pressed and e.button_index == JOY_BUTTON_A)

@@ -51,14 +51,14 @@ var _dive := 0.0
 
 
 func _ready() -> void:
-	_auto = "auto" in OS.get_cmdline_user_args()
+	_auto = DevMenu.proto_has("auto")
 	_font = UIStyle.font()
 	SaveSystem.enabled = false
 	# the starry night's theme, for the mood
 	Music.zone = 4
 	Music._pending_zone = 4
 	Music.start()
-	if "end" in OS.get_cmdline_user_args():
+	if DevMenu.proto_has("end"):
 		_barrier = _total() - 3
 		_theta = _barrier_theta(_barrier - 1) + 0.2
 		_target = _theta
@@ -106,6 +106,9 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and e.keycode == KEY_ESCAPE:
+		DevMenu.back_to_game(get_tree())
+		return
 	var pressed: bool = (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
 		or (e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_SPACE) \
 		or (e is InputEventJoypadButton and e.pressed and e.button_index == JOY_BUTTON_A)

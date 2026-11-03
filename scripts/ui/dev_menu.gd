@@ -6,6 +6,36 @@ extends Control
 
 signal action(id: String, arg: int)
 
+## The prototypes that run as scenes of their own (tools/): played from here, Esc back to the game.
+## [name, scene, its arguments]. Only where the scene is there (tools/ is left out of exports).
+const PROTOS := [
+	["El monumento: la Madre", "res://tools/monument.tscn", []],
+	["El monumento, desde la cima", "res://tools/monument.tscn", ["end"]],
+	["El monumento, en rojo", "res://tools/monument.tscn", ["rojo"]],
+	["La espiral de ritmo (ave de estrellas)", "res://tools/spiral_rhythm.tscn", []],
+	["La espiral hacia abajo", "res://tools/spiral_down.tscn", []],
+	["La espiral, desde el fondo", "res://tools/spiral_down.tscn", ["end"]],
+]
+const GAME_SCENE := "res://scenes/main.tscn"
+
+## The arguments the prototype being played was opened with (as if given after `--`).
+static var proto_args: Array = []
+
+
+## A prototype's option: given on the command line, or by the button that opened it.
+static func proto_has(arg: String) -> bool:
+	return arg in OS.get_cmdline_user_args() or arg in proto_args
+
+
+## Out of a prototype, back into the game where it was (Esc).
+static func back_to_game(tree: SceneTree) -> void:
+	proto_args = []
+	Music.stop_feature()
+	Music.zone = Zones.of(GameState.stage)
+	Music._pending_zone = Music.zone
+	SaveSystem.enabled = true
+	tree.change_scene_to_file(GAME_SCENE)
+
 var _panel: PanelContainer
 
 
@@ -78,8 +108,11 @@ func _init() -> void:
 	_button(box, "Solo la carta", "letter", 0)
 	_button(box, "Pantalla de cierre (renacer)", "end", 0)
 
-	_title(box, "Prototipos")
+	_title(box, "Prototipos  (Esc vuelve al juego)")
 	_button(box, "Árbol al costado / en panel", "tree_inline", 0)
+	for i in PROTOS.size():
+		if ResourceLoader.exists(PROTOS[i][1]):
+			_button(box, PROTOS[i][0], "proto", i)
 
 	_title(box, "Ayudas")
 	_button(box, "Romper la barrera actual", "break", 0)

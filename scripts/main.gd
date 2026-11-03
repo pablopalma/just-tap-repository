@@ -998,6 +998,10 @@ func _on_dev(id: String, arg: int) -> void:
 			SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es")
 		"tree_inline":
 			_set_tree_inline(not tree_inline)
+		"proto":
+			# a prototype scene of its own; Esc in it comes back here
+			DevMenu.proto_args = DevMenu.PROTOS[arg][2]
+			get_tree().change_scene_to_file(DevMenu.PROTOS[arg][1])
 
 
 ## With the tree beside the line, the HUD's tree button and the panel step aside.
