@@ -51,6 +51,8 @@ func _init() -> void:
 		b.add_theme_color_override("font_outline_color", Color(Palette.PAPER, 0.9))
 		box.add_child(b)
 	_yes.pressed.connect(_tell)
+	PadFocus.offer(_yes)
+	PadFocus.reach(_no)
 	_no.pressed.connect(func() -> void: _end(_telling))
 	box.modulate.a = 0.0
 	create_tween().tween_property(box, "modulate:a", 1.0, 1.2).set_delay(1.4)

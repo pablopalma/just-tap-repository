@@ -26,6 +26,9 @@ var hold_k := 0.0
 ## While a run lasts, what a tap on the beat is worth shows beside the tip ("×2.4").
 var font: Font
 var _since_accent := 99.0
+## A run reached one of GameState.BEAT_MILESTONES: a burst of gold rings, bigger the further it got.
+var _mile := 0.0
+var _mile_level := 0
 ## In a cinematic the tip leaves a trail of its last positions (world space), fading.
 var trail := false
 var _trail: Array[Vector2] = []
@@ -56,6 +59,7 @@ func _process(delta: float) -> void:
 	_ring = lerpf(_ring, ring_to, minf(1.0, delta * 2.0))
 	_bold = lerpf(_bold, 1.0 if lesson else 0.0, minf(1.0, delta * 3.0))
 	_since_accent += delta
+	_mile = maxf(0.0, _mile - delta * 0.9)
 	position = path.pos_at(lit + jolt)
 	if trail:
 		_trail.push_front(position)
@@ -71,6 +75,11 @@ func kick(amount: float) -> void:
 	jolt = maxf(jolt, amount)
 	_squash = minf(1.0, _squash + amount / 12.0)
 	_flash = 1.0
+
+
+func milestone(level: int) -> void:
+	_mile = 1.0
+	_mile_level = level
 
 
 func accent(run: int) -> void:
@@ -121,6 +130,18 @@ func _draw() -> void:
 	if hold_k > 0.0:
 		var hc := Color(Palette.INK, 0.5 if hold_k < 1.0 else 0.3)
 		draw_arc(Vector2.ZERO, 28.0, -PI * 0.5, -PI * 0.5 + TAU * hold_k, 48, hc, 2.0, true)
+	if _mile > 0.0:
+		var e := 1.0 - _mile
+		var far := 70.0 + 14.0 * mini(_mile_level, 6)
+		for k in 3:
+			var ek := clampf(e * 1.4 - k * 0.18, 0.0, 1.0)
+			if ek <= 0.0 or ek >= 1.0:
+				continue
+			draw_arc(Vector2.ZERO, lerpf(18.0, far, ek), 0.0, TAU, 64, Color(Palette.GOLD, 0.7 * (1.0 - ek)), 2.6 - k * 0.6, true)
+		for i in 10:
+			var a := TAU * i / 10.0 + _mile_level
+			var d := lerpf(16.0, far * 0.8, e)
+			draw_circle(Vector2.from_angle(a) * d, 2.2 * _mile, Color(Palette.GOLD, 0.8 * _mile))
 	if _gold > 0.0:
 		var e := 1.0 - _gold
 		var far := 30.0 + 4.0 * minf(_run, 8)
@@ -143,8 +164,13 @@ func _draw() -> void:
 	if font != null and GameState.beat_streak > 0 and shown > 0.0:
 		var worth := GameState.beat_worth(GameState.beat_streak)
 		var s := "×%s" % (str(int(worth)) if is_equal_approx(worth, roundf(worth)) else "%.1f" % worth)
-		# on the left, a little below: the barrier's own number sits on its right
-		var size := 18 + mini(GameState.beat_streak, 8)
+		# on the left, a little below: the barrier's own number sits on its right. It grows with the
+		# run, jumps a little on every accent and a lot on a milestone.
+		var pop := 1.0 + 0.3 * (1.0 - smoothstep(0.0, 0.25, _since_accent)) + 0.5 * _mile * _mile
+		var size := int((28 + 2 * mini(GameState.beat_streak, 10)) * pop)
 		var w := font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-		View.text(self, font, View.screen(Vector2(-34.0 - w, 20.0)), s, HORIZONTAL_ALIGNMENT_LEFT, -1,
-			size, Color(Palette.GOLD.darkened(0.3), 0.9 * shown))
+		var at := View.screen(Vector2(-38.0 - w, 14.0 + size * 0.35))
+		View.text(self, font, at + View.screen(Vector2(1.5, 1.5)), s, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			size, Color(Palette.PAPER, 0.8 * shown))
+		View.text(self, font, at, s, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			size, Color(Palette.GOLD.darkened(0.35), shown))

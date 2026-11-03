@@ -8,6 +8,9 @@ var _zone: Label
 var _light: Label
 var _dmg: Label
 var _hint: Label
+## With a gamepad, the button the hint is about, drawn before its text (Pad).
+var _hint_glyph: Control
+var _hint_button := ""
 var _music: Button
 var _voice: Button
 var _lang: Button
@@ -88,6 +91,11 @@ func _ready() -> void:
 	_hint.offset_bottom = -40
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_hint)
+	_hint_glyph = Control.new()
+	_hint_glyph.mouse_filter = MOUSE_FILTER_IGNORE
+	_hint_glyph.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
+	_hint_glyph.draw.connect(_draw_hint_glyph)
+	_hint.add_child(_hint_glyph)
 
 	GameState.hit.connect(_on_hit)
 	_update_music_icon()
@@ -118,6 +126,7 @@ func _process(delta: float) -> void:
 	_dot.add_theme_color_override("font_color", col)
 
 	var hint := ""
+	var button := "a"
 	_beat_learned = _beat_learned or g.beat_streak >= 3
 	hold_learned = hold_learned or g.hold_taps_at_gate >= 4
 	if g.running and not g.finished and not g.cinematic:
@@ -129,12 +138,28 @@ func _process(delta: float) -> void:
 			hint = Loc.t("hint_beat")
 		elif g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
 			# beside the line there is nothing to open: the nodes are right there
-			hint = Loc.t("hint_tree" if _tree.visible else "hint_tree_inline")
+			hint = Loc.t("hint_tree" if _tree.visible else ("hint_tree_pad" if Pad.using else "hint_tree_inline"))
+			button = "rb"
 		elif not _beat_learned and g.stage >= 4 and g.stage < 12 and g.taps_at_gate > 15:
 			hint = Loc.t("hint_beat")
 		elif not hold_learned and g.stage >= 6 and g.stage < 20 and g.taps_at_gate > 40:
 			hint = Loc.t("hint_hold")
 	_put_text(_hint, hint)
+	_hint_button = button if Pad.using and hint != "" else ""
+	_hint_glyph.queue_redraw()
+
+
+## The hint's button, just before its text, pushed down on every beat as the player should push it.
+func _draw_hint_glyph() -> void:
+	if _hint_button == "":
+		return
+	var font := _hint.get_theme_font("font")
+	var size := _hint.get_theme_font_size("font_size")
+	var w := font.get_string_size(_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var at := Vector2(_hint.size.x * 0.5 - w * 0.5 - 26.0, _hint.size.y * 0.5 - 2.0)
+	var press := pow(1.0 - Music.heard_phase(), 4.0) if _hint_button == "a" else 0.0
+	var col: Color = _hint.get_theme_color("font_color")
+	Pad.draw_glyph(_hint_glyph, at, _hint_button, 15.0, Color(col, minf(1.0, col.a * 1.5)), press)
 
 
 func _put_text(l: Label, text: String) -> void:

@@ -422,6 +422,38 @@ func play_accent(run: int) -> void:
 		_schedule(t, "note", "glass", midi + 12, 0.028)
 
 
+## A run on the beat reached a milestone (GameState.BEAT_MILESTONES, level 0 the first): a flourish
+## after the accent, a run of notes climbing the key in sixteenths, celesta and harp in turns, that
+## lands on the next beat in a bloom (the chord spread out on the harp, glass and celesta on top) and
+## a breath of air. Longer and brighter the further the run got.
+func play_milestone(level: int) -> void:
+	if not playing:
+		return
+	var s16 := _s16()
+	var beat := s16 * 4.0
+	var t0 := maxf(_time, _zone_origin + roundf((_time - _zone_origin) / beat) * beat)
+	var n := 4 + mini(level, 4)
+	var gain := 1.0 + 0.12 * mini(level, 5)
+	for i in n:
+		var t := t0 + s16 * (i + 1)
+		_note_deg(t, "celesta" if i % 2 == 0 else "harp", 2 + i, 12, 0.03 * gain)
+		if i >= n - 2:
+			_note_deg(t, "glass", 2 + i, 24, 0.016 * gain)
+	var land := t0 + ceilf(s16 * (n + 1) / beat) * beat
+	for k in 4:
+		_note_deg(land + s16 * 0.33 * k, "harp", k, 0, 0.04 * gain)
+	_note_deg(land, "glass", 7 + mini(level, 3), 12, 0.03 * gain)
+	_note_deg(land, "celesta", 7 + mini(level, 3), 12, 0.035 * gain)
+	_note_deg(land + s16 * 2.0, "glass", 9 + mini(level, 3), 12, 0.02 * gain)
+	_schedule_atmos(land - s16, "swell", 1.25, -24.0 + 2.0 * mini(level, 4), "distant")
+
+
+## A degree of whatever chord (or key) sounds when it plays, on the music's own voices.
+func _note_deg(t: float, inst: String, deg: int, octave_offset: int, vol: float) -> void:
+	_queue.append({"t": t, "kind": "deg", "what": inst, "deg": deg, "base": octave_offset, "vol": vol,
+		"bird": false})
+
+
 func play_tap(progress: float, crit: bool) -> void:
 	if not playing:
 		return

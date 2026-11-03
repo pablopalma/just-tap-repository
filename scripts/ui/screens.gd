@@ -57,9 +57,11 @@ class Intro extends Control:
 		_choices.mouse_filter = MOUSE_FILTER_IGNORE
 		_continue = UIStyle.button("", 24)
 		_continue.pressed.connect(func() -> void: continue_pressed.emit())
+		PadFocus.offer(_continue)
 		_new = UIStyle.button("", 17)
 		_new.modulate.a = 0.6
 		_new.pressed.connect(_on_new)
+		PadFocus.reach(_new)
 		_choices.add_child(_continue)
 		_choices.add_child(_new)
 		for c in [_title, _tag, gap, _prompt if not returning else _choices]:
@@ -435,7 +437,7 @@ class Letter extends Control:
 			accept_event()
 
 	func _unhandled_input(e: InputEvent) -> void:
-		if e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_SPACE:
+		if (e is InputEventKey and e.is_pressed() and (e as InputEventKey).keycode == KEY_SPACE) 				or e.is_action_pressed("tap"):
 			_leave()
 			get_viewport().set_input_as_handled()
 
@@ -515,11 +517,14 @@ class EndScreen extends Control:
 			again.modulate.a = 0.7
 			again.pressed.connect(func() -> void: new_game_pressed.emit())
 			row.add_child(again)
+			PadFocus.offer(again)
+			PadFocus.offer(wish)
 			_demo_labels = [sub, wish, again]
 			SaveSystem.lang_changed.connect(_relabel_demo)
 		else:
 			var b := UIStyle.button(Loc.t("rebirth"), 22)
 			b.pressed.connect(func() -> void: rebirth_pressed.emit())
+			PadFocus.offer(b)
 			box.add_child(b)
 			SaveSystem.lang_changed.connect(func() -> void: b.text = Loc.t("rebirth"))
 

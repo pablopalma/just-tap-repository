@@ -62,6 +62,7 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
 - **El árbol es parte del dibujo:** brota de la línea en ramas, no se abre en un menú (§5).
 - **Tocar con la música (2/11/2026).** El toque sigue siendo el gesto, pero cambia lo que cuesta. La beta mostró que se toca mucho: los que llegan lejos hacen 3,5–5 toques por segundo y unos 2.000 en la demo, y un jugador en Reddit terminó con el brazo cansado. La intriga sostiene 10 minutos, pero no 2 horas: cada toque tiene que significar algo.
   - **A tiempo:** un toque que cae en el tiempo de la música vale ×2, y cada tiempo seguido de la racha suma ×0,375, hasta ×5. Vale más en todo lo que da un toque: daño, luz, probabilidad de destello y de eco, y combo (`GameState.BEAT_*`). La racha admite silencios de hasta 2 tiempos, así que tocar a medio tiempo también sirve. Un toque fuera de tiempo, o un segundo toque en el mismo tiempo, corta la racha. Sin penalidad: ese toque vale lo normal.
+  - **Logros de racha:** en las rachas de 4, 8, 12, 16, 24, 32, 48, 64… (`GameState.BEAT_MILESTONES`), una floritura sube en semicorcheas por la escala del tema (celesta y arpa) y cae en el tiempo siguiente en un acorde abierto con cristal (`Music.play_milestone`), mientras la punta suelta aros dorados; más larga y brillante cuanto más lejos llega. El ×N de la racha se ve más grande (28 a 48 puntos) y salta en cada toque a tiempo.
   - Cuenta el tiempo como lo escucha el jugador: se descuenta la latencia de salida de audio (`Music.beat_at_tap`). La ventana es generosa, de ±20 % del tiempo, porque se trata de sentir la música y no de precisión.
   - Se oye y se ve: la nota del acento cae sobre el tiempo y sube un grado del acorde por cada tiempo de la racha, así que la racha toca una melodía (`Music.play_accent`). Desde el cuarto tiempo se suma el cristal. La punta muestra un aro tenue que se cierra en cada tiempo y un destello dorado en cada acento (`tip.gd`).
   - **Mantener presionado** (botón, dedo o espacio): después de 0,4 s toca solo dos veces por tiempo, ×1,6 cada una (`Main.HOLD_DELAY`, `GameState.HOLD_WORTH`). El brazo descansa y se avanza un poco más lento que tocando.
@@ -520,6 +521,25 @@ Visual y audio **escuchan** señales; `GameState` no sabe nada de gráficos.
 ### 13.5 Input
 - `_unhandled_input`: `InputEventScreenTouch` (pressed) y `InputEventMouseButton` → `GameState.tap("tap", Music.beat_at_tap())`. Multitouch: cada dedo cuenta. Mientras se mantiene presionado, `Main._process_hold` toca en cada medio tiempo (§1, "Tocar con la música").
 - Activar `input_devices/pointing/emulate_mouse_from_touch = false` para no duplicar.
+
+### 13.6 Joystick
+Se toma como referencia el joystick de Xbox, el estándar en PC: Steam Input traduce cualquier otro a ese esquema, y la verificación para Steam Deck pide poder jugar todo con joystick. Los botones van por posición, como los nombra Godot, así que el mismo mapa sirve para Xbox, PlayStation y Switch (`scripts/pad.gd`; las acciones se crean al arrancar, no en `project.godot`).
+
+| Acción | Botón |
+|---|---|
+| Tocar | A, o cualquiera de los dos gatillos |
+| Mantener para seguir tocando | dejar apretado A o un gatillo |
+| Árbol: elegir mejora | RB / LB o la cruceta ← → (muestra qué hace) |
+| Árbol: comprar | X |
+| Menús (historia, inicio, final) | stick o cruceta para moverse, A para aceptar, B para volver |
+| Dejar la carta | A |
+
+**Los íconos aparecen solo cuando se juega con joystick** (`Pad.using`): el último dispositivo usado decide, y si el jugador vuelve al mouse o al teclado, vuelve el texto de siempre. Se dibujan con la tinta del juego (un círculo a mano y la letra en la tipografía de la casa), no con los gráficos de las marcas. Si el joystick es de PlayStation se dibujan ✕ ○ □ △, y si es de Switch las letras van en su lugar (abajo es B).
+- **La pista de abajo** lleva el botón antes del texto ("Ⓐ toca", "Ⓐ toca con la música", "Ⓐ mantén presionado"), latiendo con la música. La del árbol cambia a "RB · elige una mejora del árbol".
+- **El árbol**: con joystick siempre hay un nodo elegido (el primero que se puede comprar), con un aro, la Ⓧ al costado (presionándose con el pulso si se puede comprar) y, si hay más mejoras, RB del otro lado. Así se ve cómo cambiar y comprar sin tener que adivinar.
+- **Los íconos son botones**: tienen un borde por debajo, y la Ⓐ baja sobre él en cada pulso, como si se presionara, mostrando cuándo tocar.
+- **Los menús** (`scripts/ui/pad_focus.gd`): cada menú ofrece su botón principal (`PadFocus.offer`), que toma el foco cuando se juega con joystick, y el botón elegido muestra la Ⓐ al lado. Sin joystick nadie se queda con el foco, así la barra espaciadora siempre toca.
+- Prueba: `tools/pad_test.tscn` juega con un joystick simulado (empezar, tocar con el ritmo, mantener el gatillo, elegir y comprar en el árbol, contestar la historia).
 
 ---
 

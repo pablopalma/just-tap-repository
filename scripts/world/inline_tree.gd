@@ -49,6 +49,8 @@ var _wind_t := 0.0
 var _gust := 0.0              # 0.. how hard the wind blows: the line climbing fast
 var _r := 18.0                # node radius, world units
 var _shown := {}              # id -> state already drawn
+## With a gamepad (Pad): the node in focus, walked with the shoulders, bought with X.
+var pad_focus := ""
 var _appear := {}             # id -> 0..1 the branch growing and its node drawing itself
 var _pop := {}                # id -> 0..1 bounce after buying
 var _nudge := {}              # id -> 0..1 shake when it can't be bought yet
@@ -99,7 +101,21 @@ func _process(delta: float) -> void:
 		_nudge[id] = maxf(0.0, _nudge[id] - delta * 3.0)
 	_info_t = maxf(0.0, _info_t - delta)
 	_hover()
+	_pad_auto()
 	queue_redraw()
+
+
+## With a gamepad, some node always has the focus, so its buttons show without having to guess them:
+## the first that can be bought, or else the first open one.
+func _pad_auto() -> void:
+	if not Pad.using or (pad_focus != "" and int(_shown.get(pad_focus, 0)) >= 2):
+		return
+	pad_focus = ""
+	for id in Upgrades.ORDER:
+		if int(_shown.get(id, 0)) >= 2 and (pad_focus == "" or GameState.can_buy(id)):
+			pad_focus = id
+			if GameState.can_buy(id):
+				break
 
 
 ## On a computer, the mouse over a node shows what it does now and what its next level gives (on a
@@ -251,6 +267,38 @@ func try_tap(screen_pos: Vector2) -> bool:
 	return true
 
 
+## The next (dir 1) or previous (-1) open node gets the gamepad's focus, and shows what it does.
+func pad_step(dir: int) -> void:
+	if not visible or modulate.a < 0.5:
+		return
+	var open: Array[String] = []
+	for id in Upgrades.ORDER:
+		if int(_shown.get(id, 0)) >= 2:
+			open.append(id)
+	if open.is_empty():
+		return
+	var i := open.find(pad_focus)
+	i = (0 if dir > 0 else open.size() - 1) if i == -1 else posmod(i + dir, open.size())
+	pad_focus = open[i]
+	_info_id = pad_focus
+	_info_t = INFO_TIME
+
+
+## X: buys the node in focus (the first one that can be bought, if none has it yet).
+func pad_buy() -> void:
+	if not visible or modulate.a < 0.5:
+		return
+	if pad_focus == "" or int(_shown.get(pad_focus, 0)) < 2:
+		pad_focus = ""
+		for id in Upgrades.ORDER:
+			if GameState.can_buy(id):
+				pad_focus = id
+				break
+		if pad_focus == "":
+			return
+	_choose(pad_focus)
+
+
 func _choose(id: String) -> void:
 	_info_id = id
 	_info_t = INFO_TIME
@@ -333,6 +381,26 @@ func _draw() -> void:
 		var price := Loc.t("max") if maxed else "◆ " + Fmt.num(GameState.cost(id))
 		_text(below + View.screen(Vector2(0, price_size + 2)), price, price_size,
 			Color(col.darkened(0.2), k) if buyable else Color(Palette.INK, 0.45 * k))
+
+	# The gamepad's focus: a ring around the node, the button that buys it on one side (pressing on
+	# the beat while it can be bought) and, if there are others, the one that moves on the other.
+	if Pad.using and pad_focus != "" and int(_shown.get(pad_focus, 0)) >= 2:
+		var c := _point(pad_focus)
+		var ring := _r + 7.0 / z
+		var gr := 15.0 / z
+		draw_arc(c, ring, 0.0, TAU, 48, Color(Palette.INK, 0.75), line_w * 1.6, true)
+		var press := beat if GameState.can_buy(pad_focus) else 0.0
+		draw_set_transform(c + View.screen(Vector2(-ring - gr - 6.0 / z, 0)), View.angle)
+		Pad.draw_glyph(self, Vector2.ZERO, "x", gr, Color(Palette.INK, 0.85), press)
+		draw_set_transform(Vector2.ZERO)
+		var open := 0
+		for id in Upgrades.ORDER:
+			if int(_shown.get(id, 0)) >= 2:
+				open += 1
+		if open > 1:
+			draw_set_transform(c + View.screen(Vector2(ring + gr + 6.0 / z, 0)), View.angle)
+			Pad.draw_glyph(self, Vector2.ZERO, "rb", gr * 0.85, Color(Palette.INK, 0.6))
+			draw_set_transform(Vector2.ZERO)
 
 	# What the last touched node does, for a moment, under it.
 	if _info_t > 0.0 and _info_id != "":

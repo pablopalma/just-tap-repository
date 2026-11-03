@@ -119,6 +119,7 @@ var _flash_tween: Tween
 
 
 func _ready() -> void:
+	Pad.setup()
 	_build()
 	GameState.hit.connect(_on_hit)
 	GameState.gate_broken.connect(_on_gate_broken)
@@ -245,6 +246,9 @@ func _build() -> void:
 	hud.set_script(load("res://scripts/ui/hud.gd"))
 	hud.modulate.a = 0.0
 	ui.add_child(hud)
+	var pad_focus := Control.new()
+	pad_focus.set_script(load("res://scripts/ui/pad_focus.gd"))
+	ui.add_child(pad_focus)
 	zone_title = Screens.ZoneTitle.new()
 	ui.add_child(zone_title)
 	cinema = Screens.Cinema.new()
@@ -280,6 +284,11 @@ func _node(node_name: String, script_path: String) -> Node2D:
 	return n
 
 
+## Every input, before the GUI: the prompts follow the device in use (a gamepad's, or the screen's).
+func _input(e: InputEvent) -> void:
+	Pad.note(e)
+
+
 func _unhandled_input(e: InputEvent) -> void:
 	var pressed := false
 	if e is InputEventMouseButton:
@@ -301,6 +310,26 @@ func _unhandled_input(e: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if not e is InputEventKey and inline_tree.try_tap(e.get("position")):
 		return  # a node of the tree: bought, never a hit
+	_press()
+
+
+## A gamepad: A or a trigger taps (unless a menu's button has the focus: A presses that), the
+## shoulders and the d-pad walk the tree's nodes, X buys the one in focus.
+func _process_pad() -> void:
+	if get_viewport().gui_get_focus_owner() != null:
+		return
+	if Input.is_action_just_pressed("tap"):
+		_press()
+	if Input.is_action_just_pressed("tree_next"):
+		inline_tree.pad_step(1)
+	if Input.is_action_just_pressed("tree_prev"):
+		inline_tree.pad_step(-1)
+	if Input.is_action_just_pressed("tree_buy"):
+		inline_tree.pad_buy()
+
+
+## A tap on the screen, the space bar or the gamepad's button.
+func _press() -> void:
 	if _cine or _now or _story:
 		return  # in a cinematic the tip plays on its own; in a story, we listen
 	if mode == Mode.INTRO:
@@ -341,7 +370,7 @@ func _process_lesson() -> void:
 func _process_hold(delta: float) -> void:
 	if not _holding:
 		return
-	var down := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_key_pressed(KEY_SPACE)
+	var down := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_key_pressed(KEY_SPACE) 		or Input.is_action_pressed("tap")
 	if not down or mode != Mode.PLAY or _cine or _now or _story or droste.is_playing():
 		_holding = false
 		return
@@ -491,6 +520,7 @@ func _process(delta: float) -> void:
 		_process_cinematic(delta)
 	if _now:
 		_process_now(delta)
+	_process_pad()
 	_process_hold(delta)
 	_process_lesson()
 	path_view.lit = tip.lit
@@ -752,6 +782,10 @@ func _on_hit(damage: float, crit: bool, source: String) -> void:
 	tip.kick(6.0 if source == "auto" else (16.0 if run > 0 else 12.0))
 	if run > 0:
 		tip.accent(run)
+		var mile := GameState.BEAT_MILESTONES.find(run)
+		if mile >= 0:
+			tip.milestone(mile)
+			Music.play_milestone(mile)
 	if _dark and source == "tap":
 		crumble.tap(GameState.stage)
 	gates.hit(0.25 if source == "auto" else (0.9 if run > 0 else 0.6))

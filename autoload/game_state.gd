@@ -401,6 +401,10 @@ func _break_gate() -> void:
 
 
 ## What a tap on the beat is worth with a run of `run` beats (1 = the first on the beat).
+## Runs on the beat that are celebrated: a flourish of notes and a burst of gold (Main._on_hit).
+const BEAT_MILESTONES := [4, 8, 12, 16, 24, 32, 48, 64, 96, 128]
+
+
 func beat_worth(run: int) -> float:
 	return minf(BEAT_MAX, BEAT_MULT + BEAT_STEP * (run - 1))
 
