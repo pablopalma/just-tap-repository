@@ -81,7 +81,7 @@ const LESSON_FROM := 2
 const LESSON_TO := 4
 const LESSON_RUN := 4
 ## Holding is offered once, from this barrier, if it has not been tried.
-const HOLD_LESSON_FROM := 6
+const HOLD_LESSON_FROM := 12
 var lesson := false
 var _lesson_done := false
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
@@ -358,7 +358,8 @@ func _process_lesson() -> void:
 		lesson = false
 		hud.praise()
 		Narrator.say("beat_2")
-	if playing and g.stage >= HOLD_LESSON_FROM and not hud.hold_learned and g.taps_at_gate > 30:
+	# only once the tapping really adds up (3/11/2026: at barrier 6 it came less than a minute in)
+	if playing and g.stage >= HOLD_LESSON_FROM and not hud.hold_learned and g.taps_at_gate > 60:
 		Narrator.say("hold_1")
 	Music.pulse_on = lesson or (playing and Music.layers == 0 and g.beat_streak >= 2)
 	tip.lesson = lesson

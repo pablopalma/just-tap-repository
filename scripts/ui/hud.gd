@@ -142,7 +142,7 @@ func _process(delta: float) -> void:
 			button = "rb"
 		elif not _beat_learned and g.stage >= 4 and g.stage < 12 and g.taps_at_gate > 15:
 			hint = Loc.t("hint_beat")
-		elif not hold_learned and g.stage >= 6 and g.stage < 20 and g.taps_at_gate > 40:
+		elif not hold_learned and g.stage >= 12 and g.stage < 30 and g.taps_at_gate > 60:
 			hint = Loc.t("hint_hold")
 	_put_text(_hint, hint)
 	_hint_button = button if Pad.using and hint != "" else ""

@@ -111,7 +111,9 @@ const LINES := {
 }
 
 ## Reaching barrier n says the line once.
-const ON_REACH := {3: "01", 8: "02", 14: "04", 24: "07", 35: "10", 44: "14", 55: "16", 64: "20",
+## The first one waits until barrier 6 (3/11/2026): at 3 it took control away 12 s into the game,
+## while the beat's lesson was still talking.
+const ON_REACH := {6: "01", 8: "02", 14: "04", 24: "07", 35: "10", 44: "14", 55: "16", 64: "20",
 	75: "22", 84: "26", 95: "28"}
 
 ## Completing zone z (1..9); zone 10 is the ending.
