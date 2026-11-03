@@ -82,6 +82,7 @@ class Intro extends Control:
 		_lang.offset_bottom = -18
 		_lang.pressed.connect(func() -> void: SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es"))
 		add_child(_lang)
+		PadFocus.reach(_lang)
 		_phones = HBoxContainer.new()
 		_phones.set_anchors_and_offsets_preset(PRESET_CENTER_BOTTOM)
 		_phones.grow_horizontal = GROW_DIRECTION_BOTH
@@ -109,6 +110,7 @@ class Intro extends Control:
 			_data.offset_bottom = -20
 			_data.pressed.connect(_toggle_data)
 			add_child(_data)
+			PadFocus.reach(_data)
 		_refresh()
 
 	func _ready() -> void:

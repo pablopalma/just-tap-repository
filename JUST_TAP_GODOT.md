@@ -542,6 +542,8 @@ Se toma como referencia el joystick de Xbox, el estándar en PC: Steam Input tra
 - **El árbol**: con joystick siempre hay un nodo elegido (el primero que se puede comprar), con un aro, la Ⓧ al costado (presionándose con el pulso si se puede comprar) y, si hay más mejoras, RB del otro lado. Así se ve cómo cambiar y comprar sin tener que adivinar.
 - **Los íconos son botones**: tienen un borde por debajo, y la Ⓐ baja sobre él en cada pulso, como si se presionara, mostrando cuándo tocar.
 - **Los menús** (`scripts/ui/pad_focus.gd`): cada menú ofrece su botón principal (`PadFocus.offer`), que toma el foco cuando se juega con joystick, y el botón elegido muestra la Ⓐ al lado. Sin joystick nadie se queda con el foco, así la barra espaciadora siempre toca.
+- **El resto de los botones del inicio** (idioma, datos) también se eligen: con nada en foco, la cruceta va al botón más cercano; **B** suelta el foco y **A** vuelve a empezar el juego (`tools/menu_pad_test.tscn`).
+- **Sonido de los menús** (`Music.ui_hover`, `Music.ui_press`): pasar por un botón (con el mouse o el joystick) toca una nota suave de celesta que sube y baja, y apretarlo, un pequeño acorde de cristal. En el título suena en do mayor, la tonalidad del tema del título; en el juego, en la del tema que suena.
 - Prueba: `tools/pad_test.tscn` juega con un joystick simulado (empezar, tocar con el ritmo, mantener el gatillo, elegir y comprar en el árbol, contestar la historia).
 
 ---

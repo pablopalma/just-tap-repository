@@ -10,6 +10,8 @@ const LIFT := 1.08
 
 static var _offered: Array[Button] = []
 static var _hover: Button
+var _was_hot: Button   # the button you were on last frame: reaching another one plays its note
+var _cancelled := false  # B let go of the focus: it waits for the d-pad before taking it again
 
 
 ## A menu's main button, to take the focus when the player plays with a gamepad.
@@ -24,6 +26,7 @@ static func reach(b: Button) -> void:
 	b.focus_mode = FOCUS_ALL
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.add_to_group(&"pad_reach")
+	b.pressed.connect(Music.ui_press)
 	b.mouse_entered.connect(func() -> void: _hover = b)
 	b.mouse_exited.connect(func() -> void:
 		if _hover == b:
@@ -55,14 +58,31 @@ func _process(delta: float) -> void:
 			focus.release_focus()
 		queue_redraw()
 		return
-	if focus == null:
+	# B lets go of a menu's button (on the title, A then starts the game again)
+	if focus != null and Input.is_action_just_pressed("ui_cancel"):
+		focus.release_focus()
+		_cancelled = true
+		return
+	if focus != null:
+		queue_redraw()
+		return
+	# nothing in focus: the menu's main button takes it (unless B just let it go)…
+	if not _cancelled:
 		for i in range(_offered.size() - 1, -1, -1):
 			var b := _offered[i]
 			if not is_instance_valid(b):
 				_offered.remove_at(i)
 			elif b.is_visible_in_tree() and not b.disabled:
 				b.grab_focus()
-				break
+				queue_redraw()
+				return
+	# …or the d-pad reaches the menu's other buttons (the language, the data)
+	var dir := ["ui_left", "ui_right", "ui_up", "ui_down"].any(func(a: String) -> bool: return Input.is_action_just_pressed(a))
+	if dir:
+		var all := _reachable()
+		if not all.is_empty():
+			_cancelled = false
+			all[0].grab_focus()
 	queue_redraw()
 
 
@@ -70,6 +90,10 @@ func _process(delta: float) -> void:
 ## towards full ink and LIFT.
 func _lift(delta: float) -> void:
 	var hot := _hot()
+	if hot != _was_hot:
+		if hot != null:
+			Music.ui_hover()
+		_was_hot = hot
 	var k := minf(1.0, delta * 12.0)
 	for b in _reachable():
 		if not b.has_meta("rest_a"):

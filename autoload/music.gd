@@ -398,6 +398,31 @@ func _heard_time() -> float:
 	return _time - _zone_origin - AudioServer.get_output_latency() - HEARD_LAG
 
 
+## Menus (PadFocus): a soft note when a button is reached, a small chime when one is pressed, in the
+## key of whatever plays (the title theme is in C major), walking up and down so they never repeat.
+const TITLE_KEY := 60
+const UI_WALK := [2, 3, 4, 3, 2, 1]
+var _ui_i := 0
+
+
+func ui_hover() -> void:
+	var deg: int = UI_WALK[_ui_i % UI_WALK.size()]
+	_ui_i += 1
+	_play("celesta", _ui_note(deg), 0.02)
+
+
+func ui_press() -> void:
+	_play("glass", _ui_note(5), 0.03)
+	_play("celesta", _ui_note(7), 0.018)
+	_play("harp", _ui_note(0) - 12, 0.025)
+
+
+func _ui_note(deg: int) -> int:
+	if title_on or not playing:
+		return TITLE_KEY + 12 + int(PENTATONIC[deg % 5]) + 12 * int(deg / 5.0)
+	return _fold(chord_note(deg, tonic() + 24), BRIGHT_CEILING)
+
+
 ## A tap on the beat: its note lands on the beat itself (or at once, if the tap came after it),
 ## a step higher for every beat of the run, so a run on the beat plays a melody; from the fourth,
 ## glass doubles it an octave up.
