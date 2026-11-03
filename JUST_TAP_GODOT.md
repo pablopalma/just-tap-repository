@@ -37,7 +37,7 @@ Este documento describe el prototipo web (versión **"gris"**) con todo el detal
 ## 1. Visión y pilares
 
 **El norte (2/11/2026).** Just Tap es más una experiencia que un juego de números: todo lo que el jugador hace forma una gran obra de arte que representa sus pensamientos y su mundo interior. La línea no es una torre que se sube: es un recorrido hacia adentro. Cada decisión se mide contra esa idea.
-- **La historia:** el puntito es el alma de una niña (la de la portada) y la voz es su padre, o Dios, enseñándole la vida: emociones, momentos, que no está sola, que todo lo que tenemos es este momento.
+- **La historia:** el puntito es el Hijo y la voz es el Padre, el todo, enseñándole la vida: emociones, momentos, que no está solo, que todo lo que tenemos es este momento. **El Hijo no tiene género** (3/11/2026): es masculino y femenino, hijo en el sentido de hijo del Padre; la niña de la portada es una imagen, no su género.
 - **Todo está conectado (3/11/2026).** Los animales gigantes que aparecen en el camino (la ballena, y los que vengan) muestran que todos somos parte del todo. **El final del juego: el puntito es un ser que vuelve a su padre, el todo, el absoluto, que es el narrador.**
 - **Hacia adentro:** entre zona y zona la cámara cae en la punta y sale en la zona siguiente, que es la línea dentro de la línea (el efecto Droste, `scripts/world/droste.gd`). Cada zona va hacia su propio lado: la línea no siempre sube (`Main.ZONE_ANGLE`, detrás de `BuildFlags.DROSTE`).
 
@@ -718,7 +718,7 @@ Al renacer, el mundo vuelve a gris pero **la torre anterior queda dibujada muy t
 Alguien tuvo un mal día. Abre el juego y una voz le dice: *"If you had a bad day… just tap."*
 La línea que sube es lo que esa persona hace con su día: cada tap es un pequeño acto de seguir. El viaje por los colores recorre, sin nombrarlo, cómo se atraviesa un mal día: **entumecimiento → enojo → respirar → tristeza → calidez**.
 
-**¿Quién habla?** Durante todo el juego la voz parece un acompañante externo, cálido, que sabe lo que pasa. Al final se revela: **es la parte de vos que sigue adelante**. La voz es la línea.
+**¿Quién habla?** El Padre: el todo, el absoluto (decidido el 3/11/2026, `docs/brief-juego-completo.md`). Durante todo el juego acompaña, cuenta historias de su vida y alienta a seguir; al final, el puntito vuelve a él. (Antes estaba pensado que se revelara como "la parte de ti que sigue adelante"; se descartó.)
 
 ### 20.2 Tono
 - Frases cortas, en segunda persona, nunca más de 12 palabras.

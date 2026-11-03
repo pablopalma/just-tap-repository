@@ -58,6 +58,8 @@ La oscuridad se juega. Antes la demo se cortaba justo cuando aparecía lo más i
 
 ## 3. El juego completo: arco y partes oscuras
 
+> **Actualizado el 3/11/2026:** el esquema vigente de capítulos (12 capítulos, 120 niveles) está en `docs/brief-juego-completo.md`. La tabla de abajo queda como antecedente; las mecánicas de las partes oscuras (§4 y §5) siguen valiendo y van en el capítulo 9, la Noche.
+
 El juego completo recorre un mal día entero. Para que el color pese, tiene que haber oscuridad: tramos donde el mundo se apaga, se complica y el jugador tiene que sostenerse.
 
 | Acto | Capítulos | Emoción | Mecánica nueva | Barreras |
