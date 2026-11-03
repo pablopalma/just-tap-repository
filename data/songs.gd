@@ -102,21 +102,84 @@ const DARK := {
 }
 
 
-## The dark's recorded theme ("Light After the Dark", audio/music/dark_theme.ogg, 3 min at 72 BPM,
-## the dark zone's tempo, mostly in B-flat): played in the dark instead of DARK when the file is there.
-## beat0: its first beat (s). keys: for each bar from beat0, the pitch class (C = 0) of the major
-## pentatonic that fits it best, measured from the recording; the taps' notes come from it. climax:
-## where it jumps at the "now" (barrier 43), so its return home lands on the resolution.
-const DARK_THEME := {
-	"path": "res://audio/music/dark_theme.ogg",
-	"beat0": 0.766,
-	"climax": 146.0,
-	"keys": [8, 1, 10, 10, 3, 1, 10, 1, 8, 10, 10, 1, 3, 10, 10, 3, 3, 10, 10, 10, 3, 1, 10, 1, 8, 6,
-		6, 6, 6, 8, 10, 10, 3, 10, 10, 3, 3, 8, 10, 3, 3, 10, 10, 8, 8, 6, 6, 6, 8, 8, 10, 10, 3],
+## The recorded themes (audio/music, JUST_TAP_GODOT.md §9.8; docs/banda-sonora.md). Where one is
+## there, it plays instead of the generated music: each zone has its own (ZONE_TRACKS), the dark has
+## "dark", and the story and the letter have theirs (Music.play_feature). Measured from each recording:
+##   bpm, metre (beats in a bar), beat0 (its first beat, s), bar0 (its first downbeat, s);
+##   keys: for each bar from bar0, the pitch class (C = 0) of the major pentatonic that fits it best;
+##         taps, bells and every generated note take their notes from it.
+##   db: its level, so all sit like the title theme (≈ -29 LUFS), lower under a voice.
+##   taps: how a tap on the beat sounds over it, its own colour: [instrument, octave shift, gain] on
+##         the bar's first beat ("down") and on the others ("beat"); the run walks "contour" (degrees
+##         of the pentatonic, an octave up each time round); glass doubles from run "glass_from".
+##   climax (the dark): where it jumps at the "now", so its return home lands on the resolution.
+const TRACKS := {
+	# After the Hard Day · zona 1: piano bright, a gentle start.
+	"z1": {
+		"path": "res://audio/music/after_the_hard_day.ogg",
+		"bpm": 80, "metre": 4, "beat0": 0.685, "bar0": 2.935, "db": -13.5,
+		"taps": {"down": ["piano", 0, 1.0], "beat": ["harp", 0, 0.7], "contour": [0, 2, 1, 3, 2, 4, 3, 5], "glass_from": 4},
+		"keys": [7, 7, 2, 0, 9, 9, 7, 9, 9, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 9, 9, 2, 9, 9,
+			9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 9, 9, 2, 9, 9, 9, 2, 9, 9, 9, 2,
+			2, 2, 9, 9, 9, 2, 2, 0],
+	},
+	# Rooted Light · zona 2: folk, harp and flute.
+	"z2": {
+		"path": "res://audio/music/rooted_light.ogg",
+		"bpm": 66, "metre": 4, "beat0": 0.816, "bar0": 1.725, "db": -15.6,
+		"taps": {"down": ["harp", -12, 1.0], "beat": ["piano", 0, 0.6], "contour": [2, 1, 0, 1, 2, 3, 4, 3], "glass_from": 6},
+		"keys": [7, 7, 2, 0, 2, 7, 2, 0, 2, 9, 9, 2, 2, 9, 9, 2, 7, 2, 2, 9, 9, 2, 2, 9, 9, 2, 2, 2, 2,
+			2, 7, 7, 9, 9, 9, 2, 9, 2, 9, 2, 9, 2],
+	},
+	# Reach Toward Light · zona 3, a waltz in 3/4: harp on one, celesta on two and three.
+	"z3": {
+		"path": "res://audio/music/reach_toward_light.ogg",
+		"bpm": 88, "metre": 3, "beat0": 0.612, "bar0": 1.976, "db": -14.5,
+		"taps": {"down": ["harp", 0, 1.0], "beat": ["celesta", 12, 0.65], "contour": [0, 2, 4, 2, 1, 3, 5, 3], "glass_from": 5},
+		"keys": [2, 2, 2, 2, 2, 0, 2, 2, 2, 7, 2, 2, 2, 5, 2, 2, 2, 7, 7, 2, 2, 2, 2, 7, 7, 7, 7, 2, 2,
+			2, 2, 7, 7, 7, 7, 2, 2, 2, 2, 7, 7, 7, 2, 2, 2, 2, 2, 2, 2, 2, 7, 2, 2, 2, 2, 7, 7, 7, 2, 2, 2,
+			2, 2],
+	},
+	# Starlit Drift · zona 4, the starry night: celesta and glass, like stars.
+	"z4": {
+		"path": "res://audio/music/starlit_drift.ogg",
+		"bpm": 70, "metre": 4, "beat0": 0.789, "bar0": 1.646, "db": -17.1,
+		"taps": {"down": ["celesta", 0, 1.0], "beat": ["glass", 12, 0.55], "contour": [4, 2, 5, 3, 6, 4, 7, 5], "glass_from": 99},
+		"keys": [0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 0, 0, 7,
+			0, 0, 0, 7, 7, 0, 7, 7, 7, 7, 7, 7, 7, 7, 0, 7, 7],
+	},
+	# Sun Through the Leaves · the story, under the voice.
+	"story": {
+		"path": "res://audio/music/sun_through_the_leaves.ogg",
+		"bpm": 60, "metre": 4, "beat0": 0.929, "bar0": 3.929, "db": -16.6,
+		"keys": [2, 7, 2, 7, 2, 5, 2, 5, 2, 7, 2, 7, 2, 7, 2, 9, 2, 7, 2, 7, 2, 7, 2, 2, 2, 7, 2, 7, 2,
+			7, 2, 9, 2, 7, 2, 7, 2, 7, 2, 7, 0, 2, 2, 2],
+	},
+	# Letter to the Player · the letter, under the voice.
+	"letter": {
+		"path": "res://audio/music/letter_to_the_player.ogg",
+		"bpm": 66, "metre": 4, "beat0": 0.842, "bar0": 3.569, "db": -19.8,
+		"keys": [0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 7, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0,
+			0, 5, 0, 0, 5, 5, 0, 0, 0, 5, 0],
+	},
+	# Light After the Dark · the dark (41-45): piano, low on one.
+	"dark": {
+		"path": "res://audio/music/dark_theme.ogg",
+		"bpm": 72, "metre": 4, "beat0": 0.766, "bar0": 3.266, "db": -13.4,
+		"climax": 146.0,
+		"taps": {"down": ["piano", -12, 1.0], "beat": ["piano", 0, 0.7], "contour": [0, 1, 2, 1, 3, 2, 4, 3], "glass_from": 99},
+		"keys": [8, 10, 10, 3, 8, 10, 10, 8, 8, 10, 10, 8, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 1,
+			6, 6, 6, 8, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 8, 6, 6, 8, 8, 10, 10, 3, 3],
+	},
 }
+const ZONE_TRACKS := {1: "z1", 2: "z2", 3: "z3", 4: "z4"}
 
 
-## False plays every zone the old way (to compare, tools/song_test.gd).
+static func zone_track(zone: int) -> String:
+	return ZONE_TRACKS.get(zone, "") if on else ""
+
+
+## False plays every zone the old way, with neither songs nor themes (to compare, tools/song_test.gd).
 static var on := true
 
 

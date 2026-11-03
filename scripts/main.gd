@@ -1026,6 +1026,7 @@ func _show_end() -> void:
 		return
 	_end_shown = true
 	end_screen.show_end()
+	Music.stop_feature()
 	Music.play_theme()  # the title theme again, under the end screen
 
 
@@ -1236,6 +1237,7 @@ func _restart() -> void:
 	GameState.new_game()
 	SaveSystem.had_progress = false
 	SaveSystem.save_game()
+	Music.stop_feature()
 	Music.stop_theme()
 	_demo_end = false
 	_grand = false

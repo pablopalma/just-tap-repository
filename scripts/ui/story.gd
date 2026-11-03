@@ -82,7 +82,7 @@ func _tell() -> void:
 	box.offset_top = -70
 	box.offset_right = -30
 	box.offset_bottom = -24
-	Music.play_theme()
+	Music.play_feature("story")
 
 
 func _process(delta: float) -> void:
@@ -113,7 +113,7 @@ func _end(told: bool) -> void:
 		return
 	_ending = true
 	if told:
-		Music.stop_theme()
+		Music.stop_feature()
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, 1.6 if told else 0.6).set_trans(Tween.TRANS_SINE)
 	tw.tween_callback(func() -> void:

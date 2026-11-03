@@ -19,17 +19,17 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | # | Tema | Momento del juego | Tono · tempo | Estado |
 |---|---|---|---|---|
 | 1 | **Just Tap** (tema principal) | título y pantalla final | 80 BPM | ✅ grabado (`title_theme.ogg`) |
-| 2 | **Gray Morning** (semilla) | zona 1, barreras 1–10 | do · 64 | pendiente: prompt abajo |
-| 3 | **Roots** (raíz) | zona 2 | re · 66, 4/4 | canción generada en el juego (§9.7); prompt abajo |
-| 4 | **Growing Waltz** (tallo) | zona 3 | si menor · 88, 3/4 | canción generada en el juego (§9.7); prompt abajo |
-| 5 | **Waiting for Dad** | la historia (entre zonas 2 y 3) | re · 60 | pendiente: prompt abajo |
-| 6 | **Under the Stars** (la noche) | zona 4, la noche estrellada | la menor · 70 | pendiente: prompt abajo |
+| 2 | **After the Hard Day** (semilla) | zona 1 | 80 BPM | ✅ grabado (`after_the_hard_day.ogg`) |
+| 3 | **Rooted Light** (raíz) | zona 2 | 66 BPM, 4/4 | ✅ grabado (`rooted_light.ogg`) |
+| 4 | **Reach Toward Light** (tallo) | zona 3 | 88 BPM, vals 3/4 | ✅ grabado (`reach_toward_light.ogg`) |
+| 5 | **Sun Through the Leaves** | la historia (entre zonas 2 y 3) | 60 BPM | ✅ grabado (`sun_through_the_leaves.ogg`) |
+| 6 | **Starlit Drift** (la noche) | zona 4, la noche estrellada | 70 BPM | ✅ grabado (`starlit_drift.ogg`) |
 | 7 | **Light After the Dark** (la oscuridad) | barreras 41–45 de la demo | si♭ mayor · 72 | ✅ grabado (`dark_theme.ogg`, máster en `Builds/music_source/`) |
-| 8 | **You Made All of This** (la carta) | la carta del final de la demo | do · 66 | pendiente: prompt abajo |
+| 8 | **Letter to the Player** (la carta) | la carta del final de la demo | 66 BPM | ✅ grabado (`letter_to_the_player.ogg`) |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |
 | — | Capítulos del juego completo | Gris, Rojo, Verde, Azul, **Tinta**, Amarillo (`docs/juego-completo.md` §3) | — | un tema por capítulo, o agrupar las zonas de cada uno |
 
-**La demo usa 8 temas** (1 a 8): ya están 2 (el título y la oscuridad) y faltan 6. El ahora queda dentro de *Light After the Dark*. Ese álbum corto se puede sacar con la demo como *"Just Tap — Demo Soundtrack"*, gratis o a precio simbólico, para juntar seguidores. El álbum completo sale con el juego en Steam.
+**La demo usa 8 temas** (1 a 8), y están todos grabados (3/11/2026). Los másters están en `Builds/music_source/`; los datos medidos de cada uno, en `Songs.TRACKS`. El ahora queda dentro de *Light After the Dark*. Ese álbum corto se puede sacar con la demo como *"Just Tap — Demo Soundtrack"*, gratis o a precio simbólico, para juntar seguidores. El álbum completo sale con el juego en Steam.
 
 ## Prompt de ElevenLabs · La oscuridad
 
@@ -49,7 +49,7 @@ Mood arc: darkness, fragility, then quiet hope, then light. Minimal, emotional, 
 
 Secciones: *Darkness* 0:00–0:30 · *Crack of light* 0:30–0:55 · *Into the light* 0:55–1:30.
 
-## Prompts de ElevenLabs · el resto de la demo
+## Prompts de ElevenLabs · el resto de la demo (usados)
 
 Cómo usarlos: modelo de música, **instrumental**, duración 2:30 a 3:00. Generar 3 o 4 tomas y quedarse con la que tenga el pulso más claro. ElevenLabs suele respetar el tempo pero no siempre la tonalidad; no importa, porque el juego mide en la grabación las notas de cada compás y los toques las siguen (como en la oscuridad). **El tempo sí tiene que ser exacto**: si una toma sale a otro tempo, descartarla.
 

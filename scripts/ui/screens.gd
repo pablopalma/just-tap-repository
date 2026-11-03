@@ -365,6 +365,7 @@ class Letter extends Control:
 	func _ready() -> void:
 		_music_bus = AudioServer.get_bus_index(Music.MUSIC_BUS)
 		_fade_music(MUSIC_DB, 3.0)
+		Music.play_feature("letter")
 		var tw := create_tween()
 		tw.tween_property(self, "modulate:a", 1.0, 2.5)
 		tw.tween_interval(1.2)

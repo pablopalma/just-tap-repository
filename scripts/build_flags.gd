@@ -22,7 +22,7 @@ const DROSTE := true
 const TREE_INLINE := true
 
 ## Shown in the play data so balance can be compared between builds.
-const VERSION := "0.12.1-beta"
+const VERSION := "0.13.0-beta"
 
 ## Google Apps Script web app that receives the beta play data (docs/beta-datos.md). Empty: nothing
 ## is recorded and the title screen does not offer the switch.

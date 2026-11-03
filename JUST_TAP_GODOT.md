@@ -393,13 +393,28 @@ Las capas de §9.4 suenan igual en todas las zonas: solo cambian el tono, el tem
 
 Al final, el acorde mayor de la resolución sigue siendo la misma raíz, así que la vuelta al tono de la zona se siente como volver a casa (V → I).
 
-**El tema grabado** (*Light After the Dark*, `audio/music/dark_theme.ogg`, 3 min, ElevenLabs; datos en `Songs.DARK_THEME`): si el archivo está, suena en la oscuridad en lugar de la canción generada, que queda como respaldo.
-- **El pulso va con el tema**: tiene el mismo tempo que la zona (72 BPM), así que al entrar la grilla se corre a sus pulsos (el primero cae a los 0,766 s). Las notas de luz y los toques caen con él.
-- **Los toques suenan en su tonalidad**: el tema está casi todo en si bemol y pasa por la bemol y sol bemol. Para cada compás se midió la pentatónica mayor que mejor encaja (`keys`), y los toques, las campanas y los choques del caos usan esas notas.
+El tema grabado de la oscuridad, *Light After the Dark*, sigue las reglas de §9.8. Además:
 - **Toma brillo al salir**: un filtro pasa bajos lo apaga en la 41 (700 Hz), se abre en la 42 y queda abierto del todo desde la 43.
-- **En el ahora** (barrera 43) salta a su clímax (146 s), con fundido y en frases enteras para no perder el pulso. Así, la vuelta a si bemol del final cae sobre la resolución; después se apaga en 6 s.
+- **En el ahora** (barrera 43) salta a su clímax (146 s) en un primer tiempo de compás, así la vuelta a si bemol del final cae sobre la resolución.
 
-Pendiente: las otras zonas y las situaciones (historia, el final), si el prototipo funciona.
+### 9.8 Temas grabados (la banda sonora de la demo)
+Donde hay un tema grabado (`audio/music`, datos en `Songs.TRACKS`, lista en `docs/banda-sonora.md`), suena en lugar de la música generada: el de cada zona (1 a 4), el de la oscuridad, y los de la historia y la carta (`Music.play_feature`). Las canciones generadas de §9.7 quedan como respaldo si falta el archivo.
+
+- **El pulso es el del tema.** De cada grabación se midieron el tempo, el primer pulso, el primer tiempo fuerte y el compás. Al entrar un tema, la grilla del juego se corre a sus pulsos y corre a su tempo: las notas de luz, los toques y la onda de color caen con él.
+- **Las notas son las del tema.** Para cada compás se midió la pentatónica mayor que mejor encaja (`keys`). Los toques, las campanas, los choques y todo lo generado toman sus notas de ahí, así nada choca. El acompañamiento y el coro del juego callan mientras suena.
+- **Cada tema tiene su color de toque** (`taps`): un instrumento y un registro para el primer tiempo del compás y otros para el resto, un dibujo melódico propio para la racha y una intensidad que varía un poco en cada toque, como una mano. Por ejemplo:
+
+| Tema | Primer tiempo | Los otros tiempos | Dibujo |
+|---|---|---|---|
+| *After the Hard Day* (zona 1, 80 BPM) | piano | arpa, más suave | sube en zigzag |
+| *Rooted Light* (zona 2, 66) | arpa grave | piano suave | baja y vuelve a subir |
+| *Reach Toward Light* (zona 3, vals 3/4 a 88) | arpa en el uno | celesta arriba en el dos y el tres | arco |
+| *Starlit Drift* (zona 4, 70) | celesta | cristal agudo | titila arriba |
+| *Light After the Dark* (oscuridad, 72) | piano grave | piano medio | sube; campanas desde la 44 |
+
+- **Entra y sale con fundido** (3 s). Llegando al final, vuelve a su primer tiempo fuerte en un compás, sin el fundido del archivo.
+- Volumen: todos quedan como el tema del título (≈ −29 LUFS); la historia y la carta, más bajos, debajo de la voz.
+- Prueba: `tools/track_test.tscn` (sin ventana) muestra el tema, el tempo, la tónica y el desfase de la grilla (tiene que dar 0); `tools/ost_tour.tscn` graba un recorrido por todos.
 
 ### 9.6 Catálogo de sonidos
 
