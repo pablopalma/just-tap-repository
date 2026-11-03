@@ -27,6 +27,17 @@ static func proto_has(arg: String) -> bool:
 	return arg in OS.get_cmdline_user_args() or arg in proto_args
 
 
+## Into a prototype: the title theme (on the intro) and the game's voice leave with the game, so only
+## the prototype's own music plays.
+static func enter_proto(tree: SceneTree, i: int) -> void:
+	proto_args = PROTOS[i][2]
+	Music.stop_theme()
+	Music.stop_feature()
+	Narrator._queue.clear()
+	Narrator._player.stop()
+	tree.change_scene_to_file(PROTOS[i][1])
+
+
 ## Out of a prototype, back into the game where it was (Esc).
 static func back_to_game(tree: SceneTree) -> void:
 	proto_args = []

@@ -44,7 +44,7 @@ func _process(delta: float) -> void:
 			tap.keycode = KEY_SPACE
 			tap.pressed = true
 			Input.parse_input_event(tap)
-		print("PROTO playing ", cur.name, " ", cur.scene_file_path)
+		print("PROTO playing ", cur.name, "  title theme: ", Music.title_on, "  track: ", Music.track)
 		var esc := InputEventKey.new()
 		esc.keycode = KEY_ESCAPE
 		esc.pressed = true
