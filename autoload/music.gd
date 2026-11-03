@@ -94,7 +94,10 @@ var dark := false:
 			for p in _choir_players:
 				if p.playing:
 					create_tween().tween_property(p, "volume_db", -60.0, CHOIR_FADE * 2.0)
-const DARK_CHORDS := [[0, 3, 7, 14], [8, 12, 15, 19], [3, 7, 10, 14], [10, 14, 17]]
+## How far out of the dark the player is (0..1: barrier 41 to 45): the dark's song brightens with it
+## (Songs.DARK), a step at a time, taken on a bar so the harmony never turns mid-phrase.
+var dark_light := 0.0
+var _dark_step := 0
 const DARK_DROP := 5
 var _celestial: Array[AudioStreamPlayer] = []
 var _celestial_i := 0
@@ -131,6 +134,11 @@ var _chord_idx := 0
 var _zone_origin := 0.0   # time of step 0 of the current zone
 var _pending_zone := 1
 var _arp_i := 0
+## The song's melody under the player's taps (play_accent): when the last tap on the beat was, and
+## which note of the chord's phrase comes next.
+var _last_accent := -100.0
+var _accent_chord := -1
+var _accent_i := 0
 var _queue: Array[Dictionary] = []
 var _slot_use := {}       # tap slot -> notes already in it
 
@@ -296,7 +304,7 @@ func is_enabled() -> bool:
 
 func chord() -> Array:
 	if dark:
-		return DARK_CHORDS[_chord_idx]
+		return Songs.DARK.steps[_dark_step].chords[_chord_idx]
 	return Zones.PROGRESSIONS[zone - 1][_chord_idx]
 
 
@@ -355,12 +363,27 @@ func play_accent(run: int) -> void:
 		return
 	var beat := _s16() * 4.0
 	var t := maxf(_time, _zone_origin + roundf((_time - _zone_origin) / beat) * beat)
+	_last_accent = _time
 	var n := chord().size()
 	var midi := chord_note((run - 1) % (n * 2), tonic() + 12)
+	var song := _song()
+	if not song.is_empty() or dark:
+		# the song's melody, note by note: each chord starts its phrase again
+		var at := int(_step / float(_chord_steps()))
+		if _accent_chord != at:
+			_accent_chord = at
+			_accent_i = 0
+		var phrase: Array = _melody(song)[_chord_idx]
+		midi = _fold(tonic() + 12 + int(phrase[_accent_i % phrase.size()][1]), BRIGHT_CEILING)
+		_accent_i += 1
 	shape_note.emit(midi, true)
 	_schedule(t, "note", _tap_instrument(), midi, 0.065)
 	_schedule(t, "wind", "tap", midi, 0.045)
-	if run >= 4:
+	if _bells_now(song):
+		var up := _fold(midi + 12, BRIGHT_CEILING + 5)
+		_schedule(t, "note", "celesta", up, 0.03)
+		_schedule(t, "note", "glass", up, 0.016)
+	elif run >= 4:
 		_schedule(t, "note", "glass", midi + 12, 0.028)
 
 
@@ -771,15 +794,20 @@ func _on_reborn() -> void:
 # --- Clock and layers -------------------------------------------------------
 
 func _on_step() -> void:
-	if _step % STEPS_PER_CHORD == 0:
+	if _step % _chord_steps() == 0:
 		if _pending_zone != zone:
 			zone = _pending_zone
 			_step = 0
 			_zone_origin = _next_step_time
 			_slot_use.clear()
 			_theme_from = 0
-		_chord_idx = int(_step / float(STEPS_PER_CHORD)) % 4
+			_accent_chord = -1
+		_chord_idx = int(_step / float(_chord_steps())) % 4
 		_play_choir()
+	if dark and _step % 16 == 0:
+		var from := BuildFlags.DARK_FROM
+		dark_light = clampf(float(GameState.stage - from) / float(BuildFlags.DEMO_LAST - from), 0.0, 1.0)
+		_dark_step = _dark_step_for(dark_light)
 	_accompany(_step)
 	if pulse_on and _step % 4 == 0 and not title_on:
 		var low := chord_note(0, tonic())
@@ -794,19 +822,17 @@ func _accompany(s: int) -> void:
 	if theme and not dark:
 		_play_theme_step(s)
 		return
+	var song := _song()
+	if not song.is_empty():
+		_play_song_step(s, song)
+		return
 	var bar := s % 16
 	var lay := mini(layers, 1) if dark else layers
 	var c := chord()
 	var root := tonic() + int(c[0])
 	if dark:
-		if bar == 8:
-			_play("bass", root - 12 + 7, 0.04)
-		if s % 4 == 2:
-			var deg: int = ARP_PATTERN[_arp_i % ARP_PATTERN.size()]
-			_arp_i += 1
-			var low := chord_note(deg, tonic())
-			_play("harp", low, 0.022)
-			shape_note.emit(low, false)
+		_play_dark_step(s)
+		return
 	if lay >= 1 and bar == 0:
 		_play("bass", root - 12, 0.07)
 	if lay >= 3 and bar == 10:
@@ -826,6 +852,135 @@ func _accompany(s: int) -> void:
 	if lay >= 5 and bar == 0:
 		var b := int(s / 16.0)
 		_play("flute", chord_note(COUNTER_PATTERN[b % COUNTER_PATTERN.size()], tonic() + 12), 0.03)
+
+
+## One sixteenth of the zone's song (data/songs.gd): its bass and groove, and its melody on the lead
+## unless the player is playing it.
+func _play_song_step(s: int, song: Dictionary) -> void:
+	var lay := layers
+	var chorus := _in_chorus()
+	var bar := s % int(song.get("bar", 16))
+	var root := tonic() + int(chord()[0])
+	if lay >= 1:
+		var first := true
+		for b: Array in _part(song, "bass", chorus):
+			if int(b[0]) == bar:
+				_play("bass", root - 12 + int(b[1]), 0.07 if first else 0.04)
+			first = false
+	for a: Array in _part(song, "arp", chorus):
+		if int(a[0]) == bar:
+			var low := chord_note(int(a[1]), tonic() + 12 * int(a[2]) if a.size() > 2 else tonic())
+			_play(song.arp_inst, low, (0.014 if lay < 2 else 0.022) + tension * 0.03)
+			shape_note.emit(low, false)
+	if lay >= 4 and s % 8 == 4:
+		var c := chord()
+		var shine := chord_note(randi_range(0, c.size() - 1), tonic() + 24)
+		_play("glass", shine, 0.02)
+		shape_note.emit(shine, true)
+	var k := s % _chord_steps()
+	for n: Array in _melody(song)[_chord_idx]:
+		if int(n[0]) != k:
+			continue
+		var midi := _fold(tonic() + 12 + int(n[1]), BRIGHT_CEILING)
+		if _player_leads():
+			continue
+		_play(song.lead, midi, 0.03)
+		shape_note.emit(midi, false)
+		if chorus and song.get("bells", false):
+			_bell(midi)
+
+
+## One sixteenth of the dark's song: the piano's ostinato (on every eighth, soft and low at first,
+## an octave up once the light comes), the melody, and bells near the end. The low pedal of bass and
+## wind is _play_choir's.
+func _play_dark_step(s: int) -> void:
+	var d: Dictionary = Songs.DARK
+	var bar := s % 16
+	var up := dark_light >= float(d.step_at[2])
+	for o: Array in d.ostinato:
+		if int(o[0]) != bar or (dark_light < float(d.step_at[1]) and bar % 4 != 0):
+			continue
+		var low := chord_note(int(o[1]), tonic() + (12 if up else 0))
+		_play("piano", low, lerpf(0.016, 0.03, dark_light) + tension * 0.02)
+		shape_note.emit(low, false)
+	var k := s % STEPS_PER_CHORD
+	for n: Array in _melody({})[_chord_idx]:
+		if int(n[0]) != k or _player_leads():
+			continue
+		var midi := _fold(tonic() + 12 + int(n[1]), BRIGHT_CEILING)
+		_play("piano", midi, lerpf(0.026, 0.04, dark_light))
+		if _dark_step >= 1:
+			_play("flute", midi, 0.02)
+		shape_note.emit(midi, false)
+		if _bells_now({}):
+			_bell(midi)
+
+
+func _dark_step_for(light: float) -> int:
+	var at: Array = Songs.DARK.step_at
+	var i := 0
+	while i + 1 < at.size() and light >= float(at[i + 1]):
+		i += 1
+	return i
+
+
+## The melody now: the dark's step, or the song's section.
+func _melody(song: Dictionary) -> Array:
+	if dark:
+		return Songs.DARK.steps[_dark_step].melody
+	return _section(song)
+
+
+## Bells on the melody: in a song's chorus, or in the dark once the light is near.
+func _bells_now(song: Dictionary) -> bool:
+	if dark:
+		return dark_light >= float(Songs.DARK.bells_at)
+	return not song.is_empty() and song.get("bells", false) and _in_chorus()
+
+
+## The bells over the chorus: the melody an octave up in the celesta, glass under it.
+func _bell(midi: int) -> void:
+	var up := _fold(midi + 12, BRIGHT_CEILING + 5)
+	_play("celesta", up, 0.026)
+	_play("glass", up, 0.014)
+	shape_note.emit(up, true)
+
+
+## A part of the song for this section: "arp_b" in the chorus if the song has one, else "arp".
+func _part(song: Dictionary, part: String, chorus: bool) -> Array:
+	var key := part + ("_b" if chorus else "_a")
+	return song.get(key, song.get(part, []))
+
+
+func _in_chorus() -> bool:
+	return layers > Zones.BASE_LAYERS[zone - 1]
+
+
+## The zone's song (data/songs.gd), unless the title theme or the dark has the music.
+func _song() -> Dictionary:
+	if theme or dark:
+		return {}
+	return Songs.of(zone)
+
+
+## Sixteenths in a chord: two bars of the song's metre (32 in 4/4, 24 in 3/4).
+func _chord_steps() -> int:
+	return int(_song().get("bar", 16)) * 2
+
+
+## The tempo now: the song's own, or the zone's.
+func bpm() -> float:
+	return float(_song().get("bpm", Zones.BPM[zone - 1]))
+
+
+## The song's section now: the chorus (B) once the zone has its extra layer (barrier 6 of 10).
+func _section(song: Dictionary) -> Array:
+	return song.b if _in_chorus() else song.a
+
+
+## While a run on the beat lasts, the melody is the player's.
+func _player_leads() -> bool:
+	return GameState.beat_streak >= 2 and _time - _last_accent < _s16() * 8.0
 
 
 ## One sixteenth of the title theme: bass on the bar, a soft harp in eighths, and the melody on piano.
@@ -900,7 +1055,7 @@ func _update_tension(delta: float) -> void:
 # --- Grid -------------------------------------------------------------------
 
 func _s16() -> float:
-	return 60.0 / Zones.BPM[zone - 1] / 4.0
+	return 60.0 / bpm() / 4.0
 
 
 ## Tap grid: sixteenths, or sextuplets when a sixteenth is longer than 150 ms.
@@ -908,7 +1063,7 @@ func _tap_div() -> float:
 	var s := _s16()
 	if s <= 0.15:
 		return s
-	return 60.0 / Zones.BPM[zone - 1] / 6.0
+	return 60.0 / bpm() / 6.0
 
 
 func _current_slot() -> int:

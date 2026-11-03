@@ -369,6 +369,32 @@ Semitonos relativos a la tónica de la zona. Tónicas (Hz): `130.81, 146.83, 123
 - Abre el filtro del coro.
 - Hace más visible la figura abstracta.
 
+### 9.7 Una canción por zona (en prototipo: zonas 2 y 3)
+Las capas de §9.4 suenan igual en todas las zonas: solo cambian el tono, el tempo y los acordes, y se siente como la misma canción. Cada zona pasa a tener **su canción**, escrita como datos en `data/songs.gd` sobre sus mismos cuatro acordes (el coro pregrabado no cambia):
+
+- **Pulso propio**: cada canción puede tener su tempo (`bpm`) y su compás (`bar`: 4/4 o 3/4). El pulso que se toca, las notas de luz y la onda de color siguen ese tempo.
+- **Ritmo propio, distinto en cada sección**: el bajo y el arpegio de la zona, con su propio dibujo, y otro para el estribillo (`bass_a`/`bass_b`, `arp_a`/`arp_b`). Así cambia la dinámica: un verso que respira y un estribillo que empuja. Reemplazan al arpegio, al bajo y a la flauta comunes; el cristal de la capa 4 se mantiene.
+- **Campanas** (`bells`): en el estribillo, celesta y cristal doblan la melodía una octava arriba, el mismo timbre de las estrellas. Si el jugador está tocando la melodía, las campanas siguen a sus toques.
+- **Melodía en dos secciones**: A en las barreras 1–5 de la zona y B (el estribillo, más agudo) desde la 6, cuando entra la capa extra.
+- **La melodía es del jugador**: suena sola, suave, en el instrumento de la zona. Cuando el jugador toca con la música (racha de 2 o más), se calla y cada toque a tiempo toca la nota siguiente de la frase del acorde. Así, tocando con el ritmo, armás la canción vos. Con cada acorde la frase vuelve a empezar, así que siempre suena en armonía.
+- Una zona sin canción sigue con las capas de §9.4. La oscuridad mantiene su música propia.
+
+**Zona 2 · raíz** (re, 66 BPM, 4/4, Bm – F#m – G – D): el verso va a medio tiempo, con solo el bajo en el uno y tres notas de arpa por compás; el estribillo mece en 3-3-2 con empujes en semicorcheas y campanas. La melodía, en flauta, baja por grados y vuelve a subir; el estribillo arranca una octava más arriba.
+
+**Zona 3 · tallo** (si menor, **88 BPM, vals en 3/4**, Bm – A – D – Em): bajo en el uno y los acordes del arpa en el dos y el tres; en el estribillo, el arpa corre en corcheas entre los acordes y suenan campanas. La melodía va en celesta.
+
+**La oscuridad** (barreras 41–45, `Songs.DARK`), con referencia de estilo en *Zoey's Theme* (Brian Tyler y John Carey, *Escape Room*): un ostinato de piano en el registro grave y una melodía que suspira bajando un grado. Está sobre la raíz de la oscuridad, la dominante de la zona. **A medida que salís, va tomando brillo y pasa a mayor**, en tres etapas que cambian al empezar un compás:
+
+| Barrera | Etapa | Acordes | Qué suena |
+|---|---|---|---|
+| 41 | lo hondo | i(add9) – VI(maj7) – III(add9) – VII | ostinato solo en negras, melodía grave en piano |
+| 42 | una grieta de luz | VI – VII – III – V7 | ostinato en corcheas; la melodía sube una octava y la dobla la flauta |
+| 43–45 (el ahora) | afuera | I(add9) – vi – IV(maj7) – V, en mayor | ostinato una octava arriba; desde la 44, campanas |
+
+Al final, el acorde mayor de la resolución sigue siendo la misma raíz, así que la vuelta al tono de la zona se siente como volver a casa (V → I).
+
+Pendiente: las otras zonas y las situaciones (historia, el final), si el prototipo funciona.
+
 ### 9.6 Catálogo de sonidos
 
 | Evento | Sonido |
