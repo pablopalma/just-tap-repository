@@ -171,6 +171,17 @@ const TRACKS := {
 		"keys": [8, 10, 10, 3, 8, 10, 10, 8, 8, 10, 10, 8, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 1,
 			6, 6, 6, 8, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 8, 6, 6, 8, 8, 10, 10, 3, 3],
 	},
+	# What Breaks, Returns · the monument (tools/monument.tscn): piano alone through the climb, the
+	# build, the climax where she breaks ("climax", s; the scene waits for it at the crown, or jumps to
+	# it), the Mother speaking over it, the drop at 2:00 on her last words, and a gentle release.
+	"monument": {
+		"path": "res://audio/music/what_breaks_returns.ogg",
+		"bpm": 80, "metre": 4, "beat0": 0.03, "bar0": 0.03, "db": -14.1,
+		"climax": 84.03,
+		"taps": {"down": ["piano", 0, 1.0], "beat": ["celesta", 12, 0.6], "contour": [4, 3, 2, 1, 3, 2, 1, 0], "glass_from": 6},
+		"keys": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5, 5, 7, 5, 5, 5, 7, 5, 5, 5,
+			5, 5, 5, 5, 0, 0, 5, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 10, 5, 5, 5, 5, 5, 5],
+	},
 }
 const ZONE_TRACKS := {1: "z1", 2: "z2", 3: "z3", 4: "z4"}
 
