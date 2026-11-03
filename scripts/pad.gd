@@ -33,7 +33,7 @@ static func note(e: InputEvent) -> void:
 		if not using:
 			using = true
 			kind = _kind(Input.get_joy_name(e.device))
-	elif e is InputEventMouseButton or e is InputEventScreenTouch or e is InputEventKey:
+	elif e is InputEventMouseButton or e is InputEventScreenTouch or e is InputEventKey 			or (e is InputEventMouseMotion and (e as InputEventMouseMotion).relative.length() > 6.0):
 		using = false
 
 

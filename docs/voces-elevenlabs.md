@@ -8,22 +8,6 @@ Las etiquetas que ya usás y suenan bien: `[softly]`, `[warmly]`, `[whispers]`, 
 
 ## Faltan grabar
 
-### vo_beat_1.mp3 · la lección del ritmo (barrera 2)
-Que deje oír la música: lento y con aire entre las frases.
-```
-[softly] Listen. [pause] There's music under everything. [short pause] [warmly] Tap with it.
-```
-
-### vo_beat_2.mp3 · cuando toca 4 tiempos seguidos con la música
-```
-[in awe] There. [short pause] Can you hear it? [pause] [warmly] That's you.
-```
-
-### vo_hold_1.mp3 · desde la barrera 6, si nunca mantuvo presionado
-```
-[softly] Tired? [short pause] You can just hold. [pause] [warmly] I'll keep going with you.
-```
-
 ### vo_03.mp3 · zona 1 completa
 ```
 [softly] There. [pause] Something small. [short pause] [warmly] It still counts.
@@ -78,6 +62,24 @@ Que deje oír la música: lento y con aire entre las frases.
 `
 [softly] Look... [long pause] [in awe] You made all of this.
 `
+
+## Tocar con la música · la lección (grabadas el 3/11/2026)
+
+### vo_beat_1.mp3 · la lección del ritmo (barrera 2)
+Que deje oír la música: lento y con aire entre las frases.
+```
+[softly] Listen. [pause] There's music under everything. [short pause] [warmly] Tap with it.
+```
+
+### vo_beat_2.mp3 · cuando toca 4 tiempos seguidos con la música
+```
+[in awe] There. [short pause] Can you hear it? [pause] [warmly] That's you.
+```
+
+### vo_hold_1.mp3 · desde la barrera 6, si nunca mantuvo presionado
+```
+[softly] Tired? [short pause] You can just hold. [pause] [warmly] I'll keep going with you.
+```
 
 ## Final de la demo (barrera 40)
 
