@@ -1,7 +1,8 @@
 extends Node
 ## The lights as an orchestra (Music.play_orchestra): jumps to a star (barrier 16 by default, or the
 ## one given: 27, 37; a fork from 41 in the full game), taps now and then off the beat, then on every
-## beat. Logs how the star goes; record it to hear it:
+## beat (`strong`: enough strength to break barriers every few taps). Logs how the star goes;
+## record it to hear it:
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/orchestra_test.tscn [-- 27]
 
 const OFF_BEAT := 8.0
@@ -23,6 +24,8 @@ func _ready() -> void:
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 	GameState.star_completed.connect(func(n: int) -> void: print("[%5.1f s] estrella %d completa" % [_t, n]))
+	GameState.gate_broken.connect(func(n: int) -> void: print("[%5.1f s] barrera %d rota" % [_t, n]))
+	GameState.branch_broke.connect(func(i: int) -> void: print("[%5.1f s]   rama %d llegó" % [_t, i]))
 
 
 func _barrier() -> int:
@@ -38,9 +41,17 @@ func _process(delta: float) -> void:
 		_main._start()
 	if _t > 1.0 and _t - delta <= 1.0:
 		_main._dev_jump(_barrier())
+		if "strong" in OS.get_cmdline_user_args():
+			# strong enough to break a fork's barriers every few taps, to see them braid
+			GameState.light = 1e15
+			for i in 40:
+				_main.inline_tree._choose("fuerza")
 		print("[%5.1f s] barrera %d · luces %d" % [_t, GameState.stage, GameState.star.get("lights", GameState.branches).size()])
 	if _t < 3.0 or not GameState.running or GameState.cinematic:
 		return
+	if "strong" in OS.get_cmdline_user_args() and fmod(_t, 3.5) < delta:
+		for b in GameState.branches:
+			b.hp = minf(b.hp, 0.5)   # the next tap breaks them all: the lights run on through the braid
 	if _t < OFF_BEAT:
 		_acc += delta * 1.5
 		if _acc >= 1.0:

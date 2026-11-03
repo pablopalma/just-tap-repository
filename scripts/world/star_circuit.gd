@@ -207,8 +207,12 @@ func _draw_star(c: Vector2, n: int, k: int, rot: float, us: Array, prog: float, 
 				draw_line(p + half.normalized() * gap, p + half, bar, 2.2, true)
 			else:
 				draw_line(p - half, p + half, bar, 2.2, true)
-		# the light itself
+		# the light itself, the beat's notes coming to it along the circuit it has run
 		var lp := _at(c, n, k, i, u, rot)
+		if _climax < 0.0:
+			BeatNotes.draw(self, lp, func(d: float) -> Vector2:
+				var ub := u - d / R   # about one radius of path per unit of the circuit
+				return _at(c, n, k, i, ub, rot) if ub >= 0.0 else Vector2.INF, BeatNotes.strength())
 		var gl: float = _glow[i] if i < _glow.size() else 0.0
 		if gl > 0.0:
 			draw_circle(lp, 13.0 + 14.0 * gl, Color(gold, 0.35 * gl))

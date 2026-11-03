@@ -48,6 +48,10 @@ const BRANCH_INSTRUMENTS := ["piano", "harp", "celesta"]
 ## the later ones sparkle on top.
 const ORCHESTRA := [["harp", 0], ["piano", 12], ["celesta", 12], ["harp", 12], ["glass", 24], ["celesta", 24], ["flute", 12]]
 var _orch_turn := 0
+## Forked (scripts/world/forks.gd): how far apart the branches are, 0 fused to 1 widest. Their choir
+## sings one note together when fused and opens into a chord as they part.
+var fork_spread := 0.0
+const CHOIR_VOICES := [["flute", 12], ["flute", 0], ["harp", 0]]
 
 const ARP_PATTERN := [0, 1, 2, 3, 4, 3, 2, 1]
 const COUNTER_PATTERN := [2, 1, 3, 2, 4, 3, 1, 2]
@@ -489,6 +493,9 @@ func play_orchestra(count: int, run: int) -> void:
 		_note_deg(_slot_time(k), v[0], i * 2, int(v[1]), 0.03, i)
 		return
 	var t0 := maxf(_time, _zone_origin + roundf((_time - _zone_origin) / beat) * beat)
+	if not GameState.branches.is_empty():
+		_choir_chord(t0, count, run)
+		return
 	var voices := clampi(run + 1, 2, count)
 	var metre := int(Songs.TRACKS[track].metre) if track != "" else 4
 	var down := _beat_in_bar(t0) == 0
@@ -501,6 +508,19 @@ func play_orchestra(count: int, run: int) -> void:
 		var t := t0 + (0.012 * j if down else gap * j)
 		var vol := (0.034 if i == 0 else 0.028) * (1.15 if down else 1.0) * randf_range(0.9, 1.06)
 		_note_deg(t, v[0], i * 2 + shift, int(v[1]), vol, i)
+
+
+## Forked, on the beat: the branches sing together, a sustained voice each (flute, like breath),
+## on the same note when fused and spreading into a chord as they part; glass shines on top of a
+## long run.
+func _choir_chord(t0: float, count: int, run: int) -> void:
+	var spread := roundi(fork_spread * 2.0)   # 0: unison, 1: thirds, 2: open chord
+	for i in count:
+		var v: Array = CHOIR_VOICES[i % CHOIR_VOICES.size()]
+		var deg := 2 + (i - 1) * spread
+		_note_deg(t0 + 0.01 * i, v[0], deg, int(v[1]), 0.034 * randf_range(0.92, 1.05), i)
+	if run >= 4:
+		_note_deg(t0, "glass", 4 + spread, 24, 0.016)
 
 
 ## Which beat of its bar a time falls on (0 the first): the theme's bars, or the zone's 4/4.
