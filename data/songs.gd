@@ -158,7 +158,7 @@ const TRACKS := {
 	# Letter to the Player · the letter, under the voice.
 	"letter": {
 		"path": "res://audio/music/letter_to_the_player.ogg",
-		"bpm": 66, "metre": 4, "beat0": 0.842, "bar0": 3.569, "db": -19.8,
+		"bpm": 66, "metre": 4, "beat0": 0.842, "bar0": 3.569, "db": -15.8,
 		"keys": [0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 7, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0,
 			0, 5, 0, 0, 5, 5, 0, 0, 0, 5, 0],
 	},
