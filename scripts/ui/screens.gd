@@ -29,6 +29,9 @@ class Intro extends Control:
 	var _new: Button
 	var _lang: Button
 	var _data: Button
+	## The suggestion to play with headphones, small at the bottom: a pair drawn in ink and a line.
+	var _phones: HBoxContainer
+	var _phones_text: Label
 	var _confirming := false
 	var _confirm_left := 0.0
 
@@ -79,6 +82,23 @@ class Intro extends Control:
 		_lang.offset_bottom = -18
 		_lang.pressed.connect(func() -> void: SaveSystem.set_lang("en" if SaveSystem.lang == "es" else "es"))
 		add_child(_lang)
+		_phones = HBoxContainer.new()
+		_phones.set_anchors_and_offsets_preset(PRESET_CENTER_BOTTOM)
+		_phones.grow_horizontal = GROW_DIRECTION_BOTH
+		_phones.offset_top = -64
+		_phones.offset_bottom = -24
+		_phones.alignment = BoxContainer.ALIGNMENT_CENTER
+		_phones.add_theme_constant_override("separation", 10)
+		_phones.mouse_filter = MOUSE_FILTER_IGNORE
+		var icon := Control.new()
+		icon.custom_minimum_size = Vector2(26, 26)
+		icon.mouse_filter = MOUSE_FILTER_IGNORE
+		icon.draw.connect(_draw_phones.bind(icon))
+		_phones.add_child(icon)
+		_phones_text = UIStyle.label("", 17, true, Color(Palette.INK, 0.6))
+		_phones.add_child(_phones_text)
+		_phones.modulate.a = 0.0
+		add_child(_phones)
 		# Beta: the play data switch (docs/beta-datos.md), only when there is somewhere to send it.
 		if Telemetry.url != "":
 			_data = UIStyle.button("", 15)
@@ -97,6 +117,7 @@ class Intro extends Control:
 		tw.tween_interval(0.5)
 		tw.tween_property(_title, "modulate:a", 1.0, 3.0)
 		tw.parallel().tween_property(_tag, "modulate:a", 1.0, 3.0).set_delay(2.0)
+		tw.parallel().tween_property(_phones, "modulate:a", 1.0, 2.0).set_delay(3.5)
 		if _returning:
 			tw.tween_property(_choices, "modulate:a", 1.0, 1.2)
 		else:
@@ -111,6 +132,7 @@ class Intro extends Control:
 
 	func _refresh() -> void:
 		_prompt.text = Loc.t("tap_start")
+		_phones_text.text = Loc.t("headphones")
 		_continue.text = Loc.t("continue")
 		_new.text = Loc.t("confirm_new") if _confirming else Loc.t("new_game")
 		_new.add_theme_color_override("font_color",
@@ -119,6 +141,15 @@ class Intro extends Control:
 		if _data:
 			_data.text = Loc.t("data_on" if Telemetry.enabled else "data_off")
 			_data.modulate.a = 0.75 if Telemetry.enabled else 0.45
+
+	## A pair of headphones in ink: the band over the top and a cup on each side.
+	func _draw_phones(c: Control) -> void:
+		var col := Color(Palette.INK, 0.6)
+		var o := c.size * 0.5 + Vector2(0, 2)
+		c.draw_arc(o, 9.0, PI * 1.05, TAU * 0.975, 24, col, 1.6, true)
+		for side in [-1.0, 1.0]:
+			var cup := Rect2(o + Vector2(side * 9.0 - 3.0, 0.0), Vector2(6.0, 9.0))
+			c.draw_rect(cup, col, false, 1.6)
 
 	func _toggle_data() -> void:
 		Telemetry.set_enabled(not Telemetry.enabled)

@@ -11,6 +11,7 @@ const S := {
 	"hint_tap": {"es": "tap", "en": "tap"},
 	"hint_tree": {"es": "mejora el árbol", "en": "grow the tree"},
 	"hint_tree_inline": {"es": "toca el árbol", "en": "tap the tree"},
+	"headphones": {"es": "mejor con auriculares", "en": "best with headphones"},
 	"hint_tree_pad": {"es": "elige una mejora del árbol", "en": "pick an upgrade on the tree"},
 	"hint_beat": {"es": "toca con la música", "en": "tap with the music"},
 	"hint_beat_ok": {"es": "así", "en": "like that"},
