@@ -187,7 +187,63 @@ Las 2:30–3 h tienen que salir de **cosas distintas para vivir**, no de barrera
 
 ---
 
-## 11. Próximos pasos sugeridos
+## 11. Precio, público y lanzamiento (3/11/2026)
+
+### El público
+- **Quien compra Just Tap juega en Steam a GRIS, To the Moon, A Short Hike, Before Your Eyes, Florence o A Dark Room:** juegos cortos, emotivos, relajantes y personales. El incremental es el gancho original ("un clicker que se juega con la música y te cuenta una historia"), no el público principal.
+- **itch.io es el laboratorio, no la tienda:** público indie que juega muchísimo gratis en el navegador y casi no paga. La demo de la 0.17 lo muestra: 369 jugaron en el navegador y 6 descargaron. Sirve para medir retención, recibir comentarios y probar portadas.
+- **Los fans de los clickers** (r/incremental_games) buscan números y progresión larga: van a probar la demo, pero no son el núcleo comprador.
+
+### El precio
+- **El juego: USD 7,99**, con un **10–15 % de descuento de lanzamiento**.
+  - Comparables en Steam: A Dark Room USD 6,99 · A Short Hike USD 7,99 · To the Moon USD 9,99 · Before Your Eyes USD 9,99 (~2 h, con quejas de "caro para lo que dura") · GRIS USD 14,99.
+  - Para 2:30–3 h es la zona sin quejas: los juegos cortos se perdonan, los cortos y caros (USD 13–25) no.
+  - Menos de USD 10 convierte mejor las wishlists (mediana 0,15 ventas por wishlist en la primera semana; 0,10 por encima de USD 10, según GameDiscoverCo).
+  - Más barato (USD 2,99) da la impresión de juego chico.
+- **La banda sonora como DLC: USD 3,99** (*Just Tap — Soundtrack*), y un **bundle juego + banda sonora con 10–15 % de descuento**. Detalle en `docs/banda-sonora.md`.
+- En itch, el juego completo al mismo precio y la demo gratis.
+
+### Cuánta gente hace falta (estimación gruesa)
+A USD 7,99 quedan unos **USD 4,50–5 por copia** después del 30 % de Steam, impuestos y precios regionales.
+
+| Objetivo | Copias | Wishlists al lanzar |
+|---|---|---|
+| USD 20.000 | ~4.200 | ~7.000–10.000 |
+| USD 100.000 | ~21.000 | ~35.000–50.000, o un éxito que viaje solo |
+
+Como referencia del embudo: impresión → visita ≈ 2–5 % (la página de itch: 2,19 %); visita → compra ≈ 3 %; wishlist → venta en la primera semana ≈ 10–20 %.
+
+### Referencias de How To Market A Game (Chris Zukowski)
+Sus benchmarks (howtomarketagame.com/benchmarks) por nivel de ingresos de por vida: **Bronce** USD 0–10.000 · **Plata** USD 10.000–249.000 · **Oro** USD 250.000–999.000. El objetivo de Just Tap (USD 20–100.000) es **Plata**.
+
+| Para Plata | Mediana |
+|---|---|
+| Wishlists al lanzar | **~8.000** (Bronce ~5.000, Oro ~50.000) |
+| Wishlists el día que abre la página "próximamente" | 79–441 |
+| Wishlists por semana normal | 15–120 |
+| Wishlists en Steam Next Fest | 1.000–6.999 |
+| Conversión wishlist → venta, primera semana | ~20 % (15 % con menos de 5.000 wishlists) |
+| Tiempo de juego de la demo | ~18 min (Oro ~38 min) |
+| Ventas por reseña | ~31 |
+
+- **La demo de Just Tap ya está en zona Plata:** la mediana hasta el final de la demo es de ~15 min (0.17), y quien la termina juega más. Alargar la experiencia de la demo acerca al nivel Oro.
+- **El DLC de la banda sonora suma poco dinero:** la tasa de compra de DLC suele ser baja (1,5–3 % en Bronce y Oro). Vale como gesto para los fans y como vidriera de la música, no como fuente de ingresos.
+- **Su advertencia más importante:** *"Players don't typically buy indie games that are linear with a single on rails narrative"*, salvo con un arte excepcional (cita GRIS como excepción). Lo que se vende en Steam son juegos con sistemas que se combinan y se pueden rejugar; el terror y las novelas visuales son las excepciones narrativas.
+  - **Qué significa para Just Tap:** comunicar el **sistema**, no solo la historia. El gancho es *"un incremental que se toca con la música"*: el árbol, la racha, las luces que se dividen como orquesta, la Madre que se rompe. La historia va como lo que lo vuelve especial, no como el género.
+  - Cuidar que el arte esté a la altura (por eso la luz, la niebla y los rayos del monumento).
+- **Next Fest:** lanzar la demo **más de un mes antes** del festival rinde más, y cuenta el impulso de wishlists de las dos semanas previas. Las wishlists del festival convierten menos (calcular la mitad).
+
+Fuentes: [Benchmarks](https://howtomarketagame.com/benchmarks/) · [El plan de 10 pasos](https://howtomarketagame.com/2021/07/12/how-to-market-your-indie-game-a-10-step-plan/) · [Por qué no consigo wishlists](https://howtomarketagame.com/2023/12/05/why-am-i-not-getting-wishlists-a-step-by-step-solution/) · [Next Fest de febrero 2026](https://howtomarketagame.com/2026/04/13/making-sense-of-the-february-2026-steam-next-fest/) · [Impulso antes del Next Fest](https://howtomarketagame.com/2026/07/14/games-that-used-momentum-for-steam-next-fest-success/) · [La mayoría juega la demo y no agrega a la wishlist](https://howtomarketagame.com/2026/06/30/nobody-plays-demos-and-that-is-ok/)
+
+### Lo que sigue
+1. **Abrir la página de Steam cuanto antes**, aunque el juego no esté terminado, para empezar a juntar wishlists.
+2. **Steam Next Fest** con la demo.
+3. Buscar al público emotivo y relajado: r/CozyGamers, Wholesome Direct, streamers de juegos cozy y emotivos. Etiquetas: *Relaxing, Emotional, Story Rich, Atmospheric, Rhythm, Incremental, Hand-drawn*.
+4. Material de venta: la ballena que despierta, la Madre que se rompe y se rearma, la portada estilo Journey.
+
+---
+
+## 12. Próximos pasos sugeridos
 
 1. Diseñar la forma de cada capítulo que falta (bucle, marea, malla, grietas, saltos, convergencia) y prototipar las nuevas como se hizo con la espiral.
 2. Activar la oscuridad 41–45 en el juego completo.

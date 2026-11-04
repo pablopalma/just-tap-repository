@@ -94,5 +94,5 @@ A heartfelt letter from the person who made this game to the player. Soft solo p
 ## Pendiente de decidir
 
 - Si el álbum sigue las zonas (10 o más temas) o los capítulos (6 temas más largos).
-- El precio del DLC y el descuento del bundle (suelen ser USD 3–5 y 10–15 %).
+- ~~El precio del DLC y el descuento del bundle.~~ **Decidido el 3/11/2026:** el DLC *Just Tap — Soundtrack* a **USD 3,99** y el bundle juego + banda sonora con **10–15 % de descuento**; el juego, a USD 7,99 (`docs/brief-juego-completo.md` §11).
 - Si las voces del narrador aparecen en algún tema del álbum, por ejemplo una versión de *La carta* con la voz.
