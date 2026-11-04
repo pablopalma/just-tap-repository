@@ -448,7 +448,7 @@ func _panorama() -> void:
 
 ## Reaching a barrier the voice talks about plays it as a cinematic, once per run.
 func _maybe_cinematic(n: int) -> void:
-	if not cinematics_enabled or not VoiceLines.ON_REACH.has(n) or GameState.cinemas.has(n) or BuildFlags.is_dark(n):
+	if not cinematics_enabled or not VoiceLines.ON_REACH.has(n) or GameState.cinemas.has(n) or BuildFlags.is_dark(n) 			or n in VoiceLines.SPOKEN_ONLY:
 		return
 	if GameState.finished or mode != Mode.PLAY:
 		return
@@ -683,9 +683,10 @@ func _face_zone() -> void:
 	_night_on(Zones.of(GameState.stage) == NIGHT_ZONE and not BuildFlags.is_dark(GameState.stage), 0.0)
 
 
-## Between these two zones the voice stops and offers a story (scripts/ui/story.gd), once per run;
-## told or not, the dive follows.
-const STORY_AFTER_ZONE := 2
+## At the end of this zone the voice stops and offers a story (scripts/ui/story.gd), once per run;
+## told or not, the zone's end goes on (the dive, or in the demo the dark coming in). Zone 4, the last
+## calm before the dark (3/11/2026): offered at 20, more than half of those who got it left there.
+const STORY_AFTER_ZONE := 4
 const STORY_KEY := "story1"
 
 
@@ -707,7 +708,7 @@ func _on_story_done(_told: bool, z: int) -> void:
 	GameState.cinematic = false
 	Narrator.hold = false
 	create_tween().tween_property(hud, "modulate:a", 1.0, 1.2)
-	_begin_droste(z)
+	_after_zone(z)
 
 
 ## Each zone is the line inside the last one: fall into the tip and come out in the next zone.
@@ -831,11 +832,16 @@ func _on_gate_broken(n: int) -> void:
 
 ## The camera pulls back to take in the zone's ten barriers.
 func _on_zone_completed(z: int) -> void:
+	if z == STORY_AFTER_ZONE and cinematics_enabled and not GameState.cinemas.has(STORY_KEY):
+		_offer_story(z)
+		return
+	_after_zone(z)
+
+
+## A zone's end: the dive into the next, or (into the dark, or a director's cut) the pull back.
+func _after_zone(z: int) -> void:
 	if BuildFlags.DROSTE and cinematics_enabled and not BuildFlags.is_dark(z * 10 + 1):
-		if z == STORY_AFTER_ZONE and not GameState.cinemas.has(STORY_KEY):
-			_offer_story(z)
-		else:
-			_begin_droste(z)
+		_begin_droste(z)
 		return
 	# No dive (into the dark, or a director's cut): the world turns slowly to the next zone's way.
 	if absf(wrapf(_zone_angle(z + 1) - camera.angle, -PI, PI)) > 0.01:

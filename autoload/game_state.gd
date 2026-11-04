@@ -161,7 +161,7 @@ var chapter_hp := [8.0, 10.0, 7.0, 1.0, 1.0]
 ## FLOW_UNTIL take FLOW_LOW of their life, then it rises evenly to the full curve at FLOW_FULL.
 const FLOW_LOW := 0.3
 const FLOW_UNTIL := 7
-const FLOW_FULL := 14
+const FLOW_FULL := 18   # was 14: barriers 15–16 became a wall, the most players leaving at 15 (3/11/2026)
 
 
 func max_hp(n: int) -> float:

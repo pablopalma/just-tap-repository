@@ -116,6 +116,10 @@ const LINES := {
 const ON_REACH := {6: "01", 8: "02", 14: "04", 24: "07", 35: "10", 44: "14", 55: "16", 64: "20",
 	75: "22", 84: "26", 95: "28"}
 
+## Lines said on reaching their barrier without a cinematic (the game keeps going): at 8, two cinematics
+## in three barriers made players leave there (3/11/2026).
+const SPOKEN_ONLY := [8]
+
 ## Completing zone z (1..9); zone 10 is the ending.
 const ON_ZONE := {1: "03", 2: "06", 3: "09", 4: "12", 5: "15", 6: "18", 7: "21", 8: "24", 9: "27"}
 

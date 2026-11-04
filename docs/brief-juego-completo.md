@@ -42,7 +42,7 @@ Se atraviesan barreras que se rompen haciendo el daño suficiente, y el daño cr
 |---|---|---|
 | Capítulos 1–4 (barreras 1–40) + la oscuridad (41–45) | la demo | ✅ |
 | Temas grabados: título, zonas 1–4, la oscuridad, la historia, la carta | `docs/banda-sonora.md` | ✅ 8 temas |
-| Historia 1: esperando a papá en la vereda | entre caps. 2 y 3 | ✅ |
+| Historia 1: esperando a papá en la vereda | al final del cap. 4, antes de la oscuridad | ✅ |
 | El ave (rodea la torre, canta en la tonalidad) | todo el juego | ✅ |
 | La ballena celeste (despierta al salir de la oscuridad) | fin de la oscuridad | ✅ |
 | Estrellas: la luz se divide y recorre una estrella, como una orquesta | barreras 16, 27, 37 y más | ✅ |
@@ -87,9 +87,9 @@ Colores: gris (1–2), rojo (3–4), verde (5–6), azul (7–8), **tinta** (9),
 | # | Capítulo | Barreras | Color · tipo | Emoción | La forma de la línea | Tema | El acontecimiento final | Qué aprende |
 |---|---|---|---|---|---|---|---|---|
 | 1 | **Semilla** | 1–10 | gris · luz | entumecimiento | línea recta que sube ✅ | *After the Hard Day* ✅ | la lección del ritmo: *"That's you."* ✅ | tocar con la música |
-| 2 | **Raíz** | 11–20 | gris · luz | algo chico que cuenta | línea hacia la derecha ✅ | *Rooted Light* ✅ | **el color vuelve** (rojo) ✅ + **historia 1** (papá) ✅ | lo chico también cuenta |
+| 2 | **Raíz** | 11–20 | gris · luz | algo chico que cuenta | línea hacia la derecha ✅ | *Rooted Light* ✅ | **el color vuelve** (rojo) ✅ | lo chico también cuenta |
 | 3 | **Tallo** | 21–30 | rojo · luz | enojo | la espiral ✅ + **el bucle**, un anillo que hay que romper 📝 | *Reach Toward Light* (vals) ✅ | el anillo se abre en pétalos 📝 | el enojo da vueltas; se suelta |
-| 4 | **Hoja** | 31–40 | rojo → noche estrellada · **oscuro lindo** | asombro | estrellas que se recorren como orquesta ✅ | *Starlit Drift* ✅ | la noche se cierra: entra la oscuridad ✅ | no todo vuelve fácil |
+| 4 | **Hoja** | 31–40 | rojo → noche estrellada · **oscuro lindo** | asombro | estrellas que se recorren como orquesta ✅ | *Starlit Drift* ✅ | **historia 1** (papá) ✅ y la noche se cierra: entra la oscuridad ✅ | no todo vuelve fácil |
 | 5 | **Flor** | 41–50 | **oscuro** → verde | caos, el ahora | la oscuridad y "el ahora" (41–45) ✅; nace la bifurcación (46–50) ✅ | *Light After the Dark* ✅ → tema verde 💡 | **la ballena despierta** ✅ | no estás solo; solo existe este momento |
 | 6 | **Fruto** | 51–60 | verde · luz | crecer | **tres ramas trenzadas que cantan como un coro** ✅ | tema verde 💡 | las ramas se funden en una flor 📝 + **historia 2** 💡 | puedes ser más de una cosa a la vez |
 | 7 | **Bosque** | 61–70 | azul · luz | tristeza | **la marea**: líneas que ondulan y respiran 📝 | tema azul 💡 | la marea baja y deja ver algo enterrado 💡 | la tristeza viene en olas |
