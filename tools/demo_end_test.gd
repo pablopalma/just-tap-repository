@@ -16,7 +16,7 @@ func _ready() -> void:
 	SaveSystem.enabled = false
 	GameState.new_game()
 	GameState.total_taps = 6120
-	SaveSystem.lang = "es"
+	SaveSystem.lang = "en" if "en" in OS.get_cmdline_user_args() else "es"
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 
