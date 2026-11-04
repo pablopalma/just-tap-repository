@@ -89,8 +89,11 @@ func accent(run: int) -> void:
 ## The beat as notes of light climbing the line (BeatNotes), each reaching the tip as its beat sounds.
 func _draw_notes(ring: float) -> void:
 	var at := lit + jolt
+	# below the line's start (the very first barriers) they keep coming, straight on from below
+	var start: Vector2 = path.pos_at(0.0)
+	var down: Vector2 = (start - path.pos_at(8.0)).normalized()
 	BeatNotes.draw(self, Vector2.ZERO, func(d: float) -> Vector2:
-		return path.pos_at(at - d) - position if at - d >= 0.0 else Vector2.INF, ring, _bold)
+		return (path.pos_at(at - d) if at - d >= 0.0 else start + down * (d - at)) - position, ring, _bold)
 
 
 func _draw() -> void:

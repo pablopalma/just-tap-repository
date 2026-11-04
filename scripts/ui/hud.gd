@@ -23,6 +23,8 @@ var _beat_learned := false
 var hold_learned := false
 ## Main's lesson on the beat is on: its hint stays up the whole time.
 var lesson := false
+## Main's warm-up for a new player: 0 one tap at a time, 1 with the beat, -1 none.
+var warm := -1
 var _praise_t := 0.0
 
 
@@ -130,7 +132,13 @@ func _process(delta: float) -> void:
 	_beat_learned = _beat_learned or g.beat_streak >= 3
 	hold_learned = hold_learned or g.hold_taps_at_gate >= 4
 	if g.running and not g.finished and not g.cinematic:
-		if _total_taps < 3 and g.stage == 1:
+		if warm == 0:
+			hint = Loc.t("hint_tap")
+		elif warm == 1:
+			hint = Loc.t("hint_beat")
+		elif warm == 2:
+			hint = Loc.t("hint_beat_ok")
+		elif _total_taps < 3 and g.stage == 1:
 			hint = Loc.t("hint_tap")
 		elif _praise_t > 0.0:
 			hint = Loc.t("hint_beat_ok")

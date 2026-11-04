@@ -3,17 +3,18 @@ extends RefCounted
 ## The notes of light that show the beat (JUST_TAP_GODOT.md §1, "Tocar con la música"): a few
 ## notes climbing a path towards a light, each reaching it as its beat sounds, a small gold ring as it
 ## lands. The tip draws them on the line; a star's or a fork's lights on their own paths.
+## Less see-through since 4/11/2026: players missed them.
 
 const NOTES := 3
 const GAP := 64.0   # px between notes
 
 
-## How clearly they show: faint at first, clear while a run on the beat lasts.
+## How clearly they show: clear from the start, fully while a run on the beat lasts.
 static func strength() -> float:
 	var g := GameState
 	if not g.running or g.finished or g.cinematic or g.total_taps <= 0:
 		return 0.0
-	return 0.35 + 0.65 * minf(1.0, g.beat_streak / 4.0)
+	return 0.55 + 0.45 * minf(1.0, g.beat_streak / 4.0)
 
 
 ## Draws them on `ci` for a light at `light` (in ci's space). `back` gives the point `d` px behind the
@@ -29,13 +30,13 @@ static func draw(ci: CanvasItem, light: Vector2, back: Callable, ring: float, bo
 		if p == Vector2.INF:
 			continue
 		var near := 1.0 - d / (gap * NOTES)
-		var a := ring * lerpf(0.35, 0.85, bold) * smoothstep(0.0, 0.35, near)
+		var a := ring * lerpf(0.7, 1.0, bold) * smoothstep(0.0, 0.35, near)
 		var r := lerpf(3.0, 5.5, near) * lerpf(1.0, 1.3, bold)
 		var col := Palette.INK.lerp(Palette.GOLD.darkened(0.2), smoothstep(0.55, 0.9, near) * maxf(bold, 0.5))
-		ci.draw_circle(p, r * 2.2, Color(col, a * 0.18))
+		ci.draw_circle(p, r * 2.2, Color(col, a * 0.25))
 		ci.draw_circle(p, r, Color(col, a))
 	# the moment of the beat: the note lands in the light and opens a small ring
 	var land := 1.0 - minf(1.0, ph / 0.25)
 	if land > 0.0:
 		ci.draw_arc(light, lerpf(12.0, 26.0, 1.0 - land), 0.0, TAU, 40,
-			Color(Palette.GOLD.darkened(0.2), 0.5 * land * ring), 1.5, true)
+			Color(Palette.GOLD.darkened(0.2), 0.7 * land * ring), 1.5, true)

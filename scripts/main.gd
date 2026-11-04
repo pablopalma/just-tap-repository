@@ -84,6 +84,8 @@ const LESSON_RUN := 4
 const HOLD_LESSON_FROM := 12
 var lesson := false
 var _lesson_done := false
+## A new player's warm-up before the climb (scripts/world/warmup.gd): while it is on, taps go to it.
+var warmup: Warmup
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -334,6 +336,8 @@ func _press() -> void:
 		return  # in a cinematic the tip plays on its own; in a story, we listen
 	if mode == Mode.INTRO:
 		_start()
+	elif warmup:
+		warmup.tap()
 	else:
 		GameState.tap("tap", Music.beat_at_tap())
 		_holding = true
@@ -361,8 +365,10 @@ func _process_lesson() -> void:
 	# only once the tapping really adds up (3/11/2026: at barrier 6 it came less than a minute in)
 	if playing and g.stage >= HOLD_LESSON_FROM and not hud.hold_learned and g.taps_at_gate > 60:
 		Narrator.say("hold_1")
-	Music.pulse_on = lesson or (playing and Music.layers == 0 and g.beat_streak >= 2)
-	tip.lesson = lesson
+	var warm := warmup.phase if warmup else -1
+	Music.pulse_on = lesson or warm == 1 or (playing and Music.layers == 0 and g.beat_streak >= 2)
+	hud.warm = warm
+	tip.lesson = lesson or warm == 1   # the warm-up's beat part shows the game's own notes, bold
 	hud.lesson = lesson
 	tip.hold_k = clampf(_hold_t / HOLD_DELAY, 0.0, 1.0) if _holding else 0.0
 
@@ -405,6 +411,21 @@ func _start() -> void:
 	GameState.running = true
 	if BuildFlags.is_dark(GameState.stage):
 		_enter_dark(true)  # a save from inside the dark
+	if cinematics_enabled and not SaveSystem.had_progress and GameState.stage == 1 and GameState.total_taps == 0 			and not GameState.cinemas.has("warmup"):
+		warmup = Warmup.new()
+		warmup.tip = tip
+		warmup.cam = camera
+		warmup.finished.connect(_on_warmup_done)
+		add_child(warmup)
+
+
+## The warm-up is over: the beat is learned if enough taps landed on it, and the climb begins.
+func _on_warmup_done(on_beat: int, taps: int) -> void:
+	GameState.cinemas["warmup"] = true
+	_lesson_done = on_beat >= Warmup.BEAT_TAPS
+	Telemetry.event("warmup", {"on_beat": on_beat, "taps": taps})
+	warmup.queue_free()
+	warmup = null
 
 
 ## The spark has become the tip: a soft wave of gold from it, and a note.
@@ -1021,6 +1042,9 @@ func _dev_jump(n: int) -> void:
 	if intro != null:
 		_start()
 	_stop_cinematic(true)
+	if warmup:   # jumping somewhere skips the new player's warm-up
+		warmup.queue_free()
+		warmup = null
 	_pano = 0.0
 	# Visuals first: the jump itself may start a star or a fork, which must survive.
 	colour_wave.clear()
