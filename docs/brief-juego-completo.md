@@ -189,6 +189,25 @@ Las 2:30–3 h tienen que salir de **cosas distintas para vivir**, no de barrera
 
 ## 11. Precio, público y lanzamiento (3/11/2026)
 
+### La identidad: un incremental que no se trata de los números (4/11/2026)
+Just Tap usa **el esqueleto de un incremental**: una acción simple da una moneda (tocar da luz), las mejoras hacen crecer lo que se gana (el árbol), las barreras piden cada vez más y hay prestigio (el renacer). **Pero no su objetivo:**
+
+| Incremental típico | Just Tap |
+|---|---|
+| El objetivo es ver crecer los números | Los números son el medio; **lo que crece es el mundo**: el color, la música, la ciudad, las criaturas |
+| Progreso infinito, sesiones para volver siempre | Un **viaje con principio y final** (2:30–3 h) |
+| Público core o hardcore que busca poder y optimizar | Público que busca **calma, emoción y una historia** |
+| Muchas monedas y árboles enormes | **Una sola moneda** (la luz) y un árbol chico |
+| Idle: el juego avanza solo | **Activo:** se toca con la música |
+
+- **Su familia:** los incrementales narrativos que terminan: **A Dark Room**, **Universal Paperclips**, **Spaceplan**, **Candy Box**. El sistema está al servicio de lo que cuentan, y se los recuerda por la experiencia.
+- **Lo que ya cumple** de la charla de Lucy Morris (GCAP 2017, UI/UX de incrementales): la interacción más chica se siente bien (cada toque es una nota); el cansancio del clic se resuelve con el ritmo (en el pulso vale más, no hace falta tocar rápido) y con mantener presionado; una sola moneda; la información dentro del mundo (el árbol al costado de la línea, las notas sobre la línea).
+- **Lo que hay que cuidar:**
+  - **No venderlo como "idle":** atraería al público equivocado ("too short, no endgame").
+  - **Que los números no tapen la experiencia:** el HUD (luz, daño por toque, contador) se queda discreto y no suma más.
+- **La frase:** *"An incremental where the numbers aren't the point: every tap is a note, and what grows is the world."*
+- **Etiquetas de Steam:** *Incremental, Clicker, Rhythm, Relaxing, Story Rich, Emotional, Atmospheric, Hand-drawn*. Sin *Idler*.
+
 ### El público
 - **Quien compra Just Tap juega en Steam a GRIS, To the Moon, A Short Hike, Before Your Eyes, Florence o A Dark Room:** juegos cortos, emotivos, relajantes y personales. El incremental es el gancho original ("un clicker que se juega con la música y te cuenta una historia"), no el público principal.
 - **itch.io es el laboratorio, no la tienda:** público indie que juega muchísimo gratis en el navegador y casi no paga. La demo de la 0.17 lo muestra: 369 jugaron en el navegador y 6 descargaron. Sirve para medir retención, recibir comentarios y probar portadas.
@@ -240,7 +259,7 @@ Fuentes: [Benchmarks](https://howtomarketagame.com/benchmarks/) · [El plan de 1
 ### Lo que sigue
 1. **Abrir la página de Steam cuanto antes**, aunque el juego no esté terminado, para empezar a juntar wishlists.
 2. **Steam Next Fest** con la demo.
-3. Buscar al público emotivo y relajado: r/CozyGamers, Wholesome Direct, streamers de juegos cozy y emotivos. Etiquetas: *Relaxing, Emotional, Story Rich, Atmospheric, Rhythm, Incremental, Hand-drawn*.
+3. Buscar al público emotivo y relajado: Wholesome Direct, streamers de juegos cozy y emotivos (r/CozyGamers no acepta juegos con IA). Etiquetas: ver "La identidad".
 4. Material de venta: la ballena que despierta, la Madre que se rompe y se rearma, la portada estilo Journey.
 
 ---
