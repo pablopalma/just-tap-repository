@@ -622,7 +622,7 @@ func _process_climb(delta: float) -> void:
 		var start := float(Songs.TRACKS.monument.climax) - BREAK_AT
 		if Music.track != "monument" or Music._track_pos() >= start - 0.05:
 			_begin_ending()
-		elif _t - _crown_t > 12.0:
+		elif _t - _crown_t > (1.0 if DevMenu.proto_has("end") else 12.0):   # from near the top: no long wait
 			Music._track_jump(start)
 			_begin_ending()
 		return
@@ -732,7 +732,7 @@ func _tap() -> void:
 
 ## The crown is reached: pull back to see her whole, the gold runs through every crack, she breaks.
 func _begin_ending() -> void:
-	print("MONUMENT break at theme %.1f s" % (Music._track_pos() + BREAK_AT))
+	print("MONUMENT crown at %.1f s, break at theme %.1f s" % [_t, Music._track_pos() + BREAK_AT])
 	_ending = 0.0
 	_gate = BARRIERS - 1
 	_reveal_to = 1.0
@@ -832,7 +832,7 @@ func _process_descent(delta: float) -> void:
 			sh.m = 1.0
 		if _whole_t < 0.0:
 			_whole_t = 0.0
-			print("MONUMENT whole at theme %.1f s" % Music._track_pos())
+			print("MONUMENT whole at %.1f s (theme %.1f s)" % [_t, Music._track_pos()])
 			Music.resolve_chord()
 			_kick = 1.5
 		_whole_t += delta
@@ -850,7 +850,9 @@ func _process_mother(delta: float) -> void:
 	# frame her and the light; nearer, on her face and palm, while she speaks
 	var speaking := smoothstep(RISE_AT, RISE_AT + RISE_TIME + 1.0, _whole_t) * (1.0 - smoothstep(GO_AT, GO_AT + 1.5, _whole_t))
 	_speak = speaking
-	var c := (Vector2(0.2, -0.7) * H).lerp(Vector2(0.38, -0.82) * H, speaking)
+	var vp := get_viewport_rect().size
+	var upright := vp.y > vp.x   # a phone held upright: frame her a little further right, so her hand shows
+	var c := (Vector2(0.2, -0.7) * H).lerp(Vector2(0.64 if upright else 0.38, -0.82) * H, speaking)
 	_all_c = _all_c.lerp(c, 1.0 - exp(-0.9 * delta))
 	_all_h = lerpf(_all_h, lerpf(1.55, 1.05, speaking), 1.0 - exp(-0.9 * delta))
 	_alive = smoothstep(ALIVE_AT, ALIVE_AT + ALIVE_TIME, _whole_t)
@@ -1200,6 +1202,9 @@ func _draw_subs() -> void:
 		for r in rows.size():
 			var size := int(vp.y * 0.05)
 			var w := _font.get_string_size(rows[r], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+			while w > vp.x * 0.9 and size > 12:   # narrow screens (a phone held upright): fit the width
+				size -= 2
+				w = _font.get_string_size(rows[r], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 			var at := Vector2((vp.x - w) * 0.5, vp.y * 0.89 + r * size * 1.25 - (rows.size() - 1) * size * 0.6)
 			for k in 12:
 				var o := Vector2.from_angle(TAU * k / 12.0) * size * 0.08
