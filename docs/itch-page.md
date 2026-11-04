@@ -16,8 +16,8 @@ Todo lo que va en la página, listo para copiar. Las imágenes están en `Builds
 | **Release status** | In development |
 | **Pricing** | No payments (o "Donate" con mínimo 0) |
 | **Uploads** | `Builds/just_tap_web.zip` → marcar **This file will be played in the browser**. Y `Builds/just_tap_windows.zip` → plataforma **Windows**, nombre visible: *Download for Windows — smoother audio and visuals* |
-| **Genre** | Simulation (alternativa: Other) |
-| **Tags** | `clicker`, `incremental`, `relaxing`, `cozy`, `atmospheric`, `emotional`, `watercolor`, `music`, `short`, `godot` |
+| **Genre** | **Rhythm** desde el 4/11/2026 (antes Simulation: el juego era un incremental casi puro; hoy el ritmo es su centro). Si las impresiones se desploman en una semana, volver a Simulation. |
+| **Tags** | `incremental`, `clicker`, `relaxing`, `atmospheric`, `narrative`, `music`, `meditative`, `short`, `singleplayer`, `emotional` |
 | **AI generation disclosure** | Marcar lo que corresponda: las voces se hicieron con ElevenLabs |
 | **App store links / Community** | Comments: activado |
 | **Visibility** | Draft hasta probarlo; después Public |
@@ -34,6 +34,19 @@ Todo lo que va en la página, listo para copiar. Las imágenes están en `Builds
 | SharedArrayBuffer support | **Sí** (el build web usa hilos para que el audio no se trabe) |
 
 ---
+
+## Analíticas: el cambio de género (4/11/2026)
+
+Antes de pasar de Simulation a Rhythm (versión 0.18.0-beta). Comparar dentro de una semana, sin tocar nada más (ni portada ni descripción):
+
+| Fecha | Género | Impresiones (7 d) | CTR | Vistas | Juegan en el navegador | Descargas | Calificaciones | Colecciones | Comentarios |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 4/11/2026 | Simulation | 13.900 | 2,14 % | 672 | 433 | 8 | 1 (5★) | 7 | 3 |
+| ~11/11/2026 | Rhythm | | | | | | | | |
+
+- Si las impresiones bajan poco y el CTR sube: quedarse en Rhythm (llega gente que busca esto).
+- Si las impresiones se desploman: volver a Simulation.
+- Lo que más importa: cuánta gente entra y juega (vistas y juegos en el navegador), no solo las impresiones.
 
 ## Descripción (inglés)
 
