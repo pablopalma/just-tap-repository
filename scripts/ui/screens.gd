@@ -319,6 +319,12 @@ class Subtitle extends Control:
 		_label.size = Vector2(w, 0)
 		var y := 0.905 if cinema else (0.15 if high else 0.72)
 		_label.position = Vector2((size.x - w) * 0.5, size.y * y)
+		# and just as tall: a label keeps the height of a longer line it showed before (wrapped to
+		# more rows at its old width) until it is measured again at the new one
+		_fit_height.call_deferred()
+
+	func _fit_height() -> void:
+		_label.size.y = _label.get_minimum_size().y
 
 	func show_line(text: String, duration: float) -> void:
 		_label.text = text
