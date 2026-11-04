@@ -54,7 +54,8 @@ func _process(delta: float) -> void:
 	var vp := get_viewport()
 	var focus := vp.gui_get_focus_owner()
 	if not Pad.using:
-		if focus != null:
+		# not while the mouse is down: a button that loses the focus mid-click cancels the click
+		if focus != null and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			focus.release_focus()
 		queue_redraw()
 		return
