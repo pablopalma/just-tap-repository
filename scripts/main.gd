@@ -86,6 +86,8 @@ var lesson := false
 var _lesson_done := false
 ## A new player's warm-up before the climb (scripts/world/warmup.gd): while it is on, taps go to it.
 var warmup: Warmup
+## Before it, on a first run, the prologue (scripts/ui/prologue.gd): taps go to it while it lasts.
+var prologue: Prologue
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -336,6 +338,8 @@ func _press() -> void:
 		return  # in a cinematic the tip plays on its own; in a story, we listen
 	if mode == Mode.INTRO:
 		_start()
+	elif prologue:
+		prologue.tap()
 	elif warmup:
 		warmup.tap()
 	else:
@@ -396,14 +400,18 @@ func _start() -> void:
 		return
 	intro.dismiss()
 	intro = null
-	spark.play()
-	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
+	var first_run := cinematics_enabled and not SaveSystem.had_progress and GameState.stage == 1 		and GameState.total_taps == 0 and not GameState.cinemas.has("warmup")
+	var with_prologue := first_run and not GameState.cinemas.has("prologue")
+	if not with_prologue:
+		spark.play()
+		create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
 	Music.start()
 	Music.stop_theme()
 	_demo_end = BuildFlags.DEMO and GameState.finished and GameState.stage >= BuildFlags.DEMO_LAST
 	_face_zone()  # a save inside a zone that runs its own way
-	# The voice greets once the line has started climbing.
-	get_tree().create_timer(2.5).timeout.connect(_greet.bind(SaveSystem.had_progress))
+	# The voice greets once the line has started climbing (in the prologue, the Father's last words).
+	if not with_prologue:
+		get_tree().create_timer(2.5).timeout.connect(_greet.bind(SaveSystem.had_progress))
 	if GameState.finished:
 		_enter_final(true)
 		return
@@ -411,12 +419,32 @@ func _start() -> void:
 	GameState.running = true
 	if BuildFlags.is_dark(GameState.stage):
 		_enter_dark(true)  # a save from inside the dark
-	if cinematics_enabled and not SaveSystem.had_progress and GameState.stage == 1 and GameState.total_taps == 0 			and not GameState.cinemas.has("warmup"):
-		warmup = Warmup.new()
-		warmup.tip = tip
-		warmup.cam = camera
-		warmup.finished.connect(_on_warmup_done)
-		add_child(warmup)
+	if with_prologue:
+		prologue = Prologue.new()
+		prologue.tip = tip
+		prologue.finished.connect(_on_prologue_done)
+		# under the subtitles, so the Father's words show over the white
+		subtitle.get_parent().add_child(prologue)
+		subtitle.get_parent().move_child(prologue, subtitle.get_index())
+	elif first_run:
+		_begin_warmup()
+
+
+## The prologue is over (or skipped): the world shows, the HUD comes in and the warm-up begins.
+func _on_prologue_done(skipped: bool) -> void:
+	GameState.cinemas["prologue"] = true
+	Telemetry.event("prologue", {"skipped": skipped})
+	prologue = null
+	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0)
+	_begin_warmup()
+
+
+func _begin_warmup() -> void:
+	warmup = Warmup.new()
+	warmup.tip = tip
+	warmup.cam = camera
+	warmup.finished.connect(_on_warmup_done)
+	add_child(warmup)
 
 
 ## The warm-up is over: the beat is learned if enough taps landed on it, and the climb begins.
@@ -1042,7 +1070,12 @@ func _dev_jump(n: int) -> void:
 	if intro != null:
 		_start()
 	_stop_cinematic(true)
-	if warmup:   # jumping somewhere skips the new player's warm-up
+	if prologue:   # jumping somewhere skips the prologue and the warm-up
+		prologue.queue_free()
+		prologue = null
+		Narrator.hold = false
+		hud.modulate.a = 1.0
+	if warmup:
 		warmup.queue_free()
 		warmup = null
 	_pano = 0.0

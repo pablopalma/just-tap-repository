@@ -19,6 +19,12 @@ El juego busca transmitir paz e invitar a la reflexión: el Padre alienta a segu
 - **Todo está conectado:** los animales gigantes que despiertan en el camino muestran que somos parte del todo.
 - **Duración:** **120 niveles**, siempre que cada capítulo traiga una experiencia propia (sin relleno); si alguno no la tiene, se vuelve a 100. Entre **2:30 y 3 horas**.
 
+### El prólogo y el diálogo final (5/11/2026)
+- **El prólogo** (solo la primera partida, después de "empezar"): blanco papel infinito, sin línea ni HUD. La luz cae despacio del cielo y, al posarse, **habla sola en texto** (sin voz): *"¿Dónde estoy?… ¿Qué me pasó?… ¿Y mi cuerpo?"*. **El Padre responde con su voz.** No se define si la luz está muerta: puede ser un sueño, un desmayo, un "entre". El diálogo no usa palabras con género. Termina con el Padre: *"Si tuviste un mal día… solo toca."*, y empieza la práctica del pulso mientras el mundo aparece. Corre solo; un toque adelanta la frase; manteniendo presionado se saltea.
+  - Inspiración de tono: el diálogo de *The Egg* (Andy Weir), no su historia.
+- **La luz habla siempre en texto, nunca con voz**: conserva el misterio de quién es, pero tiene identidad (piensa, pregunta, siente).
+- **El diálogo final:** cuando la luz vuelve al Padre, es **la primera y única vez que se escucha su voz**: el momento en que se revela quién es. Por decidir: qué le pasó (si murió, soñó, se desmayó) y de quién es esa voz.
+
 ---
 
 ## 2. La mecánica

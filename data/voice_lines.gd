@@ -7,6 +7,13 @@ extends RefCounted
 const LINES := {
 	"00": {"en": "If you had a bad day… just tap.", "es": "Si tuviste un mal día… solo toca."},
 	"00b": {"en": "Welcome back. Where were we?", "es": "Volviste. ¿Dónde estábamos?"},
+	# the prologue (scripts/ui/prologue.gd): the Father answers the light, which speaks only in text
+	"pro_1": {"en": "Easy. You're safe here.", "es": "Calma. Aquí estás a salvo."},
+	"pro_2": {"en": "Someone who has always known you.", "es": "Alguien que te conoce desde siempre."},
+	"pro_3": {"en": "No. You just stopped for a while. You had a hard day. A very hard one.",
+		"es": "No. Solo te detuviste un momento. Tuviste un día difícil. Muy difícil."},
+	"pro_4": {"en": "That's alright. You don't need to remember to keep going. Just one small step.",
+		"es": "Está bien. No hace falta recordar para seguir. Solo un pequeño paso."},
 	# tapping with the music (Main's lesson, barriers 2–4) and holding
 	"beat_1": {"en": "Listen. There's music under everything. Tap with it.",
 		"es": "Escucha. Hay música debajo de todo. Toca con ella."},
