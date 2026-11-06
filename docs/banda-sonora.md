@@ -26,10 +26,12 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | 6 | **Starlit Drift** (la noche) | zona 4, la noche estrellada | 70 BPM | ✅ grabado (`starlit_drift.ogg`) |
 | 7 | **Light After the Dark** (la oscuridad) | barreras 41–45 de la demo | si♭ mayor · 72 | ✅ grabado (`dark_theme.ogg`, máster en `Builds/music_source/`) |
 | 8 | **Letter to the Player** (la carta) | la carta del final de la demo | 66 BPM | ✅ grabado (`letter_to_the_player.ogg`) |
+| 9 | **Who I Am** (el prólogo) | el prólogo de la primera partida: la luz cae en el blanco y habla con el Padre | la mayor · sin pulso, ambiental | ✅ grabado (`who_i_am.ogg`, 6/11/2026) |
+| 10 | **What Breaks, Returns** (la Madre) | el monumento del juego completo (`tools/monument.tscn`) | re menor → re mayor · 80 BPM | ✅ grabado (`what_breaks_returns.ogg`, fuera de la demo exportada) |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |
 | — | Capítulos del juego completo | Gris, Rojo, Verde, Azul, **Tinta**, Amarillo (`docs/juego-completo.md` §3) | — | un tema por capítulo, o agrupar las zonas de cada uno |
 
-**La demo usa 8 temas** (1 a 8), y están todos grabados (3/11/2026). Los másters están en `Builds/music_source/`; los datos medidos de cada uno, en `Songs.TRACKS`. El ahora queda dentro de *Light After the Dark*. Ese álbum corto se puede sacar con la demo como *"Just Tap — Demo Soundtrack"*, gratis o a precio simbólico, para juntar seguidores. El álbum completo sale con el juego en Steam.
+**La demo usa 9 temas** (1 a 9), y están todos grabados (6/11/2026). Los másters están en `Builds/music_source/`; los datos medidos de cada uno, en `Songs.TRACKS`. El ahora queda dentro de *Light After the Dark*. Ese álbum corto se puede sacar con la demo como *"Just Tap — Demo Soundtrack"*, gratis o a precio simbólico, para juntar seguidores. El álbum completo sale con el juego en Steam.
 
 ## Prompt de ElevenLabs · La oscuridad
 

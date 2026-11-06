@@ -1,20 +1,27 @@
 class_name Prologue
 extends Control
 ## The very first moments of a first run (docs/brief-juego-completo.md §1, "El prólogo", 5/11/2026):
-## endless white paper, no line, no HUD. A light falls slowly from the sky and, once it rests, wonders
-## where it is, in small handwritten words and no voice. The Father answers with his. It is not said
-## whether the light has died: a dream, a faint, an in-between. The Father's last words are the game's
-## own greeting, and as they end the paper lifts to show the world and the warm-up begins.
+## endless white paper, no line, no HUD. A light falls slowly from the sky, swaying, and once it rests
+## it is alive: it floats and breathes, small lights turning around it, a little hop when it speaks.
+## It wonders where it is, in small handwritten words and no voice. The Father answers with his. It is
+## not said whether the light has died: a dream, a faint, an in-between. On the Father's last words,
+## the game's own greeting, the light rises as the paper dissolves into the first level, and the
+## warm-up begins.
 ## It plays on its own; a tap moves to the next line; holding skips it all.
 
 signal finished(skipped: bool)
 
-const FALL := 4.0           # seconds the light takes to come down
+const FALL := 7.0           # seconds the light takes to come down
 const SETTLE := 1.2         # after it lands, before it speaks
 const LIGHT_LINE := 2.8     # how long one of the light's lines stays
 const FATHER_LINE := 4.6    # a Father's line without a recording yet
 const GAP := 0.7            # a breath between lines
-const LIFT := 2.4           # the paper lifting at the end
+const LIFT := 2.4           # the paper lifting when skipped (on the last words, as long as they are)
+const RISE := 150.0         # px the light rises as the paper dissolves
+## Its own music: "Who I Am", weightless, no beat (docs/banda-sonora.md). The game's theme waits in
+## silence and comes in under it as the light rises: the beat is born with the game.
+const MUSIC := "res://audio/music/who_i_am.ogg"
+const MUSIC_DB := -7.0
 const HOLD_SKIP := 1.6      # holding down this long skips it
 
 ## Who says what: "light" lines are drawn here; the Father's are VoiceLines ids, said by the Narrator.
@@ -47,10 +54,12 @@ var _step := -1
 var _step_t := 0.0
 var _step_len := 0.0
 var _lift := -1.0
+var _lift_len := LIFT
 var _hold := 0.0
 var _font: Font
 var _paper: ColorRect
 var _ink: Control   # the light and its words, over the paper
+var _music: AudioStreamPlayer
 var _skipped := false
 
 
@@ -73,13 +82,21 @@ func _ready() -> void:
 	_ink.draw.connect(_draw_light)
 	add_child(_ink)
 	Narrator.hold = true   # nothing else is said while it lasts
-	# the theme far away, muffled: almost silence (the warm-up opens it again)
+	# the game's theme waits in silence; the prologue has its own music
 	var bus := AudioServer.get_bus_index(Music.TRACK_BUS)
 	if bus != -1:
-		AudioServer.set_bus_volume_db(bus, -24.0)
+		AudioServer.set_bus_volume_db(bus, -60.0)
 		var lp := AudioServer.get_bus_effect(bus, 0) as AudioEffectLowPassFilter
 		if lp:
-			lp.cutoff_hz = 450.0
+			lp.cutoff_hz = Warmup.QUIET_CUT
+	if ResourceLoader.exists(MUSIC):
+		_music = AudioStreamPlayer.new()
+		_music.stream = load(MUSIC)
+		_music.bus = Music.MUSIC_BUS   # under the voice it ducks, like the rest of the music
+		_music.volume_db = -40.0
+		Music.add_child(_music)   # it outlives the prologue, to fade out after it
+		_music.play()
+		_music.create_tween().tween_property(_music, "volume_db", MUSIC_DB, 3.0).set_trans(Tween.TRANS_SINE)
 
 
 ## A tap: the next line, now.
@@ -101,8 +118,9 @@ func _process(delta: float) -> void:
 		_begin_lift()
 	if _lift >= 0.0:
 		_lift += delta
-		_paper.modulate.a = 1.0 - smoothstep(0.0, LIFT, _lift)
-		if _lift >= LIFT:
+		# the paper dissolves a little after the light starts rising, so the world comes in under it
+		_paper.modulate.a = 1.0 - smoothstep(_lift_len * 0.25, _lift_len, _lift)
+		if _lift >= _lift_len:
 			# what the Narrator queued meanwhile (an "I'll wait" while it listened) is dropped
 			Narrator._queue.clear()
 			Narrator._last_tap = GameState.clock
@@ -131,6 +149,10 @@ func _next() -> void:
 		if path != "":
 			length = (load(path) as AudioStream).get_length() + 0.8
 		_step_len = length + GAP
+		if _step == SCRIPT.size() - 1:
+			# the last words: the light rises and the paper dissolves into the level while they are said
+			_lift_len = maxf(length, 3.5)
+			_begin_lift()
 	else:
 		Music.play_celesta(2 + _step % 4)   # a soft note: the light's own small voice
 		_step_len = LIGHT_LINE + GAP
@@ -140,29 +162,68 @@ func _begin_lift() -> void:
 	if _lift >= 0.0:
 		return
 	_lift = 0.0
+	# the music hands over: its own fades out slowly, on into the warm-up, as the game's theme comes in,
+	# just as the warm-up wants it
+	if _music:
+		var m := _music
+		var tw := m.create_tween()
+		tw.tween_property(m, "volume_db", -50.0, _lift_len + 8.0).set_trans(Tween.TRANS_SINE)
+		tw.tween_callback(m.queue_free)
+	var bus := AudioServer.get_bus_index(Music.TRACK_BUS)
+	if bus != -1:
+		create_tween().tween_method(func(v: float) -> void: AudioServer.set_bus_volume_db(bus, v),
+			-60.0, Warmup.QUIET_DB, _lift_len).set_trans(Tween.TRANS_SINE)
+
+
+## Where the light is: falling (swaying, slowing as it nears the ground), then floating where it
+## rests, then rising at the end.
+func _light_at(t: float) -> Vector2:
+	var fall := clampf(t / FALL, 0.0, 1.0)
+	var e := 1.0 - pow(1.0 - fall, 3.0)
+	var start := Vector2(rest.x, -40.0)
+	var p := start.lerp(rest, e) + Vector2(sin(t * 1.1) * 26.0 * (1.0 - e), 0.0)
+	# alive once it rests: it floats up and down and drifts a little
+	var alive := smoothstep(FALL - 0.5, FALL + 1.5, t)
+	p += Vector2(sin(t * 0.55) * 4.0, sin(t * 1.7) * 6.0) * alive
+	# a small hop as it speaks
+	if _step >= 0 and _step < SCRIPT.size() and SCRIPT[_step][0] == "light" and _lift < 0.0:
+		var h := clampf(_step_t / 0.45, 0.0, 1.0)
+		p.y -= sin(h * PI) * 9.0
+	if _lift >= 0.0:
+		var r := smoothstep(0.0, _lift_len, _lift)
+		p.y -= RISE * r * r
+	return p
 
 
 ## The falling light, then its words beside it.
 func _draw_light() -> void:
 	var gold := Palette.GOLD
 	var fall := clampf(_t / FALL, 0.0, 1.0)
-	var e := 1.0 - pow(1.0 - fall, 3.0)   # slowing as it nears the ground
-	var start := Vector2(rest.x, -40.0)
-	var at := start.lerp(rest, e)
-	var fade := 1.0 - smoothstep(0.0, LIFT, maxf(_lift, 0.0))
+	var at := _light_at(_t)
+	var fade := 1.0 - smoothstep(_lift_len * 0.35, _lift_len, maxf(_lift, 0.0))
 	# its trail, falling
 	if fall < 1.0:
-		for i in 12:
-			var k := i / 12.0
-			var p := start.lerp(rest, maxf(0.0, e - k * 0.12))
+		for i in 14:
+			var k := i / 14.0
+			var p := _light_at(maxf(0.0, _t - k * 0.5))
 			_ink.draw_circle(p, lerpf(6.0, 1.0, k), Color(gold, 0.25 * (1.0 - k)))
-	# the light: a glow that breathes, a bright core
+	# the light: a glow that breathes, a core that brightens now and then, as if it were thinking
 	var breath := 0.5 + 0.5 * sin(_t * 1.4)
+	var glint := pow(maxf(0.0, sin(_t * 0.7 + 1.3)), 12.0)
 	for i in 6:
 		var k := i / 5.0
-		_ink.draw_circle(at, lerpf(90.0, 16.0, k) * (1.0 + 0.08 * breath), Color(gold.lightened(0.15), (0.06 + 0.1 * k) * fade))
-	_ink.draw_circle(at, 13.0, Color(gold, 0.5 * fade))
-	_ink.draw_circle(at, 9.0, Color(1.0, 0.97, 0.86, fade))
+		_ink.draw_circle(at, lerpf(90.0, 16.0, k) * (1.0 + 0.1 * breath + 0.15 * glint), Color(gold.lightened(0.15), (0.06 + 0.1 * k) * fade))
+	_ink.draw_circle(at, 13.0 + 2.0 * breath, Color(gold, 0.5 * fade))
+	_ink.draw_circle(at, 9.0 + glint * 2.0, Color(1.0, 0.97, 0.86, fade))
+	# three small lights turning slowly around it, once it rests
+	var alive := smoothstep(FALL, FALL + 2.0, _t)
+	for i in 3:
+		var a := _t * (0.6 + 0.15 * i) + TAU * i / 3.0
+		var orbit := Vector2(cos(a) * (26.0 + 6.0 * i), sin(a) * (11.0 + 3.0 * i))
+		var mote := at + orbit
+		var front := 0.6 + 0.4 * sin(a)   # brighter as they pass in front
+		_ink.draw_circle(mote, 4.0, Color(gold, 0.18 * alive * fade * front))
+		_ink.draw_circle(mote, 1.8, Color(1.0, 0.97, 0.86, 0.85 * alive * fade * front))
 	# landing: a soft ring
 	var since := _t - FALL
 	if since > 0.0 and since < 2.0:
