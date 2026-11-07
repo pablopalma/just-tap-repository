@@ -92,6 +92,7 @@ func _tell() -> void:
 	box.offset_right = -30
 	box.offset_bottom = -24
 	Music.play_feature("story")
+	Music.hush = true   # a cinematic: nothing of the level under it
 
 
 func _process(delta: float) -> void:
@@ -128,6 +129,7 @@ func _end(told: bool) -> void:
 		step = "done" if _line_i >= lines.size() else "left"
 	Telemetry.event("story", {"step": step, "s": snappedf(_t, 0.1), "lines": _line_i, "of": lines.size(),
 		"wait": snappedf((Time.get_ticks_msec() - _asked_ms) / 1000.0, 0.1)})
+	Music.hush = false
 	if told:
 		Music.stop_feature()
 	var tw := create_tween()
@@ -145,7 +147,8 @@ func _draw_scene() -> void:
 	var vs := _scene.size
 	var h := vs.y
 	var ink := Palette.INK
-	_scene.draw_rect(Rect2(Vector2.ZERO, vs), Color(PAPER, 0.95 * _k(0.0, 1.4)))
+	# opaque once it has come in: the level is not there under the memory
+	_scene.draw_rect(Rect2(Vector2.ZERO, vs), Color(PAPER, _k(0.0, 1.4)))
 	var ground := 0.64 * h  # above the subtitles (Screens.Subtitle sits at 72 %)
 	var lift := ground - 0.74 * h  # the layout below was drawn for a ground at 74 %
 	# the sidewalk and its curb
@@ -212,3 +215,7 @@ func _k(from: float, time: float) -> float:
 func _line(a: Vector2, b: Vector2, col: Color, w: float) -> void:
 	if col.a > 0.002 and a.distance_to(b) > 0.5:
 		_scene.draw_line(a, b, col, w, true)
+
+
+func _exit_tree() -> void:
+	Music.hush = false   # whatever ends it, the level's sounds come back

@@ -137,6 +137,9 @@ var _title: AudioStreamPlayer
 var _title_tween: Tween
 ## The recorded theme is sounding: the game's own accompaniment and choir rest under it.
 var title_on := false
+## A story being told: only its own theme (and the voice) is heard; the game's own sounds, the
+## bird, the ambience, the notes, wait in silence.
+var hush := false
 ## The recorded themes (Songs.TRACKS): one plays wherever there is one (the zone's, the dark's, or a
 ## scene's own: the story, the letter, see play_feature). While it plays, the beat grid sits on its
 ## beats at its tempo, every generated note takes its key bar by bar (a major pentatonic), the game's
@@ -1388,6 +1391,8 @@ func _schedule(t: float, kind: String, what: String, midi: int, vol: float, bird
 
 
 func _fire(q: Dictionary) -> void:
+	if hush:
+		return
 	if q.kind == "atmos":
 		var p := _pool(q.pool)
 		p.stream = _atmos[q.what]
