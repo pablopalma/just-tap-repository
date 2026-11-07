@@ -144,6 +144,9 @@ func _draw_ink() -> void:
 		_ink.draw_circle(p, 7.0 * (0.6 + 0.4 * a), Color(gold, 0.25 * a))
 		_ink.draw_circle(p, 4.0 * (0.6 + 0.4 * a), Color(gold, a))
 	_ink.draw_arc(c, 12.0, 0.0, TAU, 40, Color(gold, 0.5), 1.6, true)
+	# a note landing: a soft glow at the centre (no ring out to the edge: the figure has no contour)
 	for ring in _rings:
 		var k: float = ring.t / 1.2
-		_ink.draw_arc(c, lerpf(14.0, r, 1.0 - pow(1.0 - k, 3.0)), 0.0, TAU, 96, Color(gold, 0.5 * (1.0 - k)), 2.0, true)
+		for i in 5:
+			var j := i / 4.0
+			_ink.draw_circle(c, lerpf(60.0, 10.0, j) * (0.6 + 0.6 * k), Color(gold, 0.06 * (1.0 - k) * (0.4 + j)))
