@@ -19,6 +19,7 @@ uniform float seed = 0.0;
 // glow: luminous pigment over whatever is behind (the dark), the plate itself transparent
 uniform bool glow = false;
 uniform float alpha = 1.0;
+uniform float lighten = 0.4;   // how much the glowing pigment is mixed with light
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7)) + seed) * 43758.5453);
@@ -74,8 +75,8 @@ void fragment() {
 	float plate = 1.0 - smoothstep(0.5, 1.0, r + (fbm(p * 2.5 + 5.0) - 0.5) * 0.35);
 	plate *= plate;
 	if (glow) {
-		vec3 lit = mix(pigment.rgb, vec3(1.0, 0.97, 0.88), 0.4);
-		vec3 old = mix(ghost_pigment.rgb, vec3(1.0, 0.97, 0.88), 0.3);
+		vec3 lit = mix(pigment.rgb, vec3(1.0, 0.97, 0.88), lighten);
+		vec3 old = mix(ghost_pigment.rgb, vec3(1.0, 0.97, 0.88), lighten * 0.75);
 		float a = paint * 0.95;
 		float ga = gpaint * 0.45 * (1.0 - a);
 		float rim_g = 0.0;

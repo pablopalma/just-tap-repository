@@ -1,23 +1,24 @@
 class_name CymaticsFigure
 extends Node2D
 ## The demo's dark stretch (41–45), where the whale sleeps and wakes: instead of the sacred geometry,
-## every barrier is a plate of wet pigment glowing in the dark (shaders/cymatics.gdshader, glow). Each
-## note played on it (a phrase's note, or the tip's own hits in "the now") sets it vibrating in a new
-## mode, and the pigment runs and gathers into that note's figure, Chladni's lines; the figure before
-## stays underneath, faint. When the barrier falls its figure blooms and fades, and the next plate waits
-## at the next barrier. (tools/cymatics.tscn is the prototype.)
+## every note played (a phrase's note, or the tip's own hits in "the now") paints its figure under the
+## light, Chladni's lines in wet pigment (shaders/cymatics.gdshader): it blooms as the note sounds and
+## dries away before the next, so each note shows as its own figure. It lives in the world, under the
+## line and the light, and the dark's inversion (Darkness) turns its pigment to light: deep below the
+## player. (tools/cymatics.tscn is the prototype.)
 
 const RADIUS := 170.0
 const SETTLE := 1.6          # beats a figure takes to settle
 const MODES := [Vector2(1, 2), Vector2(1, 3), Vector2(2, 3), Vector2(1, 4), Vector2(2, 5), Vector2(3, 4),
 	Vector2(3, 5), Vector2(2, 7), Vector2(4, 5), Vector2(3, 7), Vector2(5, 6)]
+## The colours it glows in, once the dark inverts them (so the pigment itself is their negative).
 const COLOURS := [Color("#e2b65a"), Color("#9cbbe0"), Color("#d98f86"), Color("#9ccaa2"), Color("#c3a6e0")]
+const SHOW := 1.6            # beats a figure takes to dry away after its note
 ## The degrees the tip's own hits walk (the now has no phrase to play).
 const WALK := [3, 5, 6, 7, 5, 8, 6, 9]
 
 var path: PathData
 
-var _layer: CanvasLayer   # over the darkness, following the camera like the world
 var _rect: ColorRect
 var _mat: ShaderMaterial
 var _n := -1
@@ -35,19 +36,21 @@ func _ready() -> void:
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://shaders/cymatics.gdshader")
 	_mat.set_shader_parameter("glow", true)
+	_mat.set_shader_parameter("lighten", 0.0)
 	_mat.set_shader_parameter("aspect", 1.0)
 	_mat.set_shader_parameter("radius", 0.48)
-	_mat.set_shader_parameter("pigment", COLOURS[0])
-	_mat.set_shader_parameter("ghost_pigment", COLOURS[1])
+	_mat.set_shader_parameter("pigment", _neg(COLOURS[0]))
+	_mat.set_shader_parameter("ghost_pigment", _neg(COLOURS[1]))
 	_mat.set_shader_parameter("alpha", 0.0)
 	_rect.material = _mat
-	_layer = CanvasLayer.new()
-	_layer.layer = 7   # over the darkness (6), with the chaos's pale figures: it glows in the dark
-	_layer.follow_viewport_enabled = true
-	_layer.add_child(_rect)
-	add_child(_layer)
+	add_child(_rect)
 	GameState.hit.connect(_on_hit)
 	GameState.gate_broken.connect(_on_broken)
+
+
+## The pigment that turns into colour `c` under the dark's inversion.
+static func _neg(c: Color) -> Color:
+	return Color(1.0 - c.r, 1.0 - c.g, 1.0 - c.b)
 
 
 func _on_hit(_d: float, _crit: bool, source: String) -> void:
@@ -81,7 +84,7 @@ func note(deg: int) -> void:
 	_mat.set_shader_parameter("mode_before", before)
 	_mat.set_shader_parameter("mode_now", now_mode)
 	_mat.set_shader_parameter("ghost_pigment", _mat.get_shader_parameter("pigment"))
-	_mat.set_shader_parameter("pigment", COLOURS[int(_notes / 4.0) % COLOURS.size()])
+	_mat.set_shader_parameter("pigment", _neg(COLOURS[int(_notes / 4.0) % COLOURS.size()]))
 	_since = 0.0
 	_shiver = 1.0
 
@@ -89,7 +92,6 @@ func note(deg: int) -> void:
 func _process(delta: float) -> void:
 	var n := GameState.stage
 	visible = BuildFlags.is_dark(n) or _leaving >= 0.0
-	_layer.visible = visible
 	if not visible or path == null:
 		return
 	if n != _n and _leaving < 0.0:
@@ -115,9 +117,10 @@ func _process(delta: float) -> void:
 		if _leaving >= 1.8:
 			_leaving = -1.0
 			_rect.scale = Vector2.ONE
-	else:
-		_show = minf(1.0, _show + delta / 1.2)
-		a = _show * (0.35 + 0.65 * minf(1.0, _notes / 2.0))   # a faint plate until the first notes
+	elif _notes > 0:
+		# each note's figure blooms in at once and dries away before the next
+		var k := _since / (SHOW * beat)
+		a = smoothstep(0.0, 0.08, k) * (1.0 - smoothstep(0.35, 1.0, k))
 	_mat.set_shader_parameter("alpha", a)
 	var c := path.gate_pos(_n)
 	_rect.position = c - _rect.size * 0.5 * _rect.scale
