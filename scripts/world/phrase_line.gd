@@ -107,6 +107,8 @@ func _set_phrase() -> void:
 	_phrase = set[(_stage - 1) % set.size()]
 	_mel = (_stage * 3) % MELODY.size()
 	_misses = 0
+	_hits = 0   # each barrier starts its own count
+	_holding = -1.0
 	_origin = Music._zone_origin
 	_begin_pass(_next_bar(_now() + LEAD))
 	_need = _notes(0.0).size()
@@ -232,6 +234,7 @@ func _count(_n: Array) -> void:
 	GameState.hp = max_hp * (1.0 - float(_hits) / maxf(1.0, _need))   # the barrier cracks as it fills
 	if _hits >= _need:
 		_holding = -1.0
+		print("PHRASE %d done: %d notes, %d missed" % [_stage, _need, _misses])
 		phrase_done.emit(_stage, _misses)
 		_stage = -1   # a new phrase once the next barrier is there
 
@@ -240,9 +243,14 @@ func _play_note() -> void:
 	var deg: int = MELODY[_mel % MELODY.size()]
 	_mel += 1
 	var inst := "celesta" if GameState.stage % 2 == 0 else "harp"
-	Music._schedule_deg(Music._time, inst, deg, 12, 0.06)
+	_note(inst, deg, 12, 0.11)
 	_hold_deg = deg
 	_hold_ring = 0.0
+
+
+## A note of the theme's key, now, on the music's own bus (heard over the theme, not panned away).
+func _note(inst: String, deg: int, base: int, vol: float) -> void:
+	Music._schedule(Music._time, "note", inst, Music.chord_note(deg, Music.tonic() + base), vol)
 
 
 ## A long note held keeps sounding: the same note shimmering on every eighth until you let go.
@@ -252,7 +260,7 @@ func _sustain(delta: float) -> void:
 	if _hold_ring >= every:
 		_hold_ring -= every
 		var odd := int(_t / every) % 2 == 1
-		Music._schedule_deg(Music._time, "glass" if odd else "celesta", _hold_deg, 24 if odd else 12, 0.035)
+		_note("glass" if odd else "celesta", _hold_deg, 24 if odd else 12, 0.05)
 
 
 ## The zone's theme opens as its barriers fall: far and muffled at the first, whole at the tenth.
