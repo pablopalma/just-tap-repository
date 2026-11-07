@@ -13,6 +13,8 @@ var voice_on := true
 var lang := "en"
 ## True when a save with progress existed at startup.
 var had_progress := false
+## How the player chose to play the phrases (PhraseLine.MODES): "" until asked.
+var play_mode := ""
 ## Off while recording the trailer or running tests that must not touch the player's save.
 var enabled := true
 
@@ -53,6 +55,7 @@ func save_game() -> void:
 	d["music_on"] = music_on
 	d["voice_on"] = voice_on
 	d["lang"] = lang
+	d["play_mode"] = play_mode
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f == null:
 		push_warning("Could not save: %s" % FileAccess.get_open_error())
@@ -75,6 +78,7 @@ func load_game() -> void:
 	music_on = bool(d.get("music_on", true))
 	voice_on = bool(d.get("voice_on", true))
 	lang = str(d.get("lang", lang))
+	play_mode = str(d.get("play_mode", ""))
 	had_progress = GameState.stage > 1 or GameState.light > 0.0
 
 

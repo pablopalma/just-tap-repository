@@ -124,7 +124,12 @@ func _process(delta: float) -> void:
 	_light.add_theme_color_override("font_color", col.darkened(0.15))
 	_put_text(_dmg, Loc.t("per_tap") % Fmt.num(g.power()))
 	var buyable := g.any_buyable()
-	_dot.visible = buyable
+	_dot.visible = buyable and not BuildFlags.PHRASES
+	if BuildFlags.PHRASES:
+		# no light to spend, no tree: what shows is the music
+		_light.visible = false
+		_dmg.visible = false
+		_tree.visible = false
 	_dot.add_theme_color_override("font_color", col)
 
 	var hint := ""
@@ -144,7 +149,7 @@ func _process(delta: float) -> void:
 			hint = Loc.t("hint_beat_ok")
 		elif lesson:
 			hint = Loc.t("hint_beat")
-		elif g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
+		elif not BuildFlags.PHRASES and g.time_at_gate > 12.0 and g.taps_at_gate > 25 and g.progress() < 0.25:
 			# beside the line there is nothing to open: the nodes are right there
 			hint = Loc.t("hint_tree" if _tree.visible else ("hint_tree_pad" if Pad.using else "hint_tree_inline"))
 			button = "rb"

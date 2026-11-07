@@ -59,7 +59,7 @@ func _draw_current(p: Vector2) -> void:
 	var wv := sin(_t * 58.0) * 3.2 * _wobble
 	_bar(p + Vector2(-HALF, wv * 0.3), p + Vector2(-hole, -wv), Palette.INK)
 	_bar(p + Vector2(hole, -wv), p + Vector2(HALF, wv * 0.3), Palette.INK)
-	if font:
+	if font and not BuildFlags.PHRASES:   # with phrases the barrier shows its notes, not a life
 		var dim := Color(Palette.INK, 0.65)
 		View.text(self, font, p + Vector2(HALF + 12, 5), Fmt.num(maxf(0.0, GameState.hp)),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, dim)

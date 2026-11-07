@@ -88,6 +88,9 @@ var _lesson_done := false
 var warmup: Warmup
 ## Before it, on a first run, the prologue (scripts/ui/prologue.gd): taps go to it while it lasts.
 var prologue: Prologue
+## Every barrier a musical phrase (BuildFlags.PHRASES), and the choice of how to play them.
+var phrase_line: PhraseLine
+var mode_choice: ModeChoice
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -196,6 +199,13 @@ func _build() -> void:
 	fx.font = UIStyle.italic()
 	tip.font = fx.font
 	spark = _node("Spark", "res://scripts/world/spark.gd")
+	if BuildFlags.PHRASES:
+		phrase_line = _node("PhraseLine", "res://scripts/world/phrase_line.gd")
+		phrase_line.path = path
+		phrase_line.tip = tip
+		phrase_line.z_index = 4
+		phrase_line.mode = SaveSystem.play_mode if SaveSystem.play_mode != "" else "flow"
+		phrase_line.phrase_done.connect(_on_phrase_done)
 	spark.tip = tip
 	spark.visible = false
 	spark.landed.connect(_on_spark_landed)
@@ -338,10 +348,16 @@ func _press() -> void:
 		return  # in a cinematic the tip plays on its own; in a story, we listen
 	if mode == Mode.INTRO:
 		_start()
+	elif mode_choice:
+		return
 	elif prologue:
 		prologue.tap()
 	elif warmup:
 		warmup.tap()
+	elif phrase_line and phrase_line.active:
+		phrase_line.tap()
+	elif BuildFlags.PHRASES:
+		return   # between phrases (a cinematic, the dive): taps wait
 	else:
 		GameState.tap("tap", Music.beat_at_tap())
 		_holding = true
@@ -379,8 +395,8 @@ func _process_lesson() -> void:
 
 ## While the tap that started it is still held: one soft tap on every half beat.
 func _process_hold(delta: float) -> void:
-	if not _holding:
-		return
+	if not _holding or BuildFlags.PHRASES:
+		return   # with phrases, holding is for the long notes (PhraseLine)
 	var down := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_key_pressed(KEY_SPACE) 		or Input.is_action_pressed("tap")
 	if not down or mode != Mode.PLAY or _cine or _now or _story or droste.is_playing():
 		_holding = false
@@ -401,7 +417,7 @@ func _start() -> void:
 	intro.dismiss()
 	intro = null
 	var first_run := cinematics_enabled and not SaveSystem.had_progress and GameState.stage == 1 		and GameState.total_taps == 0 and not GameState.cinemas.has("warmup")
-	var with_prologue := first_run and not GameState.cinemas.has("prologue")
+	var with_prologue := BuildFlags.PROLOGUE and first_run and not GameState.cinemas.has("prologue")
 	if not with_prologue:
 		spark.play()
 		create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(0.6)
@@ -419,6 +435,23 @@ func _start() -> void:
 	GameState.running = true
 	if BuildFlags.is_dark(GameState.stage):
 		_enter_dark(true)  # a save from inside the dark
+	if BuildFlags.PHRASES and SaveSystem.play_mode == "":
+		mode_choice = ModeChoice.new()
+		mode_choice.chosen.connect(_on_mode_chosen.bind(first_run, with_prologue))
+		hud.get_parent().add_child(mode_choice)
+		return
+	_after_mode(first_run, with_prologue)
+
+
+## How to play the phrases is chosen: kept, and the game goes on (the prologue, the warm-up).
+func _on_mode_chosen(id: String, first_run: bool, with_prologue: bool) -> void:
+	SaveSystem.play_mode = id
+	phrase_line.mode = id
+	mode_choice = null
+	_after_mode(first_run, with_prologue)
+
+
+func _after_mode(first_run: bool, with_prologue: bool) -> void:
 	if with_prologue:
 		prologue = Prologue.new()
 		prologue.tip = tip
@@ -428,6 +461,12 @@ func _start() -> void:
 		subtitle.get_parent().move_child(prologue, subtitle.get_index())
 	elif first_run:
 		_begin_warmup()
+
+
+## A phrase played whole: the barrier breaks.
+func _on_phrase_done(n: int, misses: int) -> void:
+	Telemetry.event("phrase", {"n": n, "misses": misses, "mode": phrase_line.mode})
+	GameState.break_phrase()
 
 
 ## The prologue is over (or skipped): the world shows, the HUD comes in and the warm-up begins.
@@ -575,7 +614,13 @@ func _process(delta: float) -> void:
 	_process_lesson()
 	path_view.lit = tip.lit
 	tip.scale = Vector2.ONE * path.grow_at(tip.lit)  # grows towards the spiral's centre
-	inline_tree.active = tree_inline and GameState.running and not GameState.finished \
+	if phrase_line:
+		phrase_line.active = mode == Mode.PLAY and GameState.running and not GameState.finished \
+			and not GameState.cinematic and not _cine and not _now and not _story and not droste.is_playing() \
+			and warmup == null and prologue == null and mode_choice == null and _pano <= 0.0
+		phrase_line.owns_air = warmup == null and prologue == null and not BuildFlags.is_dark(GameState.stage) \
+			and not GameState.finished
+	inline_tree.active = not BuildFlags.PHRASES and tree_inline and GameState.running and not GameState.finished \
 		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0 and not droste.is_playing() \
 		and not _story
 	subtitle.high = inline_tree.active and inline_tree.is_narrow()
@@ -873,8 +918,9 @@ func _on_gate_broken(n: int) -> void:
 	var col := Palette.paint_col(Zones.of(n), n)
 	washes.aura(p, col)
 	fx.aura(p, col)
-	fx.float_text(p + View.screen(Vector2(0, -30)), "+◆ " + Fmt.num(GameState.reward(n)),
-		Palette.chapter_color(Palette.chapter_of(n)).darkened(0.2), 20, 1.8)
+	if not BuildFlags.PHRASES:   # with phrases there is no light to earn
+		fx.float_text(p + View.screen(Vector2(0, -30)), "+◆ " + Fmt.num(GameState.reward(n)),
+			Palette.chapter_color(Palette.chapter_of(n)).darkened(0.2), 20, 1.8)
 	hud.pulse()
 	landscape.build_piece(n)
 

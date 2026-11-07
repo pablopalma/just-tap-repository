@@ -9,6 +9,7 @@ signal action(id: String, arg: int)
 ## The prototypes that run as scenes of their own (tools/): played from here, Esc back to the game.
 ## [name, scene, its arguments]. Only where the scene is there (tools/ is left out of exports).
 const PROTOS := [
+	["Frases: cada barrera, una frase musical", "res://tools/phrases.tscn", []],
 	["El monumento: la Madre", "res://tools/monument.tscn", []],
 	["El monumento, desde la cima", "res://tools/monument.tscn", ["end"]],
 	["La espiral de ritmo (ave de estrellas)", "res://tools/spiral_rhythm.tscn", []],

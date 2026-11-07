@@ -16,6 +16,11 @@ const NOW_BARRIERS := 3
 ## dive, scripts/world/droste.gd), and some zones run their own way (Main.ZONE_ANGLE). False: the
 ## old pull-back over the zone.
 const DROSTE := true
+## Every barrier is a musical phrase (scripts/world/phrase_line.gd) instead of life and damage, and
+## there is no upgrade tree: progress is playing the music (7/11/2026).
+const PHRASES := true
+## The prologue (scripts/ui/prologue.gd) on a first run: still a proof of concept, kept off.
+const PROLOGUE := false
 
 ## The upgrade tree is drawn beside the line and bought by tapping it, without pausing
 ## (scripts/world/inline_tree.gd); false brings back the panel. The dev menu (F1) switches it.

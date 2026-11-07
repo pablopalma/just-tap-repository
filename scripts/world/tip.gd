@@ -88,6 +88,8 @@ func accent(run: int) -> void:
 
 ## The beat as notes of light climbing the line (BeatNotes), each reaching the tip as its beat sounds.
 func _draw_notes(ring: float) -> void:
+	if BuildFlags.PHRASES and lesson == false:
+		return   # the phrase's own notes are drawn by PhraseLine
 	var at := lit + jolt
 	# below the line's start (the very first barriers) they keep coming, straight on from below
 	var start: Vector2 = path.pos_at(0.0)

@@ -118,7 +118,7 @@ func _process(delta: float) -> void:
 	else:
 		combo = maxf(0.0, combo - COMBO_DECAY * delta)
 
-	if not cinematic:
+	if not cinematic and not BuildFlags.PHRASES:   # a phrase does not heal: what you caught stays
 		hp = minf(max_hp(stage), hp + regen(stage) * delta)
 		_regen_special(delta)
 
@@ -370,7 +370,9 @@ func _enter_stage() -> void:
 	star = {}
 	branches = []
 	# (no star on the spiral: the line itself is the figure there)
-	if STAR_BARRIERS.has(stage) and not finished and not PathData.in_spiral(stage):
+	if BuildFlags.PHRASES:
+		pass   # stars and forks as phrases of several lights: a later stage of the phrases
+	elif STAR_BARRIERS.has(stage) and not finished and not PathData.in_spiral(stage):
 		var spec: Array = STAR_BARRIERS[stage]
 		var lights: Array[Dictionary] = []
 		for i in int(spec[0]):
@@ -382,6 +384,13 @@ func _enter_stage() -> void:
 			var m := max_hp(stage) * (1.0 + 0.18 * sin(i * 2.3 + stage * 1.7))
 			branches.append({"hp": m, "max": m, "done": false})
 	special_changed.emit()
+
+
+## A phrase played whole (PhraseLine): the barrier breaks.
+func break_phrase() -> void:
+	if running and not finished:
+		hp = 0.0
+		_break_gate()
 
 
 func _break_gate() -> void:
