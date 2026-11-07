@@ -38,10 +38,10 @@ void vertex() {
 void fragment() {
 	float across = abs(UV.y * 2.0 - 1.0);
 	// ragged edges: where the water ran, the stroke is wider or narrower
-	float ragged = (fbm(world * 0.045) - 0.5) * 0.55 + (fbm(world * 0.21) - 0.5) * 0.2;
+	float ragged = (fbm(world * 0.06) - 0.5) * 0.45 + (fbm(world * 0.3) - 0.5) * 0.2;
 	float inside = 1.0 - smoothstep(0.72, 0.98, across + ragged);
 	// pigment pools at the edges of a wash, lighter in the middle
-	float pool = 0.55 + 0.45 * smoothstep(0.45, 0.85, across + ragged * 0.5);
+	float pool = 0.85 + 0.15 * smoothstep(0.5, 0.9, across + ragged * 0.5);   // thin: only a hint of pooling
 	// granulation and the brush running dry in places
 	float grain = 0.75 + 0.25 * fbm(world * 0.6);
 	float dry = 0.65 + 0.35 * smoothstep(0.25, 0.7, fbm(world * 0.012 + 3.0));

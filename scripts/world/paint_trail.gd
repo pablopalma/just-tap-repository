@@ -1,16 +1,19 @@
 class_name PaintTrail
 extends Node2D
-## The light leaves a trail of watercolour on the line as it climbs (shaders/paint_stroke.gdshader):
-## a stroke under the ink, in the colour of the stretch it crosses (Palette.paint_col: grey washes at
-## first, the chapters' colours as they come back), granulated, pooled at the edges, ragged where the
-## water ran. Every note caught drops a small bloom of pigment where the light is.
+## Where the light has passed, the line itself has turned to watercolour (shaders/paint_stroke.gdshader):
+## the ink line becomes a stroke of paint as wide as it was (a little wider, as a brush would), in the
+## line's own colour for that stretch (grey at first, the chapters' colours as they come back),
+## granulated, pooled at its edges, ragged where the water ran. Path draws the ink line ahead only.
+## Every note caught drops a small bloom of pigment where the light is.
 
 const STEP := 6.0           # px between the stroke's points
-const WIDTH := 22.0
+const WIDTH := 2.6         # times the ink line's width (PathView.LINE_W)
 const BLOOM_LIFE := 2.2
 
 var path: PathData
 var tip: Node2D
+## The line's width as the camera sees it (Main keeps it with the path's).
+var width_scale := 1.0
 
 var _strokes: Array[Line2D] = []
 var _barrier := -1          # the barrier the current stroke leads to
@@ -47,11 +50,9 @@ func bloom() -> void:
 
 
 func _col(n: int) -> Color:
-	var c := Palette.paint_col(Zones.of(n), n)
+	var c := Palette.line_col(n)
 	if BuildFlags.is_dark(n):
-		c = Palette.GOLD.lightened(0.2)   # in the dark, the trail is light
-	elif Palette.chapter_of(n) == 0:
-		c = c.darkened(0.12)   # the grey washes, a little deeper so they read on the grey paper
+		c = Palette.GOLD.lightened(0.2)   # in the dark, the line turns to light
 	return c
 
 
@@ -65,7 +66,7 @@ func _process(delta: float) -> void:
 	if GameState.stage != _barrier:
 		_barrier = GameState.stage
 		var s := Line2D.new()
-		s.width = WIDTH
+		s.width = WIDTH * 2.2 * width_scale
 		s.default_color = _col(_barrier)
 		s.joint_mode = Line2D.LINE_JOINT_ROUND
 		s.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -75,12 +76,14 @@ func _process(delta: float) -> void:
 		s.texture_mode = Line2D.LINE_TEXTURE_STRETCH
 		var m := _mat.duplicate() as ShaderMaterial
 		m.set_shader_parameter("seed", float(_barrier) * 1.7)
-		m.set_shader_parameter("strength", 0.8 if BuildFlags.is_dark(_barrier) else 0.7)
+		m.set_shader_parameter("strength", 1.0)
 		s.material = m
 		add_child(s)
 		if _done > 0.0:
 			s.add_point(path.pos_at(_done))
 		_strokes.append(s)
+	for s in _strokes:
+		s.width = WIDTH * 2.2 * width_scale
 	var cur: Line2D = _strokes[-1]
 	while _done + STEP <= at:
 		_done += STEP

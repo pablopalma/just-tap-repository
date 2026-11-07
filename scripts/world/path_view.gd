@@ -40,7 +40,7 @@ func _draw() -> void:
 			else:
 				pts.append(path.pos_at(lit))
 				break
-		if pts.size() >= 2:
+		if pts.size() >= 2 and not BuildFlags.PHRASES:   # with phrases the lit line is paint (PaintTrail)
 			draw_polyline(pts, Palette.line_col(n), LINE_W * width_scale, true)
 
 	# Branches of the barriers already passed light up in their colour.

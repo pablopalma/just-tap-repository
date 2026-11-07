@@ -617,6 +617,7 @@ func _process(delta: float) -> void:
 	subtitle.high = inline_tree.active and inline_tree.is_narrow()
 	shapes.focus = camera.position
 	path_view.width_scale = maxf(1.0, 0.9 / camera.zoom.x)
+	paint_trail.width_scale = path_view.width_scale
 	droste.tip_screen = tip.get_global_transform_with_canvas().origin
 	_tend_creatures()
 	if whale.sleeping:
