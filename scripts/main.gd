@@ -21,6 +21,8 @@ var tip
 var figure
 ## In the demo's dark, cymatics in paint instead of the sacred geometry (scripts/world/cymatics_figure.gd).
 var cymatics: CymaticsFigure
+## The watercolour the light leaves on the line as it climbs (scripts/world/paint_trail.gd).
+var paint_trail: PaintTrail
 var shapes
 var star
 var forks
@@ -183,6 +185,8 @@ func _build() -> void:
 	figure.path = path
 	cymatics = _node("Cymatics", "res://scripts/world/cymatics_figure.gd")
 	cymatics.path = path
+	paint_trail = _node("PaintTrail", "res://scripts/world/paint_trail.gd")
+	paint_trail.path = path
 	path_view = _node("Path", "res://scripts/world/path_view.gd")
 	path_view.setup(path)
 	gates = _node("Gates", "res://scripts/world/gates.gd")
@@ -198,6 +202,7 @@ func _build() -> void:
 	star.burst.connect(_on_star_burst)
 	tip = _node("Tip", "res://scripts/world/tip.gd")
 	tip.path = path
+	paint_trail.tip = tip
 	fx = _node("FX", "res://scripts/world/fx.gd")
 	fx.font = UIStyle.italic()
 	tip.font = fx.font
@@ -208,7 +213,9 @@ func _build() -> void:
 		phrase_line.tip = tip
 		phrase_line.z_index = 4
 		phrase_line.phrase_done.connect(_on_phrase_done)
-		phrase_line.note_played.connect(func(deg: int) -> void: cymatics.note(deg))
+		phrase_line.note_played.connect(func(deg: int) -> void:
+			cymatics.note(deg)
+			paint_trail.bloom())
 	spark.tip = tip
 	spark.visible = false
 	spark.landed.connect(_on_spark_landed)
@@ -1118,6 +1125,7 @@ func _dev_jump(n: int) -> void:
 	forks.reset()
 	figure.reset()
 	cymatics.reset()
+	paint_trail.reset()
 	shapes.clear()
 	fx.clear()
 	washes.clear()
@@ -1389,6 +1397,7 @@ func _on_reborn() -> void:
 	forks.reset()
 	figure.reset()
 	cymatics.reset()
+	paint_trail.reset()
 	shapes.clear()
 	fx.clear()
 	washes.clear()
