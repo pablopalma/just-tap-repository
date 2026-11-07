@@ -511,6 +511,7 @@ func _on_line(id: String, text: String, duration: float) -> void:
 func _new_game() -> void:
 	GameState.new_game()
 	SaveSystem.had_progress = false
+	SaveSystem.play_mode = ""   # starting over asks again how to play
 	SaveSystem.save_game()
 	tip.lit = 0.0
 	gates.reset()
@@ -1383,6 +1384,7 @@ func _clear_dark() -> void:
 func _restart() -> void:
 	GameState.new_game()
 	SaveSystem.had_progress = false
+	SaveSystem.play_mode = ""   # starting over asks again how to play
 	SaveSystem.save_game()
 	Music.stop_feature()
 	Music.stop_theme()
@@ -1392,6 +1394,10 @@ func _restart() -> void:
 	_on_reborn()
 	tip.lit = 0.0
 	_greet(false)
+	if BuildFlags.PHRASES:
+		mode_choice = ModeChoice.new()
+		mode_choice.chosen.connect(_on_mode_chosen.bind(false, false))
+		hud.get_parent().add_child(mode_choice)
 
 
 func _on_reborn() -> void:
