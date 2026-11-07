@@ -11,6 +11,8 @@ extends Node2D
 ## One way to play for now (7/11/2026: the three modes did not convince): the timing below.
 
 signal phrase_done(n: int, misses: int)
+## A note of the phrase caught: its degree of the arrangement (the dark's cymatics take its figure).
+signal note_played(deg: int)
 
 ## How to play them: beats either side of a note that still catch it, px a note travels per beat,
 ## beats of notes shown coming, half beats played, long notes held, a phrase whole in one pass.
@@ -357,6 +359,7 @@ func _play_note(i: int, n: Array) -> void:
 		Music._schedule(Music._time, "note", "harp", Music.chord_note(deg - 2, Music.tonic()), 0.045)
 	_hold_midi = midi
 	_hold_ring = 0.0
+	note_played.emit(deg)
 
 
 ## A long note held keeps sounding: the same note shimmering on every eighth until you let go.

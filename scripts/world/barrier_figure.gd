@@ -61,8 +61,8 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	if path == null:
-		return
+	if path == null or BuildFlags.is_dark(_n):
+		return   # in the demo's dark, the cymatics take its place (CymaticsFigure)
 	var breath := 1.0 + 0.02 * pow(1.0 - Music.beat_phase(), 4.0)
 	var col := Palette.paint_col(Zones.of(GameState.stage), GameState.stage)
 	if _prog > 0.002:

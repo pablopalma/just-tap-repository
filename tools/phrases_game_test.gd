@@ -1,7 +1,7 @@
 extends Node
 ## The phrases in the game (BuildFlags.PHRASES): a new game in the given mode, the warm-up tapped on the
 ## beat, then every phrase played on its notes (a miss now and then, long notes held). Logs barriers.
-## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/phrases_game_test.tscn [-- en]
+## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/phrases_game_test.tscn [-- en from=40]
 
 const LENGTH := 150.0
 
@@ -28,6 +28,11 @@ func _process(delta: float) -> void:
 	_t += delta
 	if _t > 1.0 and _main.intro != null:
 		_main._start()
+	if _t > 1.5 and _t - delta <= 1.5:
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("from="):
+				GameState.cinemas["story1"] = true   # the story is its own test (story_test)
+				_main._on_dev("edge", int(arg.trim_prefix("from=")))   # jump there and break it
 	var w = _main.warmup
 	if w and w.phase == 0 and _t - _free > 1.4:
 		_free = _t

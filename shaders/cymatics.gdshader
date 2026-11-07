@@ -16,6 +16,9 @@ uniform float ghost = 0.35;                  // how much of the old layer shows
 uniform float aspect = 1.7778;
 uniform float radius = 0.42;                 // the plate, a fraction of the height
 uniform float seed = 0.0;
+// glow: luminous pigment over whatever is behind (the dark), the plate itself transparent
+uniform bool glow = false;
+uniform float alpha = 1.0;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7)) + seed) * 43758.5453);
@@ -68,6 +71,15 @@ void fragment() {
 	float gpaint = smoothstep(0.3, 0.9, g + (grain - 0.5) * 0.5) * ghost;
 	// inside the plate only, its rim soft like a wash
 	float plate = 1.0 - smoothstep(0.92, 1.02, r + (fbm(p * 4.0) - 0.5) * 0.06);
+	if (glow) {
+		vec3 lit = mix(pigment.rgb, vec3(1.0, 0.97, 0.88), 0.4);
+		vec3 old = mix(ghost_pigment.rgb, vec3(1.0, 0.97, 0.88), 0.3);
+		float a = paint * 0.95;
+		float ga = gpaint * 0.45 * (1.0 - a);
+		float rim_g = exp(-pow((r - 0.98) * 26.0, 2.0)) * 0.18;
+		vec3 c = (lit * a + old * ga + vec3(1.0, 0.95, 0.8) * rim_g) / max(a + ga + rim_g, 0.001);
+		COLOR = vec4(c, clamp(a + ga + rim_g, 0.0, 1.0) * plate * alpha);
+	} else {
 	vec3 col = paper.rgb;
 	col = mix(col, col * ghost_pigment.rgb * 1.15, gpaint * plate * 0.8);
 	col = mix(col, col * pigment.rgb, paint * plate * 0.92);
@@ -78,4 +90,5 @@ void fragment() {
 	// paper grain over all
 	col += (hash(floor(FRAGCOORD.xy)) - 0.5) * 0.03;
 	COLOR = vec4(col, 1.0);
+	}
 }

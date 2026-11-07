@@ -19,6 +19,8 @@ var path_view
 var gates
 var tip
 var figure
+## In the demo's dark, cymatics in paint instead of the sacred geometry (scripts/world/cymatics_figure.gd).
+var cymatics: CymaticsFigure
 var shapes
 var star
 var forks
@@ -179,6 +181,8 @@ func _build() -> void:
 	shapes = _node("MusicShapes", "res://scripts/world/music_shapes.gd")
 	figure = _node("BarrierFigure", "res://scripts/world/barrier_figure.gd")
 	figure.path = path
+	cymatics = _node("Cymatics", "res://scripts/world/cymatics_figure.gd")
+	cymatics.path = path
 	path_view = _node("Path", "res://scripts/world/path_view.gd")
 	path_view.setup(path)
 	gates = _node("Gates", "res://scripts/world/gates.gd")
@@ -204,6 +208,7 @@ func _build() -> void:
 		phrase_line.tip = tip
 		phrase_line.z_index = 4
 		phrase_line.phrase_done.connect(_on_phrase_done)
+		phrase_line.note_played.connect(func(deg: int) -> void: cymatics.note(deg))
 	spark.tip = tip
 	spark.visible = false
 	spark.landed.connect(_on_spark_landed)
@@ -1112,6 +1117,7 @@ func _dev_jump(n: int) -> void:
 	star.reset()
 	forks.reset()
 	figure.reset()
+	cymatics.reset()
 	shapes.clear()
 	fx.clear()
 	washes.clear()
@@ -1382,6 +1388,7 @@ func _on_reborn() -> void:
 	star.reset()
 	forks.reset()
 	figure.reset()
+	cymatics.reset()
 	shapes.clear()
 	fx.clear()
 	washes.clear()
