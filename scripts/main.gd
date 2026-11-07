@@ -213,6 +213,9 @@ func _build() -> void:
 		phrase_line.tip = tip
 		phrase_line.z_index = 4
 		phrase_line.phrase_done.connect(_on_phrase_done)
+		phrase_line.lesson_done.connect(func() -> void:
+			if warmup:
+				warmup.lesson_done(phrase_line._hits >= phrase_line._need))
 		phrase_line.note_played.connect(func(deg: int) -> void:
 			cymatics.note(deg)
 			paint_trail.bloom())
@@ -360,6 +363,8 @@ func _press() -> void:
 		_start()
 	elif prologue:
 		prologue.tap()
+	elif warmup and warmup.phase == 1 and phrase_line:
+		phrase_line.tap()   # the lesson: the real phrase, slow
 	elif warmup:
 		warmup.tap()
 	elif phrase_line and phrase_line.active:
@@ -608,7 +613,8 @@ func _process(delta: float) -> void:
 	if phrase_line:
 		phrase_line.active = mode == Mode.PLAY and GameState.running and not GameState.finished \
 			and not GameState.cinematic and not _cine and not _now and not _story and not droste.is_playing() \
-			and warmup == null and prologue == null and _pano <= 0.0
+			and (warmup == null or warmup.phase == 1) and prologue == null and _pano <= 0.0
+		phrase_line.lesson = warmup != null and warmup.phase == 1
 		phrase_line.owns_air = warmup == null and prologue == null and not BuildFlags.is_dark(GameState.stage) \
 			and not GameState.finished
 	inline_tree.active = not BuildFlags.PHRASES and tree_inline and GameState.running and not GameState.finished \

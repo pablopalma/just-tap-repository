@@ -14,6 +14,7 @@ const S := {
 	"headphones": {"es": "mejor con auriculares", "en": "best with headphones"},
 	"hint_tree_pad": {"es": "elige una mejora del árbol", "en": "pick an upgrade on the tree"},
 	"hint_beat": {"es": "toca con la música", "en": "tap with the music"},
+	"hint_note": {"es": "toca cuando la nota llega a la luz", "en": "tap as each note reaches the light"},
 	"hint_beat_ok": {"es": "así", "en": "like that"},
 	"hint_hold": {"es": "mantén presionado para seguir", "en": "hold to keep going"},
 	"story_yes": {"es": "cuéntame", "en": "tell me"},

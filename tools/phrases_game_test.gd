@@ -37,7 +37,7 @@ func _process(delta: float) -> void:
 	if w and w.phase == 0 and _t - _free > 1.4:
 		_free = _t
 		_main._press()
-	elif w and w.phase == 1:
+	elif w and w.phase == 1 and not BuildFlags.PHRASES:
 		var k: int = Music.beat_at_tap()
 		if k >= 0 and k != _last_beat and absf(fposmod(Music.heard_phase() + 0.5, 1.0) - 0.5) < 0.04:
 			_last_beat = k

@@ -140,11 +140,13 @@ func _process(delta: float) -> void:
 		if warm == 0:
 			hint = Loc.t("hint_tap")
 		elif warm == 1:
-			hint = Loc.t("hint_beat")
+			hint = Loc.t("hint_note" if BuildFlags.PHRASES else "hint_beat")
 		elif warm == 2:
 			hint = Loc.t("hint_beat_ok")
 		elif _total_taps < 3 and g.stage == 1:
 			hint = Loc.t("hint_tap")
+		elif BuildFlags.PHRASES and g.stage <= 2:
+			hint = Loc.t("hint_note")   # the first barriers: the same words as the lesson
 		elif _praise_t > 0.0:
 			hint = Loc.t("hint_beat_ok")
 		elif lesson:

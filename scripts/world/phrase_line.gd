@@ -13,6 +13,8 @@ extends Node2D
 signal phrase_done(n: int, misses: int)
 ## A note of the phrase caught: its degree of the arrangement (the dark's cymatics take its figure).
 signal note_played(deg: int)
+## The warm-up's lesson phrase is played (Warmup): the game itself begins.
+signal lesson_done
 
 ## How to play them: beats either side of a note that still catch it, px a note travels per beat,
 ## beats of notes shown coming, half beats played, long notes held, a phrase whole in one pass.
@@ -78,6 +80,13 @@ const ARRANGEMENT := {
 		[5, 6, 7, 8, 7, 8, 10],
 	],
 }
+## The warm-up's lesson (Main sets `lesson` while the warm-up asks for it): the real mechanic, slow,
+## a note every two beats coming down the line to the light; four caught and it is learned (or three
+## passes, so nobody is stuck). Its own little line of the arrangement.
+const LESSON := [[2, "n"], [2, "n"], [2, "n"], [2, "n"]]
+const LESSON_LINE := [5, 6, 7, 5]
+const LESSON_PASSES := 3
+
 ## The arrangement's range, in degrees of the theme's pentatonic counted up from its tonic an octave
 ## up (5 per octave: 0 the tonic, 2 the third, 3 the fifth): where its line moves.
 const LOW := 2
@@ -85,6 +94,8 @@ const HIGH := 9
 
 var path: PathData
 var tip: Node2D
+## The warm-up's lesson phrase instead of the barrier's (it breaks nothing).
+var lesson := false
 ## Main says when it may play: the game running, nothing else (a cinematic, the warm-up) in the way.
 var active := false
 ## Main says when the theme is its to open (not under the prologue or the warm-up, not in the dark).
@@ -106,6 +117,8 @@ var _hold_midi := 0
 var _rings: Array[Dictionary] = []
 var _sparks: Array[Dictionary] = []
 var _t := 0.0
+var _was_lesson := false
+var _passes := 0
 
 
 func _m() -> Dictionary:
@@ -135,16 +148,18 @@ func _bar_offset() -> float:
 
 func _set_phrase() -> void:
 	_stage = GameState.stage
+	_was_lesson = lesson
+	_passes = 0
 	var zone := clampi(Zones.of(_stage), 1, SETS.size())
 	var set: Array = SETS[zone]
-	_phrase = set[(_stage - 1) % set.size()]
+	_phrase = LESSON if lesson else set[(_stage - 1) % set.size()]
 	_misses = 0
 	_hits = 0   # each barrier starts its own count
 	_holding = -1.0
 	_origin = Music._zone_origin
 	_begin_pass(_next_bar(_now() + LEAD))
 	_need = _notes(0.0).size()
-	_degs = _compose(_notes(0.0))
+	_degs = LESSON_LINE.duplicate() if lesson else _compose(_notes(0.0))
 
 
 ## The first downbeat at or after beat b.
@@ -201,11 +216,14 @@ func _process(delta: float) -> void:
 		_holding = -1.0
 		queue_redraw()
 		return
-	if _stage != GameState.stage or absf(_origin - Music._zone_origin) > 0.001:
+	if _stage != GameState.stage or absf(_origin - Music._zone_origin) > 0.001 or _was_lesson != lesson:
 		_set_phrase()
 	var now := _now()
 	if now >= _start + _length():
 		_begin_pass(_start + _length())
+		_passes += 1
+		if lesson and _passes >= LESSON_PASSES:
+			_finish_lesson()
 	var m := _m()
 	for n in _notes(_start):
 		if now > n[0] + m.window and not _caught.has(n[0]):
@@ -265,6 +283,10 @@ func tap() -> void:
 func _count(_n: Array) -> void:
 	_hits += 1
 	GameState.beat_streak += 1
+	if lesson:
+		if _hits >= _need:
+			_finish_lesson()
+		return
 	var max_hp := GameState.max_hp(GameState.stage)
 	GameState.hp = max_hp * (1.0 - float(_hits) / maxf(1.0, _need))   # the barrier cracks as it fills
 	if _hits >= _need:
@@ -272,6 +294,13 @@ func _count(_n: Array) -> void:
 		print("PHRASE %d done: %d notes, %d missed" % [_stage, _need, _misses])
 		phrase_done.emit(_stage, _misses)
 		_stage = -1   # a new phrase once the next barrier is there
+
+
+func _finish_lesson() -> void:
+	_holding = -1.0
+	lesson = false
+	_stage = -1
+	lesson_done.emit()
 
 
 ## Where none is written (later zones): one line through the whole phrase, the same every time it comes

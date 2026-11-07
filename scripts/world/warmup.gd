@@ -50,6 +50,8 @@ func tap() -> void:
 			_t = 0.0
 			_say("beat_1")
 			_set_air(BEAT_CUT, -4.0, 2.0)
+	elif phase == 1 and BuildFlags.PHRASES:
+		pass   # the lesson phrase takes the taps (Main sends them to PhraseLine)
 	elif phase == 1:
 		_taps += 1
 		var k: int = Music.beat_at_tap()
@@ -68,6 +70,19 @@ func tap() -> void:
 				_say("beat_2")
 			Music.play_milestone(1)
 			_set_air(20000.0, 0.0, 2.5)
+
+
+## With phrases: the lesson phrase was played (PhraseLine.lesson_done). caught: whether it was learned.
+func lesson_done(caught: bool) -> void:
+	if phase != 1:
+		return
+	_hits = BEAT_TAPS if caught else 0
+	phase = 2
+	_out = 0.0
+	if caught:
+		_say("beat_2")
+	Music.play_milestone(1)
+	_set_air(20000.0, 0.0, 2.5)
 
 
 func _process(delta: float) -> void:
