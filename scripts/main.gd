@@ -88,9 +88,8 @@ var _lesson_done := false
 var warmup: Warmup
 ## Before it, on a first run, the prologue (scripts/ui/prologue.gd): taps go to it while it lasts.
 var prologue: Prologue
-## Every barrier a musical phrase (BuildFlags.PHRASES), and the choice of how to play them.
+## Every barrier a musical phrase (BuildFlags.PHRASES).
 var phrase_line: PhraseLine
-var mode_choice: ModeChoice
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -204,7 +203,6 @@ func _build() -> void:
 		phrase_line.path = path
 		phrase_line.tip = tip
 		phrase_line.z_index = 4
-		phrase_line.mode = SaveSystem.play_mode if SaveSystem.play_mode != "" else "flow"
 		phrase_line.phrase_done.connect(_on_phrase_done)
 	spark.tip = tip
 	spark.visible = false
@@ -348,8 +346,6 @@ func _press() -> void:
 		return  # in a cinematic the tip plays on its own; in a story, we listen
 	if mode == Mode.INTRO:
 		_start()
-	elif mode_choice:
-		return
 	elif prologue:
 		prologue.tap()
 	elif warmup:
@@ -435,23 +431,6 @@ func _start() -> void:
 	GameState.running = true
 	if BuildFlags.is_dark(GameState.stage):
 		_enter_dark(true)  # a save from inside the dark
-	if BuildFlags.PHRASES and SaveSystem.play_mode == "":
-		mode_choice = ModeChoice.new()
-		mode_choice.chosen.connect(_on_mode_chosen.bind(first_run, with_prologue))
-		hud.get_parent().add_child(mode_choice)
-		return
-	_after_mode(first_run, with_prologue)
-
-
-## How to play the phrases is chosen: kept, and the game goes on (the prologue, the warm-up).
-func _on_mode_chosen(id: String, first_run: bool, with_prologue: bool) -> void:
-	SaveSystem.play_mode = id
-	phrase_line.mode = id
-	mode_choice = null
-	_after_mode(first_run, with_prologue)
-
-
-func _after_mode(first_run: bool, with_prologue: bool) -> void:
 	if with_prologue:
 		prologue = Prologue.new()
 		prologue.tip = tip
@@ -465,7 +444,7 @@ func _after_mode(first_run: bool, with_prologue: bool) -> void:
 
 ## A phrase played whole: the barrier breaks.
 func _on_phrase_done(n: int, misses: int) -> void:
-	Telemetry.event("phrase", {"n": n, "misses": misses, "mode": phrase_line.mode})
+	Telemetry.event("phrase", {"n": n, "misses": misses})
 	GameState.break_phrase()
 
 
@@ -511,7 +490,6 @@ func _on_line(id: String, text: String, duration: float) -> void:
 func _new_game() -> void:
 	GameState.new_game()
 	SaveSystem.had_progress = false
-	SaveSystem.play_mode = ""   # starting over asks again how to play
 	SaveSystem.save_game()
 	tip.lit = 0.0
 	gates.reset()
@@ -618,7 +596,7 @@ func _process(delta: float) -> void:
 	if phrase_line:
 		phrase_line.active = mode == Mode.PLAY and GameState.running and not GameState.finished \
 			and not GameState.cinematic and not _cine and not _now and not _story and not droste.is_playing() \
-			and warmup == null and prologue == null and mode_choice == null and _pano <= 0.0
+			and warmup == null and prologue == null and _pano <= 0.0
 		phrase_line.owns_air = warmup == null and prologue == null and not BuildFlags.is_dark(GameState.stage) \
 			and not GameState.finished
 	inline_tree.active = not BuildFlags.PHRASES and tree_inline and GameState.running and not GameState.finished \
@@ -1384,7 +1362,6 @@ func _clear_dark() -> void:
 func _restart() -> void:
 	GameState.new_game()
 	SaveSystem.had_progress = false
-	SaveSystem.play_mode = ""   # starting over asks again how to play
 	SaveSystem.save_game()
 	Music.stop_feature()
 	Music.stop_theme()
@@ -1394,10 +1371,6 @@ func _restart() -> void:
 	_on_reborn()
 	tip.lit = 0.0
 	_greet(false)
-	if BuildFlags.PHRASES:
-		mode_choice = ModeChoice.new()
-		mode_choice.chosen.connect(_on_mode_chosen.bind(false, false))
-		hud.get_parent().add_child(mode_choice)
 
 
 func _on_reborn() -> void:

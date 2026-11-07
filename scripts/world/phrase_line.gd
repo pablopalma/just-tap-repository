@@ -2,21 +2,19 @@ class_name PhraseLine
 extends Node2D
 ## Every barrier is a musical phrase (7/11/2026, tools/phrases.tscn grown into the game; replaces the
 ## upgrade tree). The notes of light climb the line to the tip in the phrase's rhythm, on the zone's
-## own theme (its tempo, its bars); you tap each as it reaches the light and it plays the next note of
-## a melody in the theme's key. A missed note passes, silent, and the phrase comes round again; with
+## own theme (its tempo, its bars); you tap each as it reaches the light and it plays its note of an
+## arrangement written over the theme (_compose). A missed note passes, silent, and the phrase comes
+## round again; with
 ## its notes caught the barrier breaks. Long notes are held: the bar of light burns and the note keeps
 ## sounding, and ends half a beat before the next so there is time to let go. What grows is the song:
 ## the zone's theme opens barrier by barrier, from far and muffled to whole.
-## Three ways to play (Main asks the first time): breathe, flow, soar.
+## One way to play for now (7/11/2026: the three modes did not convince): the timing below.
 
 signal phrase_done(n: int, misses: int)
 
-const MODES := {
-	"breathe": {"window": 0.38, "speed": 70.0, "ahead": 4.5, "halves": false, "hold": false, "whole": false},
-	"flow": {"window": 0.24, "speed": 82.0, "ahead": 4.0, "halves": true, "hold": true, "whole": false},
-	"soar": {"window": 0.15, "speed": 112.0, "ahead": 3.0, "halves": true, "hold": true, "whole": true},
-}
-const ORDER := ["breathe", "flow", "soar"]
+## How to play them: beats either side of a note that still catch it, px a note travels per beat,
+## beats of notes shown coming, half beats played, long notes held, a phrase whole in one pass.
+const PLAY := {"window": 0.24, "speed": 82.0, "ahead": 4.0, "halves": true, "hold": true, "whole": false}
 const RELEASE := 0.5        # a long note is held for its beats less this
 const LEAD := 1.5           # at least this many beats before a phrase's first note
 ## The phrases of each zone, simple to rich: [beats, kind], kind "n" a note, "r" a rest, "h" a long note.
@@ -47,12 +45,44 @@ const SETS := {
 		[[1, "n"], [1, "n"], [0.5, "n"], [0.5, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "r"]],
 	],
 }
-## The melody the caught notes walk, degrees of the theme's key.
-const MELODY := [0, 2, 4, 2, 4, 5, 4, 2, 1, 2, 4, 7, 5, 4, 2, 0]
+## The arrangement written for each phrase of SETS, note by note (rests left out), in degrees of the
+## theme's pentatonic counted up from its tonic an octave up: 5 per octave, 0 the tonic, 2 the third,
+## 3 the fifth, 5 the tonic again. A line that rises and falls through the zone, phrases asking and
+## answering, the tenth coming home high. Each bar's notes follow that bar's key (Songs.TRACKS keys),
+## so the line sits on the theme's harmony.
+const ARRANGEMENT := {
+	1: [
+		[5, 6, 7, 6],
+		[7, 6, 5, 3],
+		[3, 5, 6],
+		[7, 6, 5],
+		[5, 6, 7, 8, 7, 6, 5],
+		[3, 4, 5],
+		[6, 7],
+		[8, 7, 6],
+		[5, 6, 7, 6, 5, 3],
+		[5, 6, 7, 6, 8, 10],
+	],
+	2: [
+		[5, 6, 7, 5],
+		[7, 6, 5, 6],
+		[7, 8, 5],
+		[3, 4, 5, 3],
+		[5, 6, 7, 6, 8],
+		[8, 7, 6, 5],
+		[3, 5, 6, 5],
+		[5, 6, 7, 8, 6, 5, 3],
+		[6, 7, 8, 7, 6, 5, 6],
+		[5, 6, 7, 8, 7, 8, 10],
+	],
+}
+## The arrangement's range, in degrees of the theme's pentatonic counted up from its tonic an octave
+## up (5 per octave: 0 the tonic, 2 the third, 3 the fifth): where its line moves.
+const LOW := 2
+const HIGH := 9
 
 var path: PathData
 var tip: Node2D
-var mode := "flow"
 ## Main says when it may play: the game running, nothing else (a cinematic, the warm-up) in the way.
 var active := false
 ## Main says when the theme is its to open (not under the prologue or the warm-up, not in the dark).
@@ -67,16 +97,17 @@ var _hits := 0
 var _need := 0
 var _misses := 0
 var _holding := -1.0
-var _hold_deg := 0
 var _hold_ring := 0.0
-var _mel := 0
+var _degs: Array = []       # the arrangement: a degree for each note of the phrase, in order
+var _last_deg := 3          # where the line ended: the next phrase starts near it
+var _hold_midi := 0
 var _rings: Array[Dictionary] = []
 var _sparks: Array[Dictionary] = []
 var _t := 0.0
 
 
 func _m() -> Dictionary:
-	return MODES.get(mode, MODES.flow)
+	return PLAY
 
 
 func _beat_len() -> float:
@@ -105,13 +136,13 @@ func _set_phrase() -> void:
 	var zone := clampi(Zones.of(_stage), 1, SETS.size())
 	var set: Array = SETS[zone]
 	_phrase = set[(_stage - 1) % set.size()]
-	_mel = (_stage * 3) % MELODY.size()
 	_misses = 0
 	_hits = 0   # each barrier starts its own count
 	_holding = -1.0
 	_origin = Music._zone_origin
 	_begin_pass(_next_bar(_now() + LEAD))
 	_need = _notes(0.0).size()
+	_degs = _compose(_notes(0.0))
 
 
 ## The first downbeat at or after beat b.
@@ -212,12 +243,14 @@ func tap() -> void:
 	var now := _now()
 	GameState.total_taps += 1
 	GameState.taps_at_gate += 1
-	for n in _notes(_start):
+	var notes := _notes(_start)
+	for i in notes.size():
+		var n: Array = notes[i]
 		if _caught.has(n[0]):
 			continue
 		if absf(now - n[0]) <= _m().window:
 			_caught[n[0]] = true
-			_play_note()
+			_play_note(i, n)
 			_rings.append({"t": 0.0})
 			if n[1] == "h":
 				_holding = n[0]
@@ -239,18 +272,91 @@ func _count(_n: Array) -> void:
 		_stage = -1   # a new phrase once the next barrier is there
 
 
-func _play_note() -> void:
-	var deg: int = MELODY[_mel % MELODY.size()]
-	_mel += 1
-	var inst := "celesta" if GameState.stage % 2 == 0 else "harp"
-	_note(inst, deg, 12, 0.11)
-	_hold_deg = deg
+## Where none is written (later zones): one line through the whole phrase, the same every time it comes
+## round, like a part written for the song. It starts near where the last phrase ended and arches up,
+## its long notes and its first beats of a bar on the steady tones (the tonic, the third, the fifth),
+## the quick notes stepping between them, never the same note three times running. Phrases answer each
+## other: an odd barrier asks (ending open, on the fifth), an even one answers (home, on the tonic);
+## the tenth of a zone ends high, on the tonic an octave up.
+func _compose(notes: Array) -> Array:
+	var n := notes.size()
+	if n == 0:
+		return []
+	# the written arrangement, where there is one for this phrase
+	var zone := Zones.of(_stage)
+	if ARRANGEMENT.has(zone):
+		var set: Array = ARRANGEMENT[zone]
+		var line: Array = set[(_stage - 1) % set.size()]
+		if line.size() == n:
+			_last_deg = int(line[-1])
+			return line.duplicate()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _stage * 7919
+	# it starts where the last phrase came home, an octave down if that was high: the middle of the
+	# range, so the line has room to rise and fall again
+	var start := _last_deg - 5 if _last_deg > 6 else _last_deg
+	start = clampi(start, LOW, HIGH - 3)
+	var peak := clampi(start + 2 + rng.randi_range(0, 2), LOW, HIGH)
+	var top := 0.55 + rng.randf_range(-0.1, 0.1)
+	# where it comes home: the tonic (an answer) or the fifth (a question), in the octave nearest
+	var homes: Array = [0, 5, 10] if _stage % 2 == 0 else [3, 8]
+	if _stage % 10 == 0:
+		homes = [5, 10]
+	var out: Array = []
+	var prev := start
+	for i in n:
+		var t := i / maxf(1.0, n - 1.0)
+		var aim := lerpf(start, peak, t / top) if t <= top else lerpf(peak, start, (t - top) / (1.0 - top))
+		var step := clampi(roundi(aim) - prev, -2, 2)   # it moves by steps, as a voice would
+		var deg := prev + step if i > 0 else start
+		var note: Array = notes[i]
+		var on_bar := absf(fposmod(float(note[0]) - _bar_offset(), _metre())) < 0.01
+		if note[1] == "h" or on_bar:
+			deg = _steady(deg)
+		deg = clampi(deg, LOW, HIGH)
+		if out.size() >= 2 and deg == out[-1] and deg == out[-2]:
+			deg = deg + 1 if deg < HIGH and t < top else deg - 1   # never the same note three times running
+		out.append(deg)
+		prev = deg
+	var home: int = homes[0]
+	for h in homes:
+		if absi(h - (out[-2] if n > 1 else start)) < absi(home - (out[-2] if n > 1 else start)):
+			home = h
+	out[n - 1] = home
+	_last_deg = home
+	return out
+
+
+## The nearest steady tone (tonic, third, fifth of the pentatonic: degrees 0, 2, 3 in each octave).
+func _steady(deg: int) -> int:
+	for d in [0, 1, -1, 2, -2]:
+		if posmod(deg + d, 5) in [0, 2, 3]:
+			return deg + d
+	return deg
+
+
+## The note `i` of the phrase sounds: its degree of the arrangement, in the theme's own colour (its
+## instruments for a bar's first beat and the rest, as its taps), with a soft third below on the long
+## notes and on the bars' first beats.
+func _play_note(i: int, n: Array) -> void:
+	var deg: int = _degs[i] if i < _degs.size() else 5
+	var inst := "celesta"
+	var shift := 0
+	var gain := 1.0
+	var on_bar := absf(fposmod(float(n[0]) - _bar_offset(), _metre())) < 0.01
+	if Music.track != "" and Songs.TRACKS[Music.track].has("taps"):
+		var v: Array = Songs.TRACKS[Music.track].taps.down if on_bar else Songs.TRACKS[Music.track].taps.beat
+		inst = v[0]
+		shift = int(v[1])
+		gain = float(v[2])
+	var midi := Music.chord_note(deg, Music.tonic() + 12) + shift
+	while midi > Music.BRIGHT_CEILING:
+		midi -= 12
+	Music._schedule(Music._time, "note", inst, midi, 0.1 * gain)
+	if n[1] == "h" or on_bar:
+		Music._schedule(Music._time, "note", "harp", Music.chord_note(deg - 2, Music.tonic()), 0.045)
+	_hold_midi = midi
 	_hold_ring = 0.0
-
-
-## A note of the theme's key, now, on the music's own bus (heard over the theme, not panned away).
-func _note(inst: String, deg: int, base: int, vol: float) -> void:
-	Music._schedule(Music._time, "note", inst, Music.chord_note(deg, Music.tonic() + base), vol)
 
 
 ## A long note held keeps sounding: the same note shimmering on every eighth until you let go.
@@ -260,7 +366,7 @@ func _sustain(delta: float) -> void:
 	if _hold_ring >= every:
 		_hold_ring -= every
 		var odd := int(_t / every) % 2 == 1
-		_note("glass" if odd else "celesta", _hold_deg, 24 if odd else 12, 0.05)
+		Music._schedule(Music._time, "note", "glass" if odd else "celesta", _hold_midi + (12 if odd else 0), 0.05)
 
 
 ## The zone's theme opens as its barriers fall: far and muffled at the first, whole at the tenth.
