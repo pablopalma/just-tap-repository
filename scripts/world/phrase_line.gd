@@ -407,7 +407,7 @@ func _draw() -> void:
 	var now := _now()
 	var light: Vector2 = tip.position
 	# where the notes land
-	draw_arc(light, 19.0, 0.0, TAU, 40, Color(gold, 0.6), 2.2, true)
+	_soft_ring(light, 19.0, gold, 0.5, 7.0)
 	for pass_from in [_start, _start + _length()]:
 		for n in _notes(pass_from):
 			var ahead: float = n[0] - now
@@ -433,23 +433,40 @@ func _draw() -> void:
 					continue
 			var r := lerpf(5.0, 9.5, 1.0 - clampf(ahead / m.ahead, 0.0, 1.0))
 			var col := ink.lerp(gold, smoothstep(2.0, 0.3, ahead))
-			draw_circle(p, r * 2.2, Color(col, 0.25 * a))
-			draw_circle(p, r, Color(col, a))
+			_soft_dot(p, r, col, a)
 	if _holding >= 0.0:
 		var pulse := 0.5 + 0.5 * sin(_t * 18.0)
 		for i in 5:
 			var k := i / 4.0
 			draw_circle(light, lerpf(70.0, 18.0, k) * (1.0 + 0.1 * pulse), Color(Palette.GOLD.lightened(0.4), 0.05 + 0.1 * k))
-		draw_arc(light, 24.0 + 4.0 * pulse, 0.0, TAU, 48, Color(gold, 0.9), 2.5, true)
+		_soft_ring(light, 24.0 + 4.0 * pulse, gold, 0.8, 8.0)
 	for sp in _sparks:
 		var k: float = sp.t / sp.life
 		draw_circle(sp.p, lerpf(2.6, 0.8, k), Color(1.0, 0.95, 0.75, 1.0 - k))
 	for r in _rings:
 		var k: float = r.t / 1.0
-		draw_arc(light, lerpf(12.0, 36.0, 1.0 - pow(1.0 - k, 3.0)), 0.0, TAU, 40, Color(gold, 0.8 * (1.0 - k)), 2.0, true)
+		_soft_ring(light, lerpf(12.0, 36.0, 1.0 - pow(1.0 - k, 3.0)), gold, 0.7 * (1.0 - k), 8.0)
 	# how many notes the phrase needs: dots across the line, beside the barrier
 	var gate := path.gate_pos(GameState.stage)
 	var g_len := path.gate_len(GameState.stage)
 	var side := (path.pos_at(g_len) - path.pos_at(g_len - 8.0)).normalized().orthogonal()
 	for j in _need:
 		draw_circle(gate + side * (40.0 + j * 12.0), 3.6, Color(gold) if j < _hits else Color(ink, 0.25))
+
+
+## A ring with no hard edge: thin arcs stacked across its width, strongest in the middle, fading out
+## on both sides, like light bleeding into the paper.
+func _soft_ring(c: Vector2, r: float, col: Color, a: float, width: float) -> void:
+	var steps := 7
+	for i in steps:
+		var u := (i / float(steps - 1)) * 2.0 - 1.0   # -1 inside .. 1 outside
+		var k := exp(-u * u * 2.6)
+		draw_arc(c, r + u * width * 0.5, 0.0, TAU, 48, Color(col, a * k * 0.45), width / steps * 1.6, true)
+
+
+## A note as a soft drop of light: its glow fading out, its core with no hard edge.
+func _soft_dot(p: Vector2, r: float, col: Color, a: float) -> void:
+	var steps := 6
+	for i in steps:
+		var k := i / float(steps - 1)   # 0 outermost .. 1 the core
+		draw_circle(p, lerpf(r * 2.4, r * 0.55, k), Color(col, a * lerpf(0.06, 0.55, k * k)))
