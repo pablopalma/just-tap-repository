@@ -23,6 +23,10 @@ var _ending := false
 var _line_i := 0
 var _next := 0.0
 var _sun_t := -1.0
+## The memory told: a pause on it, then "continue" (or any tap) goes back to the game.
+const REST := 1.8
+var _told_t := -1.0
+var _continue: Button
 var _flecks: Array[Vector3] = []   # x, y (0..1 of the screen), phase
 var _leaves: Array[Vector3] = []   # x, y, radius (in screen heights)
 
@@ -105,9 +109,44 @@ func _process(delta: float) -> void:
 			_sun_t = _t
 		_next = _t + _length(lines[_line_i])
 		_line_i += 1
-	elif _line_i >= lines.size() and _t >= _next:
-		_end(true)
+	elif _line_i >= lines.size() and _t >= _next and _told_t < 0.0:
+		_told_t = _t
+		_no.get_parent().visible = false
+		get_tree().create_timer(REST).timeout.connect(_offer_continue)
 	_scene.queue_redraw()
+
+
+## After the pause: "continue", in the middle, so going back to the game is the player's choice.
+func _offer_continue() -> void:
+	if _ending:
+		return
+	_continue = UIStyle.button(Loc.t("continue"), 26)
+	_continue.add_theme_constant_override("outline_size", 10)
+	_continue.add_theme_color_override("font_outline_color", Color(Palette.PAPER, 0.9))
+	_continue.set_anchors_and_offsets_preset(PRESET_CENTER_BOTTOM)
+	_continue.grow_horizontal = GROW_DIRECTION_BOTH
+	_continue.offset_top = -120
+	_continue.offset_bottom = -70
+	_continue.pressed.connect(func() -> void: _end(true))
+	# it fades in through a holder: PadFocus keeps the button's own alpha as its rest
+	var holder := Control.new()
+	holder.set_anchors_preset(PRESET_FULL_RECT)
+	holder.mouse_filter = MOUSE_FILTER_IGNORE
+	holder.modulate.a = 0.0
+	holder.add_child(_continue)
+	add_child(holder)
+	PadFocus.offer(_continue)
+	create_tween().tween_property(holder, "modulate:a", 1.0, 1.0)
+
+
+## Once "continue" is there, a tap anywhere (or the space bar) goes on too.
+func _unhandled_input(e: InputEvent) -> void:
+	if _continue == null or _ending:
+		return
+	var pressed: bool = (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) 		or (e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_SPACE)
+	if pressed:
+		get_viewport().set_input_as_handled()
+		_end(true)
 
 
 ## How long a line takes: its recording and a breath, or the subtitle's own time without one.
