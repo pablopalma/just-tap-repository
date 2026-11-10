@@ -8,7 +8,7 @@ extends Node2D
 ## The sky (11/11/2026): deep space and a black hole on the horizon, colossal, the light a speck before
 ## it (shaders/black_hole.gdshader); the mesh, pale on the dark, runs off towards it.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
-## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto
+## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto  (`log`: the theme and its beat)
 
 const BLUE := Color("#4d84b3")
 ## The mesh on the dark: pale blue, warming where it sinks (towards the light).
@@ -33,8 +33,8 @@ const RIPPLE_SPEED := 9.0  # world units a second
 const RIPPLE_LIFE := 3.2
 ## The hole's pull on the far mesh: the floor sinks away towards it, the line going down into it.
 const PULL := 7.0
-const NEAR_TAP := 0.015
-const NEAR_DRIFT := 0.003
+const NEAR_TAP := 0.003     # over the theme's four minutes, it comes all the way
+const NEAR_DRIFT := 0.0012
 const SPEED := 2.4         # how far the light goes a second, on its own
 const SURGE := 3.2         # and the extra a tap on the beat gives it
 
@@ -63,6 +63,7 @@ func _ready() -> void:
 	Music.zone = 8
 	Music._pending_zone = 8
 	Music.start()
+	Music.play_feature("spacetime")   # Before the Vastness (docs/banda-sonora.md, 11): the beat follows it
 	_well = _line(0.0)
 	_build_sky()
 	_build_mesh()
@@ -88,6 +89,8 @@ func _process(delta: float) -> void:
 		var k := Music.beat_at_tap()
 		if k >= 0 and k != _last_beat and fmod(_t, 9.0) < 7.0 and randf() > 0.25:
 			_tap()
+	if DevMenu.proto_has("log") and Engine.get_process_frames() % 90 == 0:
+		print("TRACK ", Music.track, " bpm ", Music.bpm(), " heard ", snappedf(Music._heard_time(), 0.01), " near ", snappedf(_near, 0.01))
 	_update_mesh()
 	_top.queue_redraw()
 	queue_redraw()

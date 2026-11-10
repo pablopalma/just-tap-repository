@@ -28,7 +28,7 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | 8 | **Letter to the Player** (la carta) | la carta del final de la demo | 66 BPM | ✅ grabado (`letter_to_the_player.ogg`) |
 | 9 | **Who I Am** (el prólogo) | el prólogo de la primera partida: la luz cae en el blanco y habla con el Padre | la mayor · sin pulso, ambiental | ✅ grabado (`who_i_am.ogg`, 6/11/2026) |
 | 10 | **What Breaks, Returns** (la Madre) | el monumento del juego completo (`tools/monument.tscn`) | re menor → re mayor · 80 BPM | ✅ grabado (`what_breaks_returns.ogg`, fuera de la demo exportada) |
-| 11 | **The Weight of Light** (la malla del espacio-tiempo) | capítulo 8, Cielo (`tools/spacetime.tscn`): un agujero negro colosal en el horizonte | la menor → do mayor · 70 BPM | 💡 prompt listo (11/11/2026) |
+| 11 | **Before the Vastness** (la malla del espacio-tiempo) | capítulo 8, Cielo (`tools/spacetime.tscn`): un agujero negro colosal en el horizonte | si♭ menor (salió así; se pidió la menor) · 70 BPM · 4:00 | ✅ grabado (`before_the_vastness.ogg`, 11/11/2026, fuera de la demo exportada) |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |
 | — | Capítulos del juego completo | Gris, Rojo, Verde, Azul, **Tinta**, Amarillo (`docs/juego-completo.md` §3) | — | un tema por capítulo, o agrupar las zonas de cada uno |
 
@@ -94,7 +94,7 @@ Instrumental, 66 BPM, 4/4, key of C major. No vocals, no drums.
 A heartfelt letter from the person who made this game to the player. Soft solo piano begins alone, warm and close, simple chords and a gentle melody, leaving space for a narrator's voice over it. Slowly, warm strings enter underneath, then a soft harp, and celesta bells sparkle on the melody near the end. It grows into a quiet, tender, grateful climax, never loud or epic, like a hug, then settles back to solo piano and ends on a long, open C major chord. Emotional, hopeful, intimate, sincere. About 2 minutes 30 seconds.
 ```
 
-## Prompt de ElevenLabs · The Weight of Light (capítulo 8, la malla)
+## Prompt de ElevenLabs · Before the Vastness (capítulo 8, la malla)
 
 Referencia de estilo, que no se pone en el prompt: la banda sonora de *Interstellar*. Es la excepción a la regla de "nada épico": el nivel tiene que dar escala, y la luz es un puntito frente a algo enorme. El pulso lo marca un tic suave en cada tiempo, como un reloj, que no es batería y deja claro dónde tocar. Al principio el tema es casi vacío, para que las notas de las frases se oigan arriba.
 

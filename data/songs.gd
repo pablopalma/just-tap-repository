@@ -171,6 +171,16 @@ const TRACKS := {
 		"keys": [8, 10, 10, 3, 8, 10, 10, 8, 8, 10, 10, 8, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 1,
 			6, 6, 6, 8, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 8, 6, 6, 8, 8, 10, 10, 3, 3],
 	},
+	# Before the Vastness · the spacetime mesh (chapter 8, tools/spacetime.tscn): a clock ticking on
+	# every beat, the organ building layer by layer under a black hole. B-flat minor as recorded.
+	"spacetime": {
+		"path": "res://audio/music/before_the_vastness.ogg",
+		"bpm": 70, "metre": 4, "beat0": 0.736, "bar0": 3.308, "db": -16.1,
+		"taps": {"down": ["piano", 0, 1.0], "beat": ["celesta", 12, 0.6], "contour": [0, 1, 2, 3, 2, 4, 3, 1], "glass_from": 4},
+		"keys": [1, 1, 10, 10, 10, 10, 0, 0, 0, 0, 1, 1, 1, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 1, 1,
+			1, 10, 10, 10, 10, 1, 1, 1, 1, 10, 10, 10, 10, 10, 10, 0, 0, 1, 1, 5, 5, 10, 10, 10, 10, 1, 1,
+			5, 9, 10, 10, 10, 5, 10, 10, 10, 5, 1, 1, 5, 10, 10, 10],
+	},
 	# What Breaks, Returns · the monument (tools/monument.tscn): piano alone through the climb, the
 	# build, the climax where she breaks ("climax", s; the scene waits for it at the crown, or jumps to
 	# it), the Mother speaking over it, the drop at 2:00 on her last words, and a gentle release.
