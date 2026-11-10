@@ -69,6 +69,36 @@ float wall(float wa, float z) {
 	return noise(vec2(wa * 9.0, z * 0.35)) * noise(vec2(wa * 23.0 + 4.0, z * 0.9));
 }
 
+// The sphere of bent space at the heart of it, a starfield turned round inside it (rgb, and how much
+// of it covers this point). It shows in the shadow from the very start, small and still, so going in
+// is going towards it.
+float sphere_r() {
+	return 0.1 + 0.06 * smoothstep(0.0, 14.0, travel);
+}
+
+vec4 sphere_view(vec2 d) {
+	float r = length(d);
+	float R = sphere_r();
+	if (r >= R) {
+		return vec4(0.0);
+	}
+	vec2 in_p = d / R;
+	float k = sqrt(max(1.0 - dot(in_p, in_p), 0.0));
+	vec2 bent = -in_p / (k + 0.35) * 2.2 + travel * 0.05 + vec2(spin * 0.03, 0.0);   // seen through it, upside down
+	vec3 c = vec3(0.03, 0.06, 0.07) + vec3(0.95, 0.92, 0.85) * stars(bent * 14.0, 0.2) * 1.4;
+	c += vec3(0.55, 0.45, 0.4) * noise(bent * 2.0 + 3.0) * 0.18;             // a nebula far inside
+	c += vec3(0.5, 0.6, 0.62) * smoothstep(0.55, 1.0, 1.0 - k) * 0.3;
+	return vec4(c, smoothstep(R, R * 0.96, r));
+}
+
+// its rim: a thin glint, catching the light only here and there
+vec3 sphere_rim(vec2 d) {
+	float r = length(d);
+	float a = atan(d.y, d.x) / 6.28318 + 0.5;
+	float glint = smoothstep(0.45, 0.9, noise(vec2(a * 14.0 + travel * 0.2 + spin * 0.05, 2.0)));
+	return vec3(0.75, 0.88, 0.88) * exp(-pow((r - sphere_r()) * 320.0, 2.0)) * (0.12 + 0.6 * glint);
+}
+
 vec3 tunnel(vec2 d) {
 	float r = length(d) + 0.0001;
 	float a = atan(d.y, d.x) / 6.28318 + 0.5;
@@ -107,20 +137,9 @@ vec3 tunnel(vec2 d) {
 		vec3 tint = mix(vec3(0.85, 0.42, 0.3), vec3(0.35, 0.5, 0.85), hash(vec2(fk, 5.0)));
 		col += tint * cloud * 0.5 * smoothstep(0.0, 0.2, life) * (1.0 - smoothstep(0.75, 1.0, life));
 	}
-	// ahead: the sphere of bent space, a starfield turned round inside it
-	float R = 0.1 + 0.06 * smoothstep(0.0, 14.0, travel);
-	if (r < R) {
-		vec2 in_p = d / R;
-		float k = sqrt(max(1.0 - dot(in_p, in_p), 0.0));
-		vec2 bent = -in_p / (k + 0.35) * 2.2 + travel * 0.05;     // seen through it, upside down
-		vec3 inside_col = vec3(0.03, 0.06, 0.07) + vec3(0.95, 0.92, 0.85) * stars(bent * 14.0, 0.2) * 1.4;
-		inside_col += vec3(0.55, 0.45, 0.4) * noise(bent * 2.0 + 3.0) * 0.18;             // a nebula far inside
-		inside_col += vec3(0.5, 0.6, 0.62) * smoothstep(0.55, 1.0, 1.0 - k) * 0.3;
-		col = mix(col, inside_col, smoothstep(R, R * 0.96, r));
-	}
-	// its rim: a thin glint, catching the light only here and there
-	float glint = smoothstep(0.45, 0.9, noise(vec2(a * 14.0 + travel * 0.2, 2.0)));
-	col += vec3(0.75, 0.88, 0.88) * exp(-pow((r - R) * 320.0, 2.0)) * (0.12 + 0.6 * glint);
+	// ahead: the sphere of bent space (sphere_view), the same one the shadow shows from the start
+	vec4 sp = sphere_view(d);
+	col = mix(col, sp.rgb, sp.a) + sphere_rim(d);
 	// the white light ahead, at the very end
 	col += hot.rgb * exp(-r * 7.0) * 2.5 * white;
 	return col;
@@ -198,7 +217,12 @@ void fragment() {
 	col += mix(warm.rgb, hot.rgb, 0.6) * immerse * (0.25 * exp(-max(r - 1.0, 0.0) * 0.6) + 0.55 * exp(-max(horizon - UV.y, 0.0) * 7.0));
 	// the shadow
 	float shadow = smoothstep(1.0, 0.985, r);
-	vec3 within = reveal > 0.0 ? tunnel(q * radius) * reveal : vec3(0.0);
+	// the shadow is dark, but the sphere at its heart shows from the start; falling in, all the rest
+	vec4 sp0 = sphere_view(q * radius);
+	vec3 within = mix(vec3(0.0), sp0.rgb, sp0.a) + sphere_rim(q * radius);
+	if (reveal > 0.0) {
+		within = mix(within, tunnel(q * radius), reveal);
+	}
 	col = mix(col, within, shadow);
 	// the thin ring of light hugging it
 	col += hot.rgb * exp(-pow((r - 1.015) * 60.0, 2.0)) * 0.9;
