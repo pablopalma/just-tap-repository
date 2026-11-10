@@ -22,6 +22,11 @@ extends Node2D
 ## The notes (12/11/2026): lights coming down the line from the hole towards the light, one a beat,
 ## each reaching it as its beat sounds (tap then); pale blue far off, gold as they arrive. They ride
 ## the mesh and bend through the lens like everything else.
+## Close in (13/11/2026): as the hole nears, the camera comes down onto its disk, which becomes the
+## floor, a sea of burning gas; the hole grows up over it to one side and its bent light arcs
+## overhead, blinding. The mesh and the notes darken to show on it.
+## The shake (13/11/2026): a rumble that starts close in and grows through the fall, with jolts now
+## and then, harder as you go in, each a surge of speed inside and a deep thud; it calms in the white.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto  (`log`: the theme and its beat)
 
@@ -88,6 +93,10 @@ var _voice: AudioStreamWAV
 var _players: Array[AudioStreamPlayer] = []
 var _player_i := 0
 var _spin := 0.0
+var _sky_layer: CanvasLayer
+var _jolt := 0.0            # the last jolt, easing out
+var _next_jolt := 0.0       # seconds to the next one
+var _travel := 0.0          # how far through the inside (it surges with each jolt)
 var _hole_uv := Vector2(0.5, 0.3)   # the hole on the screen (UV) and its shadow's radius
 var _hole_r := 0.2
 var _mat: ShaderMaterial
@@ -152,6 +161,7 @@ func _process(delta: float) -> void:
 			_tap()
 	if DevMenu.proto_has("log") and Engine.get_process_frames() % 90 == 0:
 		print("TRACK ", Music.track, " bpm ", Music.bpm(), " heard ", snappedf(Music._heard_time(), 0.01), " near ", snappedf(_near, 0.01))
+	_shake(delta)
 	_update_mesh()
 	_top.queue_redraw()
 	queue_redraw()
@@ -159,6 +169,7 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	get_viewport().msaa_2d = Viewport.MSAA_DISABLED
+	get_viewport().canvas_transform = Transform2D.IDENTITY
 	var bus := AudioServer.get_bus_index(VOICE_BUS)
 	if bus != -1:
 		AudioServer.remove_bus(bus)
@@ -169,6 +180,19 @@ func _exit_tree() -> void:
 
 
 ## How strongly the hole bends light: a little from far, more as it comes, most as you fall.
+## How far down onto the disk the camera has come (0 the far view, 1 on it).
+func _immerse() -> float:
+	return smoothstep(0.2, 0.95, _near)
+
+
+func _cam_h() -> float:
+	return lerpf(CAM_H, 1.5, _immerse())
+
+
+func _horizon() -> float:
+	return lerpf(HORIZON, 0.56, _immerse())
+
+
 func _lens_k() -> float:
 	return 0.15 + 0.85 * smoothstep(0.1, 1.0, _near) + 1.2 * smoothstep(0.0, 0.8, _fall_k())
 
@@ -213,6 +237,41 @@ func _twist() -> float:
 func _mp(param: String, value: Variant) -> void:
 	_mat.set_shader_parameter(param, value)
 	_mat2.set_shader_parameter(param, value)
+
+
+## The camera shakes: a rumble growing from close in through the fall, and jolts, harder and more
+## often as you go in. The whole view moves (the sky on its layer, the rest on the canvas).
+func _shake(delta: float) -> void:
+	var fk := _fall_k()
+	var going := fk + (minf(1.0, _through / 6.0) if _through >= 0.0 else 0.0)   # 0..2
+	var calm := 1.0 - (smoothstep(THROUGH - 5.0, THROUGH, _through) if _through >= 0.0 else 0.0)
+	_jolt = maxf(0.0, _jolt - delta * 2.2)
+	if _fall >= 0.0 and calm > 0.2:
+		_next_jolt -= delta
+		if _next_jolt <= 0.0:
+			_next_jolt = lerpf(2.2, 0.7, minf(1.0, going * 0.6)) * randf_range(0.7, 1.3)
+			_jolt = minf(1.0, 0.35 + 0.4 * going)
+			if _jolt > 0.5:
+				_note(38, lerpf(-16.0, -6.0, _jolt))   # a deep thud
+	var rumble := (1.5 * _immerse() + 9.0 * smoothstep(0.0, 1.0, fk) + 6.0 * smoothstep(1.0, 2.0, going)) * calm
+	var kick := 26.0 * _jolt * _jolt * calm
+	var t := _t
+	var off := Vector2(sin(t * 37.0) + 0.6 * sin(t * 61.0 + 1.3), cos(t * 41.0) + 0.6 * sin(t * 53.0 + 2.1)) * 0.6 * rumble 		+ Vector2(sin(t * 23.0), cos(t * 19.0)) * kick
+	var rot := (sin(t * 29.0) * rumble * 0.0006) + sin(t * 17.0) * kick * 0.0012
+	if not is_finite(off.x):
+		off = Vector2.ZERO
+	var vp := get_viewport_rect().size
+	# a touch of zoom, so the shaken view never shows its edges
+	var zoom := 1.0 + (rumble * 1.6 + kick * 1.2 + 4.0) / vp.y + absf(rot) * 1.2
+	var xf := Transform2D(rot, Vector2.ONE * zoom, 0.0, Vector2.ZERO).translated(off)
+	# turn round the screen's centre, not its corner
+	xf = Transform2D(0.0, vp * 0.5) * xf * Transform2D(0.0, -vp * 0.5)
+	get_viewport().canvas_transform = xf
+	if _sky_layer:
+		_sky_layer.transform = xf
+	# each jolt is a surge of speed inside
+	if _fall >= 0.0:
+		_travel += delta * (0.8 + 2.2 * _jolt)
 
 
 func _fall_k() -> float:
@@ -282,7 +341,7 @@ func _pull(p: Vector2) -> float:
 
 
 func _pull_k() -> float:
-	return PULL * (0.6 + 0.8 * _near) * (1.0 + 7.0 * pow(_fall_k(), 1.6))
+	return PULL * (0.6 + 0.8 * _near) * (1.0 - 0.75 * _immerse()) * (1.0 + 7.0 * pow(_fall_k(), 1.6))
 
 
 ## The taps' voice, made here: a tone with a slow beat in it (two sines a few cents apart), a soft
@@ -348,13 +407,14 @@ func _project(x: float, z: float, h: float) -> Vector3:
 	if dz < 0.5:
 		return Vector3(0, 0, -1)
 	var s := FOCAL * (vp.y / 720.0) / dz
-	return Vector3(vp.x * 0.5 + (x - cam_x) * s, vp.y * HORIZON + (CAM_H - h) * s, dz)
+	return Vector3(vp.x * 0.5 + (x - cam_x) * s, vp.y * _horizon() + (_cam_h() - h) * s, dz)
 
 
 ## The sky: a full-screen rect behind everything, the black hole drawn by its shader.
 func _build_sky() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = -1
+	_sky_layer = layer
 	_sky = ColorRect.new()
 	_sky.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_sky_mat = ShaderMaterial.new()
@@ -422,9 +482,11 @@ func _update_mesh() -> void:
 	# the hole hardly moves: it is that far; the camera's sway shifts it only a touch
 	var fk := _fall_k()
 	var grow := pow(fk, 3.0)
-	var radius := 0.2 + 0.14 * _near + 0.25 * smoothstep(0.0, 0.6, fk) + 2.6 * grow
+	var im := _immerse()
+	var radius := 0.2 + 0.14 * _near + 0.5 * im * im + 0.25 * smoothstep(0.0, 0.6, fk) + 2.6 * grow
 	_sky_mat.set_shader_parameter("radius", radius)
 	var at := Vector2(0.5 - cam.x * 0.004, HORIZON - 0.55 * (0.2 + 0.14 * _near))
+	at = at.lerp(Vector2(0.17, 0.2), smoothstep(0.0, 1.0, im))
 	_hole_uv = at.lerp(Vector2(0.5, 0.5), smoothstep(0.0, 0.7, fk))
 	_hole_r = radius
 	_sky_mat.set_shader_parameter("center", _hole_uv)
@@ -434,6 +496,17 @@ func _update_mesh() -> void:
 	_sky_mat.set_shader_parameter("inside", inside)
 	_sky_mat.set_shader_parameter("fall", fk)
 	_sky_mat.set_shader_parameter("te", _sky_te())
+	_sky_mat.set_shader_parameter("immerse", im)
+	_sky_mat.set_shader_parameter("horizon", _horizon())
+	_sky_mat.set_shader_parameter("cam_h", _cam_h())
+	_sky_mat.set_shader_parameter("focal_k", FOCAL / 720.0)
+	_sky_mat.set_shader_parameter("cam_pos", cam)
+	_sky_mat.set_shader_parameter("flow", _spin * 0.6)
+	_mp("cam_h", _cam_h())
+	_mp("horizon", _horizon())
+	# the mesh: pale on the dark far off, dark ink on the bright disk close in
+	_mp("ink", LINE.lerp(Color(0.32, 0.13, 0.04), im))
+	_mp("blue", LINE_SUNK.lerp(Color(0.2, 0.06, 0.02), im))
 	var hole := _hole_px()
 	_mp("hole_px", Vector2(hole.x, hole.y))
 	_mp("hole_r_px", hole.z)
@@ -444,7 +517,7 @@ func _update_mesh() -> void:
 	if bus != -1:
 		AudioServer.set_bus_volume_db(bus, lerpf(0.0, -14.0, smoothstep(0.3, 1.0, fk)) if _through < 0.0
 			else lerpf(-14.0, -4.0, smoothstep(0.0, 6.0, _through)))
-	_sky_mat.set_shader_parameter("travel", maxf(_fall, 0.0) * 0.8)
+	_sky_mat.set_shader_parameter("travel", _travel)
 	_sky_mat.set_shader_parameter("reveal", smoothstep(0.03, 0.45, fk))
 	_sky_mat.set_shader_parameter("twist", _twist())
 	_mp("twist", _twist())
@@ -488,9 +561,9 @@ func _draw_path() -> void:
 		d += 0.25
 	var show := 1.0 - smoothstep(0.35, 0.7, _fall_k())
 	if pts_ahead.size() > 1:
-		_top.draw_polyline(pts_ahead, Color(LINE, 0.55 * show), 1.5, true)
+		_top.draw_polyline(pts_ahead, Color(LINE.lerp(Color(0.25, 0.1, 0.03), _immerse()), 0.55 * show), 1.5, true)
 	if pts_lit.size() > 1:
-		_top.draw_polyline(pts_lit, Color(Palette.GOLD.darkened(0.15), 0.9 * show), 3.0, true)
+		_top.draw_polyline(pts_lit, Color(Palette.GOLD.darkened(0.15 + 0.4 * _immerse()), 0.9 * show), 3.0, true)
 
 
 ## The notes coming down the line to the light: the k-th lands on the k-th beat from now.
@@ -512,6 +585,9 @@ func _draw_notes() -> void:
 		var a := show * smoothstep(0.0, 0.3, near)
 		var size := clampf(0.16 * FOCAL * (vp.y / 720.0) / q.z, 1.5, 9.0)
 		var col := Color(0.75, 0.88, 1.0).lerp(Palette.GOLD, smoothstep(0.55, 0.92, near))
+		# on the bright disk: deep blue notes with a dark rim, so they show
+		col = col.lerp(Color(0.1, 0.18, 0.4).lerp(Color(0.35, 0.12, 0.02), smoothstep(0.55, 0.92, near)), _immerse())
+		_top.draw_circle(at, size * 1.35, Color(0.05, 0.03, 0.02, 0.35 * a * _immerse()))
 		_top.draw_circle(at, size * 2.6, Color(col, 0.18 * a))
 		_top.draw_circle(at, size, Color(col, 0.95 * a))
 	# the beat: the note lands in the light and opens a ring
@@ -546,5 +622,6 @@ func _draw_light() -> void:
 	for i in 5:
 		var k := i / 4.0
 		_top.draw_circle(c, lerpf(46.0, 12.0, k) * s, Color(Palette.GOLD, (0.05 + 0.04 * beat) * (0.5 + k)))
+	_top.draw_circle(c, 9.0 * s, Color(0.08, 0.04, 0.02, 0.45 * _immerse()))   # a dark rim on the bright disk
 	_top.draw_circle(c, 7.0 * s, Color(1.0, 0.97, 0.88))
 	_top.draw_circle(c, 3.5 * s, Palette.GOLD.darkened(0.2))

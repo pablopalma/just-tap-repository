@@ -22,6 +22,16 @@ uniform float te = 1.2;                 // the Einstein ring's radius, in shadow
 uniform float twist = 0.0;
 // Falling in, the shadow is no longer empty: the matter inside shows through it, more and more.
 uniform float reveal = 0.0;
+// Close in (13/11/2026): you are down on the disk. Below the horizon the floor is the disk itself, a
+// sea of burning gas out to the horizon, white-hot far off, amber and streaked near; it passes in
+// front of the shadow, which stands up over it, huge, to one side; the disk's far side, bent over the
+// hole, arcs overhead; the light is blinding. 0 the far view, 1 down on the disk.
+uniform float immerse = 0.0;
+uniform float horizon = 0.44;           // the eye line on the screen (UV)
+uniform float cam_h = 3.6;              // the camera's height over the floor (world)
+uniform float focal_k = 0.861;          // the camera's focal length / 720
+uniform vec2 cam_pos;                   // where the camera is over the floor (world x, z)
+uniform float flow = 0.0;               // how far the gas has turned
 uniform float fall = 0.0;               // the fall into it (0..1): the disk sweeps past and is gone
 uniform float inside = 0.0;             // 0 the sky as above, 1 the way through
 uniform float travel = 0.0;             // seconds inside
@@ -116,6 +126,30 @@ vec3 tunnel(vec2 d) {
 	return col;
 }
 
+// The disk under you, as a floor in perspective, its gas streaming sideways round the hole.
+vec4 disk_floor(vec2 uv) {
+	float y = uv.y - horizon;
+	if (y <= 0.0) {
+		return vec4(0.0);
+	}
+	float z = cam_h * focal_k / y;                              // how far ahead
+	float x = (uv.x - 0.5) * aspect * z / focal_k;
+	vec2 w = vec2(x + cam_pos.x, z + cam_pos.y);
+	// streaks along the flow: stretched across, turning
+	// clouds of gas, billowing, a little stretched along the flow
+	vec2 f = vec2(w.x * 0.22 + flow, w.y * 0.55);
+	float g = noise(f) * 0.45 + noise(f * 2.1 + 7.0) * 0.27 + noise(f * 4.3 + 3.0) * 0.17 + noise(f * 8.9 + 1.0) * 0.11;
+	g = smoothstep(0.2, 0.85, g);
+	float lanes = smoothstep(0.45, 0.8, noise(vec2(w.x * 0.12 + flow * 1.3, w.y * 0.9) + 11.0));
+	float heat = 1.0 - smoothstep(0.0, 0.42, y);              // white-hot towards the horizon
+	vec3 ember = vec3(0.62, 0.26, 0.07);
+	vec3 col = mix(ember * 0.6, vec3(1.0, 0.7, 0.36), g);
+	col *= 0.45 + 0.95 * g;
+	col *= 1.0 - 0.55 * lanes * (1.0 - heat);                   // darker lanes in the near gas
+	col = mix(col, hot.rgb * 1.1, pow(heat, 1.6));
+	return vec4(col, smoothstep(0.0, 0.01, y));
+}
+
 // how bright the disk is at distance r (in shadow radii) from the centre: hot inside, fading out
 float disk_glow(float r) {
 	return smoothstep(1.35, 1.7, r) * exp(-(r - 1.7) * 0.42);
@@ -134,7 +168,7 @@ void fragment() {
 	// stars, a few, twinkling faintly (drawn where their light comes from: near the ring, arcs)
 	vec2 cell = floor(src * vec2(aspect, 1.0) * 140.0);
 	float st = hash(cell);
-	if (st > 0.985) {
+	if (st > 0.985 && immerse < 0.98) {
 		vec2 f = fract(src * vec2(aspect, 1.0) * 140.0) - 0.5;
 		col += vec3(0.8, 0.85, 1.0) * smoothstep(0.25, 0.0, length(f)) * (st - 0.985) * 50.0 * mag;
 	}
@@ -143,9 +177,9 @@ void fragment() {
 	float across = dot(g, normalize(vec2(-0.35, 1.0)));
 	float dust = noise(src * vec2(aspect, 1.0) * 7.0) * 0.6 + noise(src * vec2(aspect, 1.0) * 23.0) * 0.4;
 	float galaxy = exp(-across * across / 0.018) * (0.35 + 0.65 * dust);
-	col += mix(vec3(0.35, 0.42, 0.65), vec3(0.8, 0.68, 0.58), dust) * galaxy * 0.09 * min(mag, 2.5);
+	col += mix(vec3(0.35, 0.42, 0.65), vec3(0.8, 0.68, 0.58), dust) * galaxy * 0.09 * min(mag, 2.5) * (1.0 - immerse);
 	// the Einstein ring itself: a thin gathering of all that light
-	col += vec3(0.85, 0.88, 1.0) * exp(-pow((r - te) * 14.0, 2.0)) * 0.22 * smoothstep(1.05, 1.4, te);
+	col += vec3(0.85, 0.88, 1.0) * exp(-pow((r - te) * 14.0, 2.0)) * 0.22 * smoothstep(1.05, 1.4, te) * (1.0 - immerse);
 	// a wide soft glow of the hole's light on the space around it
 	col += warm.rgb * 0.18 * exp(-max(r - 1.0, 0.0) * 0.55);
 	// the far side of the disk, bent over the top of the shadow (and a thinner image under it)
@@ -154,10 +188,14 @@ void fragment() {
 	float up = smoothstep(0.0, -0.35, q.y);                          // over the shadow
 	float arc_r = r - 1.0;
 	// sharp at the shadow, fading outwards; it wraps all the way down to the disk on either side
-	float arc = smoothstep(0.5, -0.1, q.y) * smoothstep(0.015, 0.05, arc_r) * (exp(-max(arc_r - 0.05, 0.0) * 9.0) + 0.35 * exp(-max(arc_r, 0.0) * 2.2));
+	float arc = smoothstep(mix(0.5, 1.4, immerse), -0.1, q.y) * smoothstep(0.015, 0.05, arc_r)
+		* (exp(-max(arc_r - 0.05, 0.0) * mix(9.0, 2.2, immerse)) + 0.35 * exp(-max(arc_r, 0.0) * mix(2.2, 0.9, immerse)));
+	arc *= 1.0 + immerse * (1.6 * smoothstep(0.35, 0.8, noise(vec2(ang * 9.0 - spin * 2.0, r * 3.0))) - 0.4);
 	float under = smoothstep(0.0, 0.35, q.y) * smoothstep(0.02, 0.06, arc_r) * exp(-max(arc_r - 0.06, 0.0) * 14.0);
 	float bent = (arc + 0.55 * under) * gas(r, ang) * side * (1.0 - smoothstep(0.2, 0.5, fall));
-	col += mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.8, bent)) * bent * 2.0;
+	col += mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.8, bent)) * bent * (2.0 + 1.5 * immerse);
+	// close in, the whole sky glows with it: a haze over the horizon
+	col += mix(warm.rgb, hot.rgb, 0.6) * immerse * (0.25 * exp(-max(r - 1.0, 0.0) * 0.6) + 0.55 * exp(-max(horizon - UV.y, 0.0) * 7.0));
 	// the shadow
 	float shadow = smoothstep(1.0, 0.985, r);
 	vec3 within = reveal > 0.0 ? tunnel(q * radius) * reveal : vec3(0.0);
@@ -170,8 +208,13 @@ void fragment() {
 	float band = smoothstep(half_h, half_h * 0.25, abs(q.y - 0.04));
 	float along = x < 1.7 ? 1.0 : disk_glow(x);   // in front of the shadow it runs straight across
 	float dop = clamp(0.55 - q.x * 0.07, 0.25, 1.0);
-	float front = band * along * gas(x, q.x * 0.35 + q.y * 3.0) * dop * 1.5 * (1.0 - smoothstep(0.15, 0.45, fall));
+	float front = band * along * gas(x, q.x * 0.35 + q.y * 3.0) * dop * 1.5 * (1.0 - smoothstep(0.15, 0.45, fall)) * (1.0 - immerse);
 	col = mix(col, mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.9, front)) * 1.25, clamp(front * 1.4, 0.0, 1.0));
+	// the disk under you passes in front of the shadow; it goes as you fall in
+	if (immerse > 0.0) {
+		vec4 fl = disk_floor(UV);
+		col = mix(col, fl.rgb, fl.a * immerse * (1.0 - smoothstep(0.35, 0.75, fall)));
+	}
 	if (inside > 0.0) {
 		col = mix(col, tunnel(vec2((UV.x - center.x) * aspect, UV.y - center.y)), inside);
 	}
