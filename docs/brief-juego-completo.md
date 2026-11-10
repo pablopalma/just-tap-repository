@@ -99,9 +99,9 @@ Colores: gris (1–2), rojo (3–4), verde (5–6), azul (7–8), **tinta** (9),
 | 5 | **Flor** | 41–50 | **oscuro** → verde | caos, el ahora | la oscuridad y "el ahora" (41–45) ✅; nace la bifurcación (46–50) ✅ | *Light After the Dark* ✅ → tema verde 💡 | **la ballena despierta** ✅ | no estás solo; solo existe este momento |
 | 6 | **Fruto** | 51–60 | verde · luz | crecer | **tres ramas trenzadas que cantan como un coro** ✅ | tema verde 💡 | las ramas se funden en una flor 📝 + **historia 2** 💡 | puedes ser más de una cosa a la vez |
 | 7 | **Bosque** | 61–70 | azul · luz | tristeza | **la marea**: líneas que ondulan y respiran 📝 | tema azul 💡 | la marea baja y deja ver algo enterrado 💡 | la tristeza viene en olas |
-| 8 | **Cielo** | 71–80 | azul · luz | soltar | barreras que se disuelven si las dejas 📝; **la malla del espacio-tiempo** que se hunde bajo el peso de la luz 💡 | tema azul (reutilizado) | **soltar**: la barrera que solo cae si no la tocas 📝 | no todo se pelea; se respira |
+| 8 | **Cielo** | 71–80 | azul · luz | soltar | barreras que se disuelven si las dejas 📝; **la malla del espacio-tiempo** que se hunde bajo el peso de la luz, sin agujero, bajo el cielo azul 🧪 | tema azul (reutilizado) | **soltar**: la barrera que solo cae si no la tocas 📝 | no todo se pelea; se respira |
 | 9 | **Noche** | 81–90 | **tinta · oscuro** | miedo, quiebre | grietas, apagón, la sombra 📝 | *Light After the Dark* (variación) | **el ave sanada** vuelve a volar en dorado 📝 + **historia 3** 💡 | caerse está permitido; lo roto también guarda luz |
-| 10 | **Estrella** | 91–100 | noche estrellada → oro · **oscuro lindo** | rendirse a la luz | **la espiral hacia abajo**, tramo de ritmo 🧪 | *Starlit Drift* (reutilizado) | **el ave de estrellas despierta** 🧪 | dejarse llevar |
+| 10 | **Estrella** | 91–100 | noche estrellada → oro · **oscuro lindo** | rendirse a la luz | **el agujero negro**: la malla con un agujero colosal que se acerca 🧪; **la espiral hacia abajo**, tramo de ritmo 🧪 | *Before the Vastness* ✅ | **la caída al agujero** hasta la luz blanca 🧪, donde **el ave de estrellas despierta** y te lleva 💡 | dejarse llevar |
 | 11 | **Alba** | 101–110 | amarillo · luz | renacer | **los saltos**: subir de barrera en barrera tocando en el pulso 💡; líneas espejadas, al revés 💡 | tema final (primera parte) | el sol sale 💡 + **historia 4** 💡 | levantarse otra vez |
 | 12 | **Luz** | 111–120 | amarillo · luz | calidez, volver a casa | **la convergencia**: todas las formas juntas 💡; el coloso (120) 📝 | tema final 💡 + la carta ✅ | **el puntito vuelve al Padre**, al todo 💡 | estás en casa |
 
@@ -111,7 +111,12 @@ Colores: gris (1–2), rojo (3–4), verde (5–6), azul (7–8), **tinta** (9),
 
 Los dos son la misma familia de experiencia: la luz se mueve sola con la música y tú la acompañas tocando en el pulso, sin árbol ni barreras que romper. Por eso los pongo **seguidos, en el desenlace, y uno como espejo del otro**:
 
-- **Capítulo 10, Estrella: la espiral hacia abajo.** Después de la noche más dura (cap. 9), bajar hacia adentro, hacia la luz del fondo. Es entregarse. Cada nota acertada dibuja el ave de estrellas, que despierta al final. 🧪
+- **Capítulo 10, Estrella: el agujero negro y la espiral hacia abajo.** Después de la noche más dura (cap. 9), bajar hacia adentro, hacia la luz del fondo. Es entregarse: un agujero negro no se pelea, solo se deja que te lleve. 🧪
+  - **Niveles 1–6:** la malla del espacio-tiempo con un agujero negro colosal en el horizonte (estilo *Interstellar*). Barrera a barrera se acerca, la lente crece y el espacio se desdobla; al final la cámara baja sobre el disco y el agujero se alza como una cúpula. Suena *Before the Vastness* todo el capítulo.
+  - **Desenlace (7–9):** la espiral hacia abajo, ya cayendo. Cada nota acertada dibuja el ave de estrellas.
+  - **Barrera 100:** la caída al agujero, con el temblor y las estrellas pasando, hasta la luz blanca. Adentro, entre las estelas, el ave de estrellas despierta y te lleva a la luz, de donde sale el alba del capítulo 11.
+  - El recorrido de color es el del capítulo: espacio oscuro con estrellas, el disco dorado, el blanco.
+  - Prototipo: `tools/spacetime.tscn` (F1, "El agujero negro").
 - **Capítulo 11, Alba: los saltos hacia arriba.** Del fondo de la espiral, la luz sale y sube: un toque a tiempo la impulsa a la barrera siguiente; si no, se frena ahí hasta acertar. De costado, de abajo hacia arriba, en zigzag. Es levantarse. 💡
 
 **Bajar para después subir:** el punto más hondo del viaje queda en el medio, y los dos tramos se responden. Además, como se tocan en el pulso, son de lo más **distinto** del juego: rompen la rutina justo antes del final, cuando más hace falta.
@@ -133,7 +138,8 @@ El brief pide que cada capítulo se sienta como un **"flash" visual y sonoro**: 
 | Geometría sagrada | figuras que se dibujan barrera a barrera | ✅ | 5 (el ahora) |
 | Bucle | un anillo de segmentos que hay que romper | 📝 | 3 |
 | Líneas que ondulan | la línea fluye como agua, con la marea | 📝 | 7 |
-| **Malla del espacio-tiempo** | una malla se hunde bajo el "peso" de la luz al pasar (solo visual) | 💡 | 8 |
+| **Malla del espacio-tiempo** | una malla se hunde bajo el "peso" de la luz al pasar (solo visual) | 🧪 | 8 |
+| **Agujero negro** | la malla con un agujero colosal que se acerca, su lente y la caída hasta la luz blanca | 🧪 | 10 |
 | Grietas, apagón, la sombra | partes oscuras para trabajar lo interno | 📝 | 9 |
 | Espiral hacia abajo | un pozo con escalera caracol hacia la luz | 🧪 | 10 |
 | **Saltos (subida)** | un toque a tiempo impulsa la luz a la barrera siguiente | 💡 | 11 |

@@ -1,5 +1,5 @@
 extends Node2D
-## Prototype (10/11/2026, chapter 8 "Cielo", docs/brief-juego-completo.md: "la malla del espacio-tiempo"):
+## Prototype (10/11/2026, chapter 10 "Estrella", first planned for chapter 8, docs/brief-juego-completo.md: "la malla del espacio-tiempo"):
 ## the paper is a mesh seen in perspective, and the light has weight. Where it is, the mesh sinks
 ## into a well around it, as in the drawings of relativity; the line it follows sinks with it. Only a
 ## visual: the light still goes along its line. A tap on the beat makes the light heavier for a moment

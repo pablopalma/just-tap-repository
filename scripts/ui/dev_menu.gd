@@ -11,7 +11,7 @@ signal action(id: String, arg: int)
 const PROTOS := [
 	["Frases: cada barrera, una frase musical", "res://tools/phrases.tscn", []],
 	["Cimática en pintura: las notas forman figuras", "res://tools/cymatics.tscn", []],
-	["La malla del espacio-tiempo (capítulo 8)", "res://tools/spacetime.tscn", []],
+	["El agujero negro (capítulo 10)", "res://tools/spacetime.tscn", []],
 	["El monumento: la Madre", "res://tools/monument.tscn", []],
 	["El monumento, desde la cima", "res://tools/monument.tscn", ["end"]],
 	["La espiral de ritmo (ave de estrellas)", "res://tools/spiral_rhythm.tscn", []],

@@ -171,7 +171,7 @@ const TRACKS := {
 		"keys": [8, 10, 10, 3, 8, 10, 10, 8, 8, 10, 10, 8, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 1,
 			6, 6, 6, 8, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 3, 3, 10, 10, 8, 8, 6, 6, 8, 8, 10, 10, 3, 3],
 	},
-	# Before the Vastness · the spacetime mesh (chapter 8, tools/spacetime.tscn): a clock ticking on
+	# Before the Vastness · the spacetime mesh (chapter 10, tools/spacetime.tscn): a clock ticking on
 	# every beat, the organ building layer by layer under a black hole. It sits on D (minor, B natural
 	# now and then): every bar takes D minor's pentatonic (F major's, 5).
 	"spacetime": {
