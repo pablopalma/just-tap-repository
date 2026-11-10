@@ -7,6 +7,11 @@ extends Node2D
 ## Off the beat: a soft tap, a small dip. The well lags behind the light a little, like cloth settling.
 ## The sky (11/11/2026): deep space and a black hole on the horizon, colossal, the light a speck before
 ## it (shaders/black_hole.gdshader); the mesh, pale on the dark, runs off towards it.
+## The taps sound their own voice (12/11/2026): a soft tone with a slow beat in it, in a big reverb,
+## on the theme's scale (D minor pentatonic; the theme sits on D). The hole draws near smoothly; when
+## it has come all the way, the cinematic: the hole fills the sky, the mesh drains into it, the light
+## falls in, and inside, the light of all the stars it swallowed streams past, until a white light
+## ahead takes everything. Then it starts again. `end`: from just before the fall.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto  (`log`: the theme and its beat)
 
@@ -37,6 +42,17 @@ const NEAR_TAP := 0.003     # over the theme's four minutes, it comes all the wa
 const NEAR_DRIFT := 0.0012
 const SPEED := 2.4         # how far the light goes a second, on its own
 const SURGE := 3.2         # and the extra a tap on the beat gives it
+const NEAR_EASE := 0.8      # how fast the hole follows where the taps say it is (no jumps)
+## The taps' notes: D minor pentatonic (D F G A C), as the theme; a run walks the contour up from D4.
+const SCALE := [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77, 79, 81, 84, 86]
+const CONTOUR := [0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 7]
+const BASE_I := 5
+const VOICE_BUS := "SpaceVerb"
+const VOICE_MIDI := 62.0
+## The cinematic: the fall (the hole fills the sky, the mesh drains into it), then the way through.
+const FALL := 9.0
+const THROUGH := 16.0
+const AFTER := 3.0
 
 var _auto := false
 var _t := 0.0
@@ -50,6 +66,12 @@ var _run := 0
 ## How near the hole has come (0..1): a little with every tap on the beat, slowly on its own. It grows
 ## in the sky and its pull bends the far mesh more.
 var _near := 0.0
+var _near_to := 0.0
+var _fall := -1.0           # seconds into the fall, -1 before it
+var _through := -1.0        # seconds inside, -1 before
+var _voice: AudioStreamWAV
+var _players: Array[AudioStreamPlayer] = []
+var _player_i := 0
 var _mat: ShaderMaterial
 var _sky: ColorRect
 var _sky_mat: ShaderMaterial
@@ -67,6 +89,10 @@ func _ready() -> void:
 	_well = _line(0.0)
 	_build_sky()
 	_build_mesh()
+	_build_voice()
+	if DevMenu.proto_has("end"):
+		_near = 0.97
+		_near_to = 0.97
 	get_viewport().msaa_2d = Viewport.MSAA_4X   # the mesh's lines are one pixel wide
 
 
@@ -80,12 +106,26 @@ func _process(delta: float) -> void:
 	_surge = maxf(0.0, _surge - delta * 2.5)
 	_weight = maxf(0.0, _weight - delta * 1.1)
 	_dist += delta * (SPEED + SURGE * _surge)
-	_near = minf(1.0, _near + delta * NEAR_DRIFT)
+	_near_to = minf(1.0, _near_to + delta * NEAR_DRIFT)
+	_near += (_near_to - _near) * minf(1.0, delta * NEAR_EASE)
+	if _fall < 0.0 and _near > 0.985:
+		_begin_fall()
+	if _fall >= 0.0:
+		_fall += delta
+		_surge = 1.0 + 2.0 * _fall_k()   # the light speeds on, drawn in
+		if _fall >= FALL and _through < 0.0:
+			_through = 0.0
+			_chord([62, 69, 74, 77, 81], -14.0)
+	if _through >= 0.0:
+		_through += delta
+		if _through >= THROUGH + AFTER:
+			get_tree().reload_current_scene()
+			return
 	_well = _well.lerp(_line(_dist), minf(1.0, delta * 4.0))
 	for r in _ripples:
 		r.t += delta
 	_ripples = _ripples.filter(func(r: Dictionary) -> bool: return r.t < RIPPLE_LIFE)
-	if _auto and _t > 1.5:
+	if _auto and _t > 1.5 and _fall < 0.0:
 		var k := Music.beat_at_tap()
 		if k >= 0 and k != _last_beat and fmod(_t, 9.0) < 7.0 and randf() > 0.25:
 			_tap()
@@ -98,6 +138,19 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	get_viewport().msaa_2d = Viewport.MSAA_DISABLED
+	var bus := AudioServer.get_bus_index(VOICE_BUS)
+	if bus != -1:
+		AudioServer.remove_bus(bus)
+
+
+func _fall_k() -> float:
+	return clampf(_fall / FALL, 0.0, 1.0) if _fall >= 0.0 else 0.0
+
+
+func _begin_fall() -> void:
+	_fall = 0.0
+	_note(38, -6.0)                 # a deep D under the theme
+	_note(50, -12.0)
 
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -107,7 +160,7 @@ func _unhandled_input(e: InputEvent) -> void:
 	var pressed: bool = (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
 		or (e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_SPACE) \
 		or (e is InputEventJoypadButton and e.pressed and e.button_index == JOY_BUTTON_A)
-	if pressed:
+	if pressed and _fall < 0.0:
 		_tap()
 
 
@@ -116,14 +169,17 @@ func _tap() -> void:
 	if k >= 0 and k != _last_beat:
 		_last_beat = k
 		_run += 1
-		Music.play_accent(_run)
-		_near = minf(1.0, _near + NEAR_TAP)
+		var i: int = BASE_I + CONTOUR[(_run - 1) % CONTOUR.size()] + (2 if (_run - 1) / CONTOUR.size() % 2 == 1 else 0)
+		_note(SCALE[mini(i, SCALE.size() - 1)], -15.0)
+		if _run >= 8 and _run % 4 == 0:
+			_note(SCALE[mini(i + 5, SCALE.size() - 1)], -22.0)   # a long run: an octave shimmer over it
+		_near_to = minf(1.0, _near_to + NEAR_TAP)
 		_weight = 1.0
 		_surge = 1.0
 		_ripples.append({"at": _line(_dist), "t": 0.0, "k": 1.0})
 	else:
 		_run = 0
-		Music.play_tap(0.1, false)
+		_note(50, -24.0)   # off the beat: the low D, barely there
 		_weight = maxf(_weight, 0.35)
 		_ripples.append({"at": _line(_dist), "t": 0.0, "k": 0.35})
 
@@ -154,7 +210,61 @@ func _pull(p: Vector2) -> float:
 
 
 func _pull_k() -> float:
-	return PULL * (0.6 + 0.8 * _near)
+	return PULL * (0.6 + 0.8 * _near) * (1.0 + 7.0 * pow(_fall_k(), 1.6))
+
+
+## The taps' voice, made here: a tone with a slow beat in it (two sines a few cents apart), a soft
+## overtone that fades first, a gentle attack and a long tail, played in a big reverb.
+func _build_voice() -> void:
+	var rate := 44100
+	var n := int(rate * 4.5)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	var f := 440.0 * pow(2.0, (VOICE_MIDI - 69.0) / 12.0)
+	for i in n:
+		var t := float(i) / rate
+		var env := (1.0 - exp(-t / 0.05)) * exp(-t / 1.4)
+		var v := sin(TAU * f * t) + 0.7 * sin(TAU * f * 1.0045 * t) \
+			+ 0.3 * exp(-t / 0.7) * sin(TAU * 2.0 * f * t) + 0.1 * exp(-t / 0.3) * sin(TAU * 3.01 * f * t)
+		data.encode_s16(i * 2, int(clampf(v * env * 0.45, -1.0, 1.0) * 32767.0))
+	_voice = AudioStreamWAV.new()
+	_voice.format = AudioStreamWAV.FORMAT_16_BITS
+	_voice.mix_rate = rate
+	_voice.data = data
+	var bus := AudioServer.get_bus_index(VOICE_BUS)
+	if bus == -1:
+		AudioServer.add_bus()
+		bus = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(bus, VOICE_BUS)
+		AudioServer.set_bus_send(bus, &"Master")
+		var verb := AudioEffectReverb.new()
+		verb.room_size = 0.95
+		verb.damping = 0.25
+		verb.spread = 1.0
+		verb.wet = 0.55
+		verb.dry = 0.75
+		verb.hipass = 0.15
+		AudioServer.add_bus_effect(bus, verb)
+	for i in 10:
+		var pl := AudioStreamPlayer.new()
+		pl.bus = VOICE_BUS
+		add_child(pl)
+		_players.append(pl)
+
+
+## One note of the voice, at a MIDI pitch (the sample sped up or slowed down).
+func _note(midi: float, db: float) -> void:
+	var pl := _players[_player_i % _players.size()]
+	_player_i += 1
+	pl.stream = _voice
+	pl.pitch_scale = pow(2.0, (midi - VOICE_MIDI) / 12.0)
+	pl.volume_db = db
+	pl.play()
+
+
+func _chord(notes: Array, db: float) -> void:
+	for m in notes:
+		_note(m, db)
 
 
 ## World (x on the floor across, z ahead, h up) to the screen. The camera follows the light.
@@ -229,9 +339,20 @@ func _update_mesh() -> void:
 	_sky_mat.set_shader_parameter("aspect", vp.x / vp.y)
 	_sky_mat.set_shader_parameter("spin", _t * 0.25)
 	# the hole hardly moves: it is that far; the camera's sway shifts it only a touch
-	var radius := 0.2 + 0.14 * _near
+	var fk := _fall_k()
+	var grow := pow(fk, 2.4)
+	var radius := 0.2 + 0.14 * _near + 2.6 * grow
 	_sky_mat.set_shader_parameter("radius", radius)
-	_sky_mat.set_shader_parameter("center", Vector2(0.5 - cam.x * 0.004, HORIZON - 0.55 * radius))
+	var at := Vector2(0.5 - cam.x * 0.004, HORIZON - 0.55 * (0.2 + 0.14 * _near))
+	_sky_mat.set_shader_parameter("center", at.lerp(Vector2(0.5, 0.5), smoothstep(0.0, 0.7, fk)))
+	var inside := 0.0
+	if _through >= 0.0:
+		inside = smoothstep(0.0, 2.5, _through)
+	_sky_mat.set_shader_parameter("inside", inside)
+	_sky_mat.set_shader_parameter("fall", fk)
+	_sky_mat.set_shader_parameter("travel", maxf(_through, 0.0))
+	_sky_mat.set_shader_parameter("white", smoothstep(THROUGH - 4.0, THROUGH, _through) if _through >= 0.0 else 0.0)
+	_grid.modulate.a = 1.0 - smoothstep(0.25, 0.75, fk)
 	_mat.set_shader_parameter("pull", _pull_k())
 	_mat.set_shader_parameter("origin", Vector2(snappedf(cam.x, STEP), floorf((cam.y + NEAR) / STEP) * STEP))
 	_mat.set_shader_parameter("cam", cam)
@@ -265,10 +386,11 @@ func _draw_path() -> void:
 					pts_ahead.append(pts_lit[pts_lit.size() - 1])
 				pts_ahead.append(Vector2(q.x, q.y))
 		d += 0.25
+	var show := 1.0 - smoothstep(0.2, 0.6, _fall_k())
 	if pts_ahead.size() > 1:
-		_top.draw_polyline(pts_ahead, Color(LINE, 0.55), 1.5, true)
+		_top.draw_polyline(pts_ahead, Color(LINE, 0.55 * show), 1.5, true)
 	if pts_lit.size() > 1:
-		_top.draw_polyline(pts_lit, Color(Palette.GOLD.darkened(0.15), 0.9), 3.0, true)
+		_top.draw_polyline(pts_lit, Color(Palette.GOLD.darkened(0.15), 0.9 * show), 3.0, true)
 
 
 ## The light, sitting at the bottom of its well.
@@ -279,6 +401,15 @@ func _draw_light() -> void:
 		return
 	var c := Vector2(q.x, q.y)
 	var s := 1.0 + 0.35 * _weight
+	var fk := _fall_k()
+	if fk > 0.0:
+		# drawn into the hole: to its centre, smaller and smaller
+		var vp := get_viewport_rect().size
+		var e := smoothstep(0.35, 0.95, fk)
+		c = c.lerp(vp * 0.5, e)
+		s *= 1.0 - 0.85 * e
+		if _through >= 0.0:
+			return
 	var ph := Music.heard_phase()
 	var beat := pow(1.0 - minf(1.0, fposmod(ph + 0.06, 1.0) / 0.3), 2.0)
 	for i in 5:
