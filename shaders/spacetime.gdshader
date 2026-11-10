@@ -21,6 +21,12 @@ uniform float pull = 7.0;    // the black hole's pull: far off, the floor sinks 
 uniform vec2 hole_px;
 uniform float hole_r_px = 100.0;
 uniform float mesh_te = 0.0;
+uniform float twist = 0.0;     // space dragged round the hole (radians at the ring)
+// 1: the outer image. -1: the second image a lens makes, flipped to the other side, inside the ring
+// (drawn by a second copy of the mesh), seen only once the lens is strong.
+uniform float image = 1.0;
+uniform float image_alpha = 1.0;
+varying float shade;
 uniform vec4 ink : source_color;
 uniform vec4 blue : source_color;
 
@@ -55,7 +61,21 @@ void vertex() {
 		// only what is far off, behind the hole's plane, is seen through it
 		float behind = smoothstep(0.2, 0.7, clamp((p.y - cam.y) / far_span, 0.0, 1.0));
 		float th = (b + sqrt(b * b + 4.0 * mesh_te * mesh_te)) * 0.5;
-		VERTEX = hole_px + d / b * mix(b, th, behind) * hole_r_px;
+		if (image < 0.0) {
+			// the second image: flipped to the other side, packed in the band between the shadow
+			// and the ring (nearest the ring for what is near the hole, hugging the shadow for the rest)
+			float ring = max(mesh_te, 1.2);
+			th = -(1.04 + (ring - 1.04) * exp(-max(b - 1.0, 0.0) * 0.5));
+		}
+		float at = mix(b, th, behind);
+		float ang = twist * behind / (at * at + 0.3);
+		vec2 u = d / b;
+		u = vec2(u.x * cos(ang) - u.y * sin(ang), u.x * sin(ang) + u.y * cos(ang));
+		VERTEX = hole_px + u * at * hole_r_px;
+		// the second image only behind, and never inside the shadow
+		shade = image > 0.0 ? 1.0 : behind * smoothstep(1.02, 1.2, abs(at));
+	} else {
+		shade = image > 0.0 ? 1.0 : 0.0;
 	}
 	sink = clamp(-h / depth, 0.0, 1.0);
 	far_k = clamp((p.y - cam.y) / far_span, 0.0, 1.0);
@@ -63,6 +83,6 @@ void vertex() {
 
 void fragment() {
 	vec3 col = mix(ink.rgb, blue.rgb, 0.55 + 0.3 * sink);
-	float a = (0.22 + 0.3 * sink) * (1.0 - far_k * far_k);
+	float a = (0.22 + 0.3 * sink) * (1.0 - far_k * far_k) * shade * (image > 0.0 ? 1.0 : image_alpha);
 	COLOR = vec4(col, a);
 }

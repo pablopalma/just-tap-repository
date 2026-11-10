@@ -16,6 +16,9 @@ extends Node2D
 ## The stars and the galaxy's band stretch into arcs round it and gather in an Einstein ring; the far
 ## mesh and the line wrap round it. Faint at first, it grows as you come near, and through the fall
 ## the sky folds in round the shadow. The fall is slow, and the theme muffles and fades as you go in.
+## Unfolding (12/11/2026): space is dragged round the spinning hole, a swirl that grows as you near,
+## and the lens's second image shows: a flipped copy of the far mesh inside the ring. Falling in, the
+## shadow is no longer empty: the matter inside shows through it, and the fall runs on into it.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto  (`log`: the theme and its beat)
 
@@ -85,6 +88,8 @@ var _mat: ShaderMaterial
 var _sky: ColorRect
 var _sky_mat: ShaderMaterial
 var _grid: MeshInstance2D
+var _grid2: MeshInstance2D       # the lens's second image of the mesh
+var _mat2: ShaderMaterial
 var _top: Node2D
 
 
@@ -186,7 +191,22 @@ func _lens(q: Vector2, far: float) -> Vector2:
 	var d := (q - Vector2(h.x, h.y)) / h.z
 	var b := d.length() + 0.0001
 	var th := (b + sqrt(b * b + 4.0 * te * te)) * 0.5
-	return Vector2(h.x, h.y) + d / b * lerpf(b, th, smoothstep(0.2, 0.7, far)) * h.z
+	var behind := smoothstep(0.2, 0.7, far)
+	var at := lerpf(b, th, behind)
+	var u := (d / b).rotated(_twist() * behind / (at * at + 0.3))
+	return Vector2(h.x, h.y) + u * at * h.z
+
+
+## Space dragged round the hole: radians at the ring, growing as it nears and as you fall.
+func _twist() -> float:
+	var k := _lens_k()
+	return 0.8 * k * k
+
+
+## A parameter for both copies of the mesh.
+func _mp(param: String, value: Variant) -> void:
+	_mat.set_shader_parameter(param, value)
+	_mat2.set_shader_parameter(param, value)
 
 
 func _fall_k() -> float:
@@ -362,15 +382,22 @@ func _build_mesh() -> void:
 	mesh.custom_aabb = AABB(Vector3(-1e5, -1e5, -1), Vector3(2e5, 2e5, 2))
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://shaders/spacetime.gdshader")
-	_mat.set_shader_parameter("ink", LINE)
-	_mat.set_shader_parameter("blue", LINE_SUNK)
-	_mat.set_shader_parameter("cam_h", CAM_H)
-	_mat.set_shader_parameter("focal", FOCAL)
-	_mat.set_shader_parameter("horizon", HORIZON)
-	_mat.set_shader_parameter("far_span", FAR)
+	_mat2 = ShaderMaterial.new()
+	_mat2.shader = _mat.shader
+	_mat2.set_shader_parameter("image", -1.0)
+	_mp("ink", LINE)
+	_mp("blue", LINE_SUNK)
+	_mp("cam_h", CAM_H)
+	_mp("focal", FOCAL)
+	_mp("horizon", HORIZON)
+	_mp("far_span", FAR)
 	_grid = MeshInstance2D.new()
 	_grid.mesh = mesh
 	_grid.material = _mat
+	_grid2 = MeshInstance2D.new()
+	_grid2.mesh = mesh
+	_grid2.material = _mat2
+	add_child(_grid2)
 	add_child(_grid)
 	_top = Node2D.new()
 	_top.draw.connect(func() -> void:
@@ -401,33 +428,38 @@ func _update_mesh() -> void:
 	_sky_mat.set_shader_parameter("fall", fk)
 	_sky_mat.set_shader_parameter("te", _sky_te())
 	var hole := _hole_px()
-	_mat.set_shader_parameter("hole_px", Vector2(hole.x, hole.y))
-	_mat.set_shader_parameter("hole_r_px", hole.z)
-	_mat.set_shader_parameter("mesh_te", _mesh_te())
+	_mp("hole_px", Vector2(hole.x, hole.y))
+	_mp("hole_r_px", hole.z)
+	_mp("mesh_te", _mesh_te())
 	# the theme muffles and fades as you fall in, as if its sound stretched away
 	Music.muffle = lerpf(20000.0, 500.0, pow(smoothstep(0.1, 0.9, fk), 0.6))
 	var bus := AudioServer.get_bus_index(Music.TRACK_BUS)
 	if bus != -1:
 		AudioServer.set_bus_volume_db(bus, lerpf(0.0, -14.0, smoothstep(0.3, 1.0, fk)) if _through < 0.0
 			else lerpf(-14.0, -4.0, smoothstep(0.0, 6.0, _through)))
-	_sky_mat.set_shader_parameter("travel", maxf(_through, 0.0))
+	_sky_mat.set_shader_parameter("travel", maxf(_fall, 0.0) * 0.8)
+	_sky_mat.set_shader_parameter("reveal", smoothstep(0.03, 0.45, fk))
+	_sky_mat.set_shader_parameter("twist", _twist())
+	_mp("twist", _twist())
+	_mat2.set_shader_parameter("image_alpha", smoothstep(0.35, 0.9, _lens_k()) * 0.9)
 	_sky_mat.set_shader_parameter("white", smoothstep(THROUGH - 4.0, THROUGH, _through) if _through >= 0.0 else 0.0)
 	_grid.modulate.a = 1.0 - smoothstep(0.45, 0.85, fk)
-	_mat.set_shader_parameter("pull", _pull_k())
-	_mat.set_shader_parameter("origin", Vector2(snappedf(cam.x, STEP), floorf((cam.y + NEAR) / STEP) * STEP))
-	_mat.set_shader_parameter("cam", cam)
-	_mat.set_shader_parameter("screen", get_viewport_rect().size)
-	_mat.set_shader_parameter("well", _well)
-	_mat.set_shader_parameter("depth", DEPTH * (1.0 + TAP_WEIGHT * _weight * _weight))
-	_mat.set_shader_parameter("width2", WIDTH * WIDTH * (1.0 + 0.3 * _weight))
+	_grid2.modulate.a = _grid.modulate.a
+	_mp("pull", _pull_k())
+	_mp("origin", Vector2(snappedf(cam.x, STEP), floorf((cam.y + NEAR) / STEP) * STEP))
+	_mp("cam", cam)
+	_mp("screen", get_viewport_rect().size)
+	_mp("well", _well)
+	_mp("depth", DEPTH * (1.0 + TAP_WEIGHT * _weight * _weight))
+	_mp("width2", WIDTH * WIDTH * (1.0 + 0.3 * _weight))
 	var rs: Array[Vector4] = []
 	for r in _ripples.slice(-8):
 		var front: float = r.t * RIPPLE_SPEED
 		rs.append(Vector4(r.at.x, r.at.y, front, (1.0 - r.t / RIPPLE_LIFE) * r.k / (1.0 + front * 0.15)))
-	_mat.set_shader_parameter("ripple_count", rs.size())
+	_mp("ripple_count", rs.size())
 	while rs.size() < 8:
 		rs.append(Vector4.ZERO)
-	_mat.set_shader_parameter("ripples", rs)
+	_mp("ripples", rs)
 
 
 ## The light's line: lit behind it, faint ahead; it sinks with the mesh where the light is.

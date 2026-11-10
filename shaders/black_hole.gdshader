@@ -18,6 +18,10 @@ uniform float spin = 0.0;               // the gas's turn so far (time)
 // distance r (shadow radii) from the centre comes from r - te*te/r: stars and the galaxy's band stretch
 // into arcs round the hole, and an Einstein ring of te gathers their light. It grows as you come near.
 uniform float te = 1.2;                 // the Einstein ring's radius, in shadow radii
+// The hole spins and drags space round with it: the view swirls, more near it (radians at the ring).
+uniform float twist = 0.0;
+// Falling in, the shadow is no longer empty: the matter inside shows through it, more and more.
+uniform float reveal = 0.0;
 uniform float fall = 0.0;               // the fall into it (0..1): the disk sweeps past and is gone
 uniform float inside = 0.0;             // 0 the sky as above, 1 the way through
 uniform float travel = 0.0;             // seconds inside
@@ -55,8 +59,7 @@ float wall(float wa, float z) {
 	return noise(vec2(wa * 9.0, z * 0.35)) * noise(vec2(wa * 23.0 + 4.0, z * 0.9));
 }
 
-vec3 tunnel(vec2 uv) {
-	vec2 d = vec2((uv.x - 0.5) * aspect, uv.y - 0.5);
+vec3 tunnel(vec2 d) {
 	float r = length(d) + 0.0001;
 	float a = atan(d.y, d.x) / 6.28318 + 0.5;
 	float z = 0.3 / r + travel * (1.1 + travel * 0.05);    // depth: what is at the edges rushes past
@@ -123,7 +126,9 @@ void fragment() {
 	float r = length(q);
 	vec3 col = space.rgb;
 	// where this point's light really comes from (the lens), and how much brighter it is for it
-	vec2 s = q * (1.0 - te * te / max(r * r, 0.0001));
+	float drag = twist / (r * r + 0.3);
+	vec2 qt = vec2(q.x * cos(drag) - q.y * sin(drag), q.x * sin(drag) + q.y * cos(drag));
+	vec2 s = qt * (1.0 - te * te / max(r * r, 0.0001));
 	vec2 src = center + vec2(s.x * radius / aspect, s.y * radius);
 	float mag = clamp(1.0 / max(abs(1.0 - pow(te / max(r, 0.0001), 4.0)), 0.001), 1.0, 5.0);
 	// stars, a few, twinkling faintly (drawn where their light comes from: near the ring, arcs)
@@ -155,7 +160,8 @@ void fragment() {
 	col += mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.8, bent)) * bent * 2.0;
 	// the shadow
 	float shadow = smoothstep(1.0, 0.985, r);
-	col = mix(col, vec3(0.0), shadow);
+	vec3 within = reveal > 0.0 ? tunnel(q * radius) * reveal : vec3(0.0);
+	col = mix(col, within, shadow);
 	// the thin ring of light hugging it
 	col += hot.rgb * exp(-pow((r - 1.015) * 60.0, 2.0)) * 0.9;
 	// the near side of the disk, across in front of the shadow: a thin band, wider further out
@@ -167,7 +173,7 @@ void fragment() {
 	float front = band * along * gas(x, q.x * 0.35 + q.y * 3.0) * dop * 1.5 * (1.0 - smoothstep(0.15, 0.45, fall));
 	col = mix(col, mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.9, front)) * 1.25, clamp(front * 1.4, 0.0, 1.0));
 	if (inside > 0.0) {
-		col = mix(col, tunnel(UV), inside);
+		col = mix(col, tunnel(vec2((UV.x - center.x) * aspect, UV.y - center.y)), inside);
 	}
 	col = mix(col, hot.rgb * 1.05, white);
 	COLOR = vec4(col, 1.0);
