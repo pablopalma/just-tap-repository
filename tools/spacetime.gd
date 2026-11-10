@@ -5,10 +5,15 @@ extends Node2D
 ## visual: the light still goes along its line. A tap on the beat makes the light heavier for a moment
 ## (the well deepens) and sends a ripple out across the mesh, a gravitational wave, as it surges ahead.
 ## Off the beat: a soft tap, a small dip. The well lags behind the light a little, like cloth settling.
+## The sky (11/11/2026): deep space and a black hole on the horizon, colossal, the light a speck before
+## it (shaders/black_hole.gdshader); the mesh, pale on the dark, runs off towards it.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto
 
 const BLUE := Color("#4d84b3")
+## The mesh on the dark: pale blue, warming where it sinks (towards the light).
+const LINE := Color("#7f9fc4")
+const LINE_SUNK := Color("#f1dcae")
 ## The mesh: a grid on the floor, in world units, drawn from the camera to the far edge.
 const SPAN_X := 26.0
 const NEAR := 2.0
@@ -16,10 +21,10 @@ const FAR := 52.0
 const STEP := 1.0          # between the grid's lines
 const SUB := 4             # each segment in this many pieces, so the lines can bend
 ## The camera, above the floor and a little behind the light.
-const CAM_H := 8.0
+const CAM_H := 6.0
 const CAM_BACK := 19.0
 const FOCAL := 620.0
-const HORIZON := 0.16       # where the camera's eye line meets the screen, from the top
+const HORIZON := 0.34       # where the camera's eye line meets the screen, from the top
 ## The well under the light: how deep and how wide (a Gaussian), and the extra weight of a tap.
 const DEPTH := 2.8
 const WIDTH := 2.6
@@ -39,6 +44,8 @@ var _ripples: Array[Dictionary] = []   # {at: Vector2, t, k}
 var _last_beat := -100
 var _run := 0
 var _mat: ShaderMaterial
+var _sky: ColorRect
+var _sky_mat: ShaderMaterial
 var _grid: MeshInstance2D
 var _top: Node2D
 
@@ -50,6 +57,7 @@ func _ready() -> void:
 	Music._pending_zone = 8
 	Music.start()
 	_well = _line(0.0)
+	_build_sky()
 	_build_mesh()
 	get_viewport().msaa_2d = Viewport.MSAA_4X   # the mesh's lines are one pixel wide
 
@@ -135,13 +143,17 @@ func _project(x: float, z: float, h: float) -> Vector3:
 	return Vector3(vp.x * 0.5 + (x - cam_x) * s, vp.y * HORIZON + (CAM_H - h) * s, dz)
 
 
-## The sky behind the mesh: paper, a little bluer towards the horizon.
-func _draw() -> void:
-	var vp := get_viewport_rect().size
-	draw_rect(Rect2(Vector2.ZERO, vp), Palette.PAPER)
-	for i in 12:
-		var k := i / 11.0
-		draw_rect(Rect2(0, vp.y * (0.05 + 0.03 * i), vp.x, vp.y * 0.04), Color(BLUE, 0.025 * (1.0 - k)))
+## The sky: a full-screen rect behind everything, the black hole drawn by its shader.
+func _build_sky() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = -1
+	_sky = ColorRect.new()
+	_sky.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_sky_mat = ShaderMaterial.new()
+	_sky_mat.shader = load("res://shaders/black_hole.gdshader")
+	_sky.material = _sky_mat
+	layer.add_child(_sky)
+	add_child(layer)
 
 
 ## The mesh is drawn on the GPU (shaders/spacetime.gdshader): a grid of short line pieces around
@@ -168,8 +180,8 @@ func _build_mesh() -> void:
 	mesh.custom_aabb = AABB(Vector3(-1e5, -1e5, -1), Vector3(2e5, 2e5, 2))
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://shaders/spacetime.gdshader")
-	_mat.set_shader_parameter("ink", Palette.INK)
-	_mat.set_shader_parameter("blue", BLUE)
+	_mat.set_shader_parameter("ink", LINE)
+	_mat.set_shader_parameter("blue", LINE_SUNK)
 	_mat.set_shader_parameter("cam_h", CAM_H)
 	_mat.set_shader_parameter("focal", FOCAL)
 	_mat.set_shader_parameter("horizon", HORIZON)
@@ -187,6 +199,11 @@ func _build_mesh() -> void:
 
 func _update_mesh() -> void:
 	var cam := Vector2(_well.x * 0.6, _dist - CAM_BACK)
+	var vp := get_viewport_rect().size
+	_sky_mat.set_shader_parameter("aspect", vp.x / vp.y)
+	_sky_mat.set_shader_parameter("spin", _t * 0.25)
+	# the hole hardly moves: it is that far; the camera's sway shifts it only a touch
+	_sky_mat.set_shader_parameter("center", Vector2(0.5 - cam.x * 0.004, HORIZON - 0.04))
 	_mat.set_shader_parameter("origin", Vector2(snappedf(cam.x, STEP), floorf((cam.y + NEAR) / STEP) * STEP))
 	_mat.set_shader_parameter("cam", cam)
 	_mat.set_shader_parameter("screen", get_viewport_rect().size)
@@ -220,7 +237,7 @@ func _draw_path() -> void:
 				pts_ahead.append(Vector2(q.x, q.y))
 		d += 0.25
 	if pts_ahead.size() > 1:
-		_top.draw_polyline(pts_ahead, Color(Palette.INK, 0.35), 1.5, true)
+		_top.draw_polyline(pts_ahead, Color(LINE, 0.55), 1.5, true)
 	if pts_lit.size() > 1:
 		_top.draw_polyline(pts_lit, Color(Palette.GOLD.darkened(0.15), 0.9), 3.0, true)
 
