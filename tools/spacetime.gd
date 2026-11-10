@@ -203,7 +203,7 @@ func _sky_te() -> float:
 
 
 func _mesh_te() -> float:
-	return 1.6 * _lens_k()
+	return 1.6 * _lens_k() * (1.0 - 0.85 * _immerse())   # on the disk the mesh stays down on it, the arch clear
 
 
 ## Where the hole is on the screen and its shadow's radius, in pixels.
@@ -223,7 +223,7 @@ func _lens(q: Vector2, far: float) -> Vector2:
 	var th := (b + sqrt(b * b + 4.0 * te * te)) * 0.5
 	var behind := smoothstep(0.2, 0.7, far)
 	var at := lerpf(b, th, behind)
-	var u := (d / b).rotated(_twist() * behind / (at * at + 0.3))
+	var u := (d / b).rotated(_mesh_twist() * behind / (at * at + 0.3))
 	return Vector2(h.x, h.y) + u * at * h.z
 
 
@@ -231,6 +231,11 @@ func _lens(q: Vector2, far: float) -> Vector2:
 func _twist() -> float:
 	var k := _lens_k()
 	return 0.8 * k * k
+
+
+## On the disk the mesh lies flat on it: the swirl stays in the sky.
+func _mesh_twist() -> float:
+	return _twist() * (1.0 - 0.95 * _immerse())
 
 
 ## A parameter for both copies of the mesh.
@@ -483,10 +488,10 @@ func _update_mesh() -> void:
 	var fk := _fall_k()
 	var grow := pow(fk, 3.0)
 	var im := _immerse()
-	var radius := 0.2 + 0.14 * _near + 0.5 * im * im + 0.25 * smoothstep(0.0, 0.6, fk) + 2.6 * grow
+	var radius := 0.2 + 0.14 * _near + 0.3 * im * im + 0.25 * smoothstep(0.0, 0.6, fk) + 2.6 * grow
 	_sky_mat.set_shader_parameter("radius", radius)
 	var at := Vector2(0.5 - cam.x * 0.004, HORIZON - 0.55 * (0.2 + 0.14 * _near))
-	at = at.lerp(Vector2(0.17, 0.2), smoothstep(0.0, 1.0, im))
+	at = at.lerp(Vector2(0.46, 0.74), smoothstep(0.0, 1.0, im))   # a dome standing on the horizon
 	_hole_uv = at.lerp(Vector2(0.5, 0.5), smoothstep(0.0, 0.7, fk))
 	_hole_r = radius
 	_sky_mat.set_shader_parameter("center", _hole_uv)
@@ -520,8 +525,8 @@ func _update_mesh() -> void:
 	_sky_mat.set_shader_parameter("travel", _travel)
 	_sky_mat.set_shader_parameter("reveal", smoothstep(0.03, 0.45, fk))
 	_sky_mat.set_shader_parameter("twist", _twist())
-	_mp("twist", _twist())
-	_mat2.set_shader_parameter("image_alpha", smoothstep(0.35, 0.9, _lens_k()) * 0.9)
+	_mp("twist", _mesh_twist())
+	_mat2.set_shader_parameter("image_alpha", smoothstep(0.35, 0.9, _lens_k()) * 0.9 * (1.0 - _immerse()))
 	_sky_mat.set_shader_parameter("white", smoothstep(THROUGH - 4.0, THROUGH, _through) if _through >= 0.0 else 0.0)
 	_grid.modulate.a = 1.0 - smoothstep(0.45, 0.85, fk)
 	_grid2.modulate.a = _grid.modulate.a

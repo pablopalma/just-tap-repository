@@ -76,19 +76,23 @@ float sphere_r() {
 	return 0.1 + 0.06 * smoothstep(0.0, 14.0, travel);
 }
 
+// What the sphere shows at in_p (its own radii, 0 at the centre, 1 at its edge).
+vec3 sphere_inside(vec2 in_p) {
+	float k = sqrt(max(1.0 - dot(in_p, in_p), 0.0));
+	vec2 bent = -in_p / (k + 0.35) * 2.2 + travel * 0.05 + vec2(spin * 0.03, 0.0);   // seen through it, upside down
+	vec3 c = vec3(0.03, 0.06, 0.07) + vec3(0.95, 0.92, 0.85) * stars(bent * 14.0, 0.2) * 1.4;
+	c += vec3(0.55, 0.45, 0.4) * noise(bent * 2.0 + 3.0) * 0.18;             // a nebula far inside
+	c += vec3(0.5, 0.6, 0.62) * smoothstep(0.55, 1.0, 1.0 - k) * 0.3;
+	return c;
+}
+
 vec4 sphere_view(vec2 d) {
 	float r = length(d);
 	float R = sphere_r();
 	if (r >= R) {
 		return vec4(0.0);
 	}
-	vec2 in_p = d / R;
-	float k = sqrt(max(1.0 - dot(in_p, in_p), 0.0));
-	vec2 bent = -in_p / (k + 0.35) * 2.2 + travel * 0.05 + vec2(spin * 0.03, 0.0);   // seen through it, upside down
-	vec3 c = vec3(0.03, 0.06, 0.07) + vec3(0.95, 0.92, 0.85) * stars(bent * 14.0, 0.2) * 1.4;
-	c += vec3(0.55, 0.45, 0.4) * noise(bent * 2.0 + 3.0) * 0.18;             // a nebula far inside
-	c += vec3(0.5, 0.6, 0.62) * smoothstep(0.55, 1.0, 1.0 - k) * 0.3;
-	return vec4(c, smoothstep(R, R * 0.96, r));
+	return vec4(sphere_inside(d / R), smoothstep(R, R * 0.96, r));
 }
 
 // its rim: a thin glint, catching the light only here and there
@@ -212,14 +216,26 @@ void fragment() {
 	arc *= 1.0 + immerse * (1.6 * smoothstep(0.35, 0.8, noise(vec2(ang * 9.0 - spin * 2.0, r * 3.0))) - 0.4);
 	float under = smoothstep(0.0, 0.35, q.y) * smoothstep(0.02, 0.06, arc_r) * exp(-max(arc_r - 0.06, 0.0) * 14.0);
 	float bent = (arc + 0.55 * under) * gas(r, ang) * side * (1.0 - smoothstep(0.2, 0.5, fall));
-	col += mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.8, bent)) * bent * (2.0 + 1.5 * immerse);
+	col += mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.8, bent)) * bent * (2.0 + 1.5 * immerse) * (1.0 - immerse);
+	// close in: the disk's far side, bent right round the shadow, rises from the horizon on one side,
+	// arches over and comes down on the other, its gas streaming along it (white-hot inside, amber out)
+	if (immerse > 0.0) {
+		float ar = r - 1.0;
+		float arch = smoothstep(0.0, 0.05, ar) * (1.0 - smoothstep(0.18, 0.6, ar));
+		// streaks along the arch: slow change along it, quick across it; they stream round with the spin
+		float fs = noise(vec2(ang * 4.0 - spin * 3.0, ar * 38.0)) * 0.55 + noise(vec2(ang * 11.0 - spin * 5.0, ar * 90.0)) * 0.3
+			+ noise(vec2(ang * 30.0 - spin * 8.0, ar * 20.0)) * 0.15;
+		float lit = arch * (0.45 + 0.95 * smoothstep(0.3, 0.8, fs)) * (1.0 - smoothstep(0.2, 0.5, fall));
+		vec3 arch_col = mix(hot.rgb * 1.25, vec3(0.95, 0.55, 0.2), smoothstep(0.04, 0.45, ar));
+		col += arch_col * lit * immerse * 1.7;
+	}
 	// close in, the whole sky glows with it: a haze over the horizon
 	col += mix(warm.rgb, hot.rgb, 0.6) * immerse * (0.25 * exp(-max(r - 1.0, 0.0) * 0.6) + 0.55 * exp(-max(horizon - UV.y, 0.0) * 7.0));
 	// the shadow
 	float shadow = smoothstep(1.0, 0.985, r);
 	// the shadow is dark, but the sphere at its heart shows from the start; falling in, all the rest
-	vec4 sp0 = sphere_view(q * radius);
-	vec3 within = mix(vec3(0.0), sp0.rgb, sp0.a) + sphere_rim(q * radius);
+	// the whole shadow is the sphere: you are already in the hole's orbit, looking into it
+	vec3 within = sphere_inside(q / 0.985) * (0.75 + 0.25 * smoothstep(0.98, 0.7, r));
 	if (reveal > 0.0) {
 		within = mix(within, tunnel(q * radius), reveal);
 	}
@@ -232,12 +248,12 @@ void fragment() {
 	float band = smoothstep(half_h, half_h * 0.25, abs(q.y - 0.04));
 	float along = x < 1.7 ? 1.0 : disk_glow(x);   // in front of the shadow it runs straight across
 	float dop = clamp(0.55 - q.x * 0.07, 0.25, 1.0);
-	float front = band * along * gas(x, q.x * 0.35 + q.y * 3.0) * dop * 1.5 * (1.0 - smoothstep(0.15, 0.45, fall)) * (1.0 - immerse);
+	float front = band * along * gas(x, q.x * 0.35 + q.y * 3.0) * dop * 1.5 * (1.0 - smoothstep(0.15, 0.45, fall)) * (1.0 - smoothstep(0.0, 0.45, immerse));
 	col = mix(col, mix(warm.rgb, hot.rgb, smoothstep(0.3, 0.9, front)) * 1.25, clamp(front * 1.4, 0.0, 1.0));
 	// the disk under you passes in front of the shadow; it goes as you fall in
 	if (immerse > 0.0) {
 		vec4 fl = disk_floor(UV);
-		col = mix(col, fl.rgb, fl.a * immerse * (1.0 - smoothstep(0.35, 0.75, fall)));
+		col = mix(col, fl.rgb, fl.a * smoothstep(0.0, 0.45, immerse) * (1.0 - smoothstep(0.35, 0.75, fall)));
 	}
 	if (inside > 0.0) {
 		col = mix(col, tunnel(vec2((UV.x - center.x) * aspect, UV.y - center.y)), inside);
