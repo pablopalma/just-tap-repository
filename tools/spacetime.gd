@@ -21,16 +21,20 @@ const FAR := 52.0
 const STEP := 1.0          # between the grid's lines
 const SUB := 4             # each segment in this many pieces, so the lines can bend
 ## The camera, above the floor and a little behind the light.
-const CAM_H := 6.0
-const CAM_BACK := 19.0
+const CAM_H := 3.6
+const CAM_BACK := 16.0
 const FOCAL := 620.0
-const HORIZON := 0.34       # where the camera's eye line meets the screen, from the top
+const HORIZON := 0.44       # where the camera's eye line meets the screen, from the top
 ## The well under the light: how deep and how wide (a Gaussian), and the extra weight of a tap.
 const DEPTH := 2.8
 const WIDTH := 2.6
 const TAP_WEIGHT := 1.6
 const RIPPLE_SPEED := 9.0  # world units a second
 const RIPPLE_LIFE := 3.2
+## The hole's pull on the far mesh: the floor sinks away towards it, the line going down into it.
+const PULL := 7.0
+const NEAR_TAP := 0.015
+const NEAR_DRIFT := 0.003
 const SPEED := 2.4         # how far the light goes a second, on its own
 const SURGE := 3.2         # and the extra a tap on the beat gives it
 
@@ -43,6 +47,9 @@ var _well := Vector2.ZERO   # where the well's centre is (it follows the light, 
 var _ripples: Array[Dictionary] = []   # {at: Vector2, t, k}
 var _last_beat := -100
 var _run := 0
+## How near the hole has come (0..1): a little with every tap on the beat, slowly on its own. It grows
+## in the sky and its pull bends the far mesh more.
+var _near := 0.0
 var _mat: ShaderMaterial
 var _sky: ColorRect
 var _sky_mat: ShaderMaterial
@@ -72,6 +79,7 @@ func _process(delta: float) -> void:
 	_surge = maxf(0.0, _surge - delta * 2.5)
 	_weight = maxf(0.0, _weight - delta * 1.1)
 	_dist += delta * (SPEED + SURGE * _surge)
+	_near = minf(1.0, _near + delta * NEAR_DRIFT)
 	_well = _well.lerp(_line(_dist), minf(1.0, delta * 4.0))
 	for r in _ripples:
 		r.t += delta
@@ -106,6 +114,7 @@ func _tap() -> void:
 		_last_beat = k
 		_run += 1
 		Music.play_accent(_run)
+		_near = minf(1.0, _near + NEAR_TAP)
 		_weight = 1.0
 		_surge = 1.0
 		_ripples.append({"at": _line(_dist), "t": 0.0, "k": 1.0})
@@ -128,7 +137,21 @@ func _height(p: Vector2) -> float:
 		var x := d - front
 		var fade: float = (1.0 - r.t / RIPPLE_LIFE) * r.k / (1.0 + front * 0.15)
 		h += 0.55 * fade * sin(x * 1.6) * exp(-x * x * 0.35)
-	return h
+	return h + _pull(p)
+
+
+## The hole's pull: far off, the floor sinks away towards it, more as it comes nearer. Same as the
+## mesh's shader.
+func _pull(p: Vector2) -> float:
+	var cam := Vector2(_well.x * 0.6, _dist - CAM_BACK)
+	var far := clampf((p.y - cam.y) / FAR, 0.0, 1.0)
+	var dx := p.x - cam.x
+	var sp := 5.0 + 12.0 * far
+	return -_pull_k() * pow(far, 2.2) * exp(-dx * dx / (2.0 * sp * sp))
+
+
+func _pull_k() -> float:
+	return PULL * (0.6 + 0.8 * _near)
 
 
 ## World (x on the floor across, z ahead, h up) to the screen. The camera follows the light.
@@ -203,7 +226,10 @@ func _update_mesh() -> void:
 	_sky_mat.set_shader_parameter("aspect", vp.x / vp.y)
 	_sky_mat.set_shader_parameter("spin", _t * 0.25)
 	# the hole hardly moves: it is that far; the camera's sway shifts it only a touch
-	_sky_mat.set_shader_parameter("center", Vector2(0.5 - cam.x * 0.004, HORIZON - 0.04))
+	var radius := 0.2 + 0.14 * _near
+	_sky_mat.set_shader_parameter("radius", radius)
+	_sky_mat.set_shader_parameter("center", Vector2(0.5 - cam.x * 0.004, HORIZON - 0.55 * radius))
+	_mat.set_shader_parameter("pull", _pull_k())
 	_mat.set_shader_parameter("origin", Vector2(snappedf(cam.x, STEP), floorf((cam.y + NEAR) / STEP) * STEP))
 	_mat.set_shader_parameter("cam", cam)
 	_mat.set_shader_parameter("screen", get_viewport_rect().size)

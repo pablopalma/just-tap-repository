@@ -28,6 +28,7 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | 8 | **Letter to the Player** (la carta) | la carta del final de la demo | 66 BPM | ✅ grabado (`letter_to_the_player.ogg`) |
 | 9 | **Who I Am** (el prólogo) | el prólogo de la primera partida: la luz cae en el blanco y habla con el Padre | la mayor · sin pulso, ambiental | ✅ grabado (`who_i_am.ogg`, 6/11/2026) |
 | 10 | **What Breaks, Returns** (la Madre) | el monumento del juego completo (`tools/monument.tscn`) | re menor → re mayor · 80 BPM | ✅ grabado (`what_breaks_returns.ogg`, fuera de la demo exportada) |
+| 11 | **The Weight of Light** (la malla del espacio-tiempo) | capítulo 8, Cielo (`tools/spacetime.tscn`): un agujero negro colosal en el horizonte | la menor → do mayor · 70 BPM | 💡 prompt listo (11/11/2026) |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |
 | — | Capítulos del juego completo | Gris, Rojo, Verde, Azul, **Tinta**, Amarillo (`docs/juego-completo.md` §3) | — | un tema por capítulo, o agrupar las zonas de cada uno |
 
@@ -92,6 +93,17 @@ A clear night sky, stars lighting up one by one. A harp plays a steady, flowing 
 Instrumental, 66 BPM, 4/4, key of C major. No vocals, no drums.
 A heartfelt letter from the person who made this game to the player. Soft solo piano begins alone, warm and close, simple chords and a gentle melody, leaving space for a narrator's voice over it. Slowly, warm strings enter underneath, then a soft harp, and celesta bells sparkle on the melody near the end. It grows into a quiet, tender, grateful climax, never loud or epic, like a hug, then settles back to solo piano and ends on a long, open C major chord. Emotional, hopeful, intimate, sincere. About 2 minutes 30 seconds.
 ```
+
+## Prompt de ElevenLabs · The Weight of Light (capítulo 8, la malla)
+
+Referencia de estilo, que no se pone en el prompt: la banda sonora de *Interstellar*. Es la excepción a la regla de "nada épico": el nivel tiene que dar escala, y la luz es un puntito frente a algo enorme. El pulso lo marca un tic suave en cada tiempo, como un reloj, que no es batería y deja claro dónde tocar. Al principio el tema es casi vacío, para que las notas de las frases se oigan arriba.
+
+```
+Instrumental, 70 BPM, 4/4, key of A minor turning to C major. No vocals, no drums, no percussion except a soft, dry ticking like a clock on every beat, steady from start to end.
+Vast, cosmic, awe-struck. Begins almost empty: the soft ticking, and a church pipe organ holding a low, quiet chord, breathing in and out. A felt piano enters with a simple, hypnotic ostinato of repeated notes in eighth notes, two notes rocking back and forth, very steady, in the middle register (chords Am – F – C – G, two bars each). Slowly the organ adds higher stops and the ostinato climbs, layer by layer, with long sustained strings underneath, a minimalist build that never changes tempo. In the middle the harmony lifts to C major and the organ swells to a wide, luminous, overwhelming chord, like standing before something immense, while the ticking keeps going. Then it falls away suddenly to the lone piano ostinato and the ticking, and a soft choir pad hums the theme, small and tender, like a tiny light in front of a giant. Reverb-rich, spacious, deep sub-bass under the organ, emotional but restrained, no fast notes in the high register. Seamless and loopable, no big ending.
+```
+
+Secciones: *Empty space* 0:00–0:40 · *The build* 0:40–1:40 · *The weight* 1:40–2:10 · *Tiny light* 2:10–2:45.
 
 ## Pendiente de decidir
 

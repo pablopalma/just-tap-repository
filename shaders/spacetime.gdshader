@@ -15,6 +15,7 @@ uniform float focal = 620.0;
 uniform vec2 screen;
 uniform float horizon = 0.16;
 uniform float far_span = 52.0;
+uniform float pull = 7.0;    // the black hole's pull: far off, the floor sinks away towards it
 uniform vec4 ink : source_color;
 uniform vec4 blue : source_color;
 
@@ -31,7 +32,10 @@ float height(vec2 p) {
 		float x = distance(p, r.xy) - r.z;
 		h += 0.55 * r.w * sin(x * 1.6) * exp(-x * x * 0.35);
 	}
-	return h;
+	float far = clamp((p.y - cam.y) / far_span, 0.0, 1.0);
+	float dx = p.x - cam.x;
+	float sp = 5.0 + 12.0 * far;
+	return h - pull * pow(far, 2.2) * exp(-dx * dx / (2.0 * sp * sp));
 }
 
 void vertex() {
