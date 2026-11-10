@@ -19,6 +19,9 @@ extends Node2D
 ## Unfolding (12/11/2026): space is dragged round the spinning hole, a swirl that grows as you near,
 ## and the lens's second image shows: a flipped copy of the far mesh inside the ring. Falling in, the
 ## shadow is no longer empty: the matter inside shows through it, and the fall runs on into it.
+## The notes (12/11/2026): lights coming down the line from the hole towards the light, one a beat,
+## each reaching it as its beat sounds (tap then); pale blue far off, gold as they arrive. They ride
+## the mesh and bend through the lens like everything else.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto  (`log`: the theme and its beat)
 
@@ -54,6 +57,9 @@ const NEAR_EASE := 0.8      # how fast the hole follows where the taps say it is
 const SCALE := [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77, 79, 81, 84, 86]
 const CONTOUR := [0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 7]
 const BASE_I := 5
+## The notes on the line: how many, and how far apart (world units, a beat each).
+const NOTES := 5
+const NOTE_GAP := 2.6
 const VOICE_BUS := "SpaceVerb"
 const VOICE_MIDI := 62.0
 ## The cinematic: the fall (the hole fills the sky, the mesh drains into it), then the way through.
@@ -402,6 +408,7 @@ func _build_mesh() -> void:
 	_top = Node2D.new()
 	_top.draw.connect(func() -> void:
 		_draw_path()
+		_draw_notes()
 		_draw_light())
 	add_child(_top)
 
@@ -484,6 +491,37 @@ func _draw_path() -> void:
 		_top.draw_polyline(pts_ahead, Color(LINE, 0.55 * show), 1.5, true)
 	if pts_lit.size() > 1:
 		_top.draw_polyline(pts_lit, Color(Palette.GOLD.darkened(0.15), 0.9 * show), 3.0, true)
+
+
+## The notes coming down the line to the light: the k-th lands on the k-th beat from now.
+func _draw_notes() -> void:
+	var show := 1.0 - smoothstep(0.0, 0.25, _fall_k())
+	if show <= 0.0:
+		return
+	var ph := Music.heard_phase()
+	var vp := get_viewport_rect().size
+	for k in NOTES:
+		var ahead := (k + 1.0 - ph) * NOTE_GAP
+		var d := _dist + ahead
+		var p := _line(d)
+		var q := _project(p.x, p.y, _height(p) + 0.12)
+		if q.z <= 0.0:
+			continue
+		var at := _lens(Vector2(q.x, q.y), clampf((d - (_dist - CAM_BACK)) / FAR, 0.0, 1.0))
+		var near := 1.0 - ahead / (NOTE_GAP * NOTES)
+		var a := show * smoothstep(0.0, 0.3, near)
+		var size := clampf(0.16 * FOCAL * (vp.y / 720.0) / q.z, 1.5, 9.0)
+		var col := Color(0.75, 0.88, 1.0).lerp(Palette.GOLD, smoothstep(0.55, 0.92, near))
+		_top.draw_circle(at, size * 2.6, Color(col, 0.18 * a))
+		_top.draw_circle(at, size, Color(col, 0.95 * a))
+	# the beat: the note lands in the light and opens a ring
+	var land := 1.0 - minf(1.0, ph / 0.25)
+	if land > 0.0:
+		var lp := _line(_dist)
+		var lq := _project(lp.x, lp.y, _height(lp) + 0.15)
+		if lq.z > 0.0:
+			_top.draw_arc(Vector2(lq.x, lq.y), lerpf(12.0, 30.0, 1.0 - land), 0.0, TAU, 40,
+				Color(Palette.GOLD, 0.75 * land * show), 1.8, true)
 
 
 ## The light, sitting at the bottom of its well.
