@@ -157,6 +157,8 @@ var _streams := {}   # id -> AudioStream
 var _track_players: Array[AudioStreamPlayer] = []
 var _track_i := 0
 var _track_filter: AudioEffectLowPassFilter
+## A ceiling on the theme's low-pass a scene can set (tools/spacetime.gd muffles it as you fall in).
+var muffle := 20000.0
 var _track_origin := 0.0   # clock time of the theme's position 0
 var _track_jumped := false
 
@@ -251,6 +253,7 @@ func _process(delta: float) -> void:
 		var cut := 20000.0
 		if track == "dark":
 			cut = 700.0 * pow(28.0, clampf(dark_light / 0.5, 0.0, 1.0))
+		cut = minf(cut, muffle)
 		_track_filter.cutoff_hz = lerpf(_track_filter.cutoff_hz, cut, minf(1.0, delta * 0.8))
 	if not playing:
 		return

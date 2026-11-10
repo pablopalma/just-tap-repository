@@ -12,6 +12,10 @@ extends Node2D
 ## it has come all the way, the cinematic: the hole fills the sky, the mesh drains into it, the light
 ## falls in, and inside, the light of all the stars it swallowed streams past, until a white light
 ## ahead takes everything. Then it starts again. `end`: from just before the fall.
+## The lens (12/11/2026): as in a real black hole, its gravity bends the light of what is behind it.
+## The stars and the galaxy's band stretch into arcs round it and gather in an Einstein ring; the far
+## mesh and the line wrap round it. Faint at first, it grows as you come near, and through the fall
+## the sky folds in round the shadow. The fall is slow, and the theme muffles and fades as you go in.
 ## Tap: space, click, a gamepad's A. Esc: back to the game. `-- auto` plays it on its own.
 ## godot --path . --write-movie x.avi --fixed-fps 30 res://tools/spacetime.tscn -- auto  (`log`: the theme and its beat)
 
@@ -50,11 +54,13 @@ const BASE_I := 5
 const VOICE_BUS := "SpaceVerb"
 const VOICE_MIDI := 62.0
 ## The cinematic: the fall (the hole fills the sky, the mesh drains into it), then the way through.
-const FALL := 9.0
+const FALL := 20.0
 const THROUGH := 16.0
 const AFTER := 3.0
 
 var _auto := false
+## `fast`: the hole comes in about a minute, to see the whole approach.
+var _fast := false
 var _t := 0.0
 var _dist := 0.0            # how far along its line the light is
 var _surge := 0.0
@@ -72,6 +78,9 @@ var _through := -1.0        # seconds inside, -1 before
 var _voice: AudioStreamWAV
 var _players: Array[AudioStreamPlayer] = []
 var _player_i := 0
+var _spin := 0.0
+var _hole_uv := Vector2(0.5, 0.3)   # the hole on the screen (UV) and its shadow's radius
+var _hole_r := 0.2
 var _mat: ShaderMaterial
 var _sky: ColorRect
 var _sky_mat: ShaderMaterial
@@ -81,6 +90,7 @@ var _top: Node2D
 
 func _ready() -> void:
 	_auto = DevMenu.proto_has("auto")
+	_fast = DevMenu.proto_has("fast")
 	SaveSystem.enabled = false
 	Music.zone = 8
 	Music._pending_zone = 8
@@ -91,7 +101,7 @@ func _ready() -> void:
 	_build_mesh()
 	_build_voice()
 	if DevMenu.proto_has("end"):
-		_near = 0.97
+		_near = 0.9
 		_near_to = 0.97
 	get_viewport().msaa_2d = Viewport.MSAA_4X   # the mesh's lines are one pixel wide
 
@@ -106,7 +116,7 @@ func _process(delta: float) -> void:
 	_surge = maxf(0.0, _surge - delta * 2.5)
 	_weight = maxf(0.0, _weight - delta * 1.1)
 	_dist += delta * (SPEED + SURGE * _surge)
-	_near_to = minf(1.0, _near_to + delta * NEAR_DRIFT)
+	_near_to = minf(1.0, _near_to + delta * NEAR_DRIFT * (14.0 if _fast else 1.0))
 	_near += (_near_to - _near) * minf(1.0, delta * NEAR_EASE)
 	if _fall < 0.0 and _near > 0.985:
 		_begin_fall()
@@ -141,6 +151,42 @@ func _exit_tree() -> void:
 	var bus := AudioServer.get_bus_index(VOICE_BUS)
 	if bus != -1:
 		AudioServer.remove_bus(bus)
+	Music.muffle = 20000.0
+	var track_bus := AudioServer.get_bus_index(Music.TRACK_BUS)
+	if track_bus != -1:
+		AudioServer.set_bus_volume_db(track_bus, 0.0)
+
+
+## How strongly the hole bends light: a little from far, more as it comes, most as you fall.
+func _lens_k() -> float:
+	return 0.15 + 0.85 * smoothstep(0.1, 1.0, _near) + 1.2 * smoothstep(0.0, 0.8, _fall_k())
+
+
+## The Einstein ring's radius, in shadow radii, for the sky; and how much the mesh bends.
+func _sky_te() -> float:
+	return 1.0 + 0.9 * _lens_k()
+
+
+func _mesh_te() -> float:
+	return 1.6 * _lens_k()
+
+
+## Where the hole is on the screen and its shadow's radius, in pixels.
+func _hole_px() -> Vector3:
+	var vp := get_viewport_rect().size
+	return Vector3(_hole_uv.x * vp.x, _hole_uv.y * vp.y, _hole_r * vp.y)
+
+
+## A point on the screen as seen through the lens (the mesh's shader does the same).
+func _lens(q: Vector2, far: float) -> Vector2:
+	var h := _hole_px()
+	var te := _mesh_te()
+	if te <= 0.0:
+		return q
+	var d := (q - Vector2(h.x, h.y)) / h.z
+	var b := d.length() + 0.0001
+	var th := (b + sqrt(b * b + 4.0 * te * te)) * 0.5
+	return Vector2(h.x, h.y) + d / b * lerpf(b, th, smoothstep(0.2, 0.7, far)) * h.z
 
 
 func _fall_k() -> float:
@@ -337,22 +383,36 @@ func _update_mesh() -> void:
 	var cam := Vector2(_well.x * 0.6, _dist - CAM_BACK)
 	var vp := get_viewport_rect().size
 	_sky_mat.set_shader_parameter("aspect", vp.x / vp.y)
-	_sky_mat.set_shader_parameter("spin", _t * 0.25)
+	_spin += get_process_delta_time() * (0.25 + 1.2 * _fall_k())   # dragged round faster as you fall
+	_sky_mat.set_shader_parameter("spin", _spin)
 	# the hole hardly moves: it is that far; the camera's sway shifts it only a touch
 	var fk := _fall_k()
-	var grow := pow(fk, 2.4)
-	var radius := 0.2 + 0.14 * _near + 2.6 * grow
+	var grow := pow(fk, 3.0)
+	var radius := 0.2 + 0.14 * _near + 0.25 * smoothstep(0.0, 0.6, fk) + 2.6 * grow
 	_sky_mat.set_shader_parameter("radius", radius)
 	var at := Vector2(0.5 - cam.x * 0.004, HORIZON - 0.55 * (0.2 + 0.14 * _near))
-	_sky_mat.set_shader_parameter("center", at.lerp(Vector2(0.5, 0.5), smoothstep(0.0, 0.7, fk)))
+	_hole_uv = at.lerp(Vector2(0.5, 0.5), smoothstep(0.0, 0.7, fk))
+	_hole_r = radius
+	_sky_mat.set_shader_parameter("center", _hole_uv)
 	var inside := 0.0
 	if _through >= 0.0:
 		inside = smoothstep(0.0, 2.5, _through)
 	_sky_mat.set_shader_parameter("inside", inside)
 	_sky_mat.set_shader_parameter("fall", fk)
+	_sky_mat.set_shader_parameter("te", _sky_te())
+	var hole := _hole_px()
+	_mat.set_shader_parameter("hole_px", Vector2(hole.x, hole.y))
+	_mat.set_shader_parameter("hole_r_px", hole.z)
+	_mat.set_shader_parameter("mesh_te", _mesh_te())
+	# the theme muffles and fades as you fall in, as if its sound stretched away
+	Music.muffle = lerpf(20000.0, 500.0, pow(smoothstep(0.1, 0.9, fk), 0.6))
+	var bus := AudioServer.get_bus_index(Music.TRACK_BUS)
+	if bus != -1:
+		AudioServer.set_bus_volume_db(bus, lerpf(0.0, -14.0, smoothstep(0.3, 1.0, fk)) if _through < 0.0
+			else lerpf(-14.0, -4.0, smoothstep(0.0, 6.0, _through)))
 	_sky_mat.set_shader_parameter("travel", maxf(_through, 0.0))
 	_sky_mat.set_shader_parameter("white", smoothstep(THROUGH - 4.0, THROUGH, _through) if _through >= 0.0 else 0.0)
-	_grid.modulate.a = 1.0 - smoothstep(0.25, 0.75, fk)
+	_grid.modulate.a = 1.0 - smoothstep(0.45, 0.85, fk)
 	_mat.set_shader_parameter("pull", _pull_k())
 	_mat.set_shader_parameter("origin", Vector2(snappedf(cam.x, STEP), floorf((cam.y + NEAR) / STEP) * STEP))
 	_mat.set_shader_parameter("cam", cam)
@@ -379,14 +439,15 @@ func _draw_path() -> void:
 		var p := _line(d)
 		var q := _project(p.x, p.y, _height(p) + 0.02)
 		if q.z > 0.0:
+			var at := _lens(Vector2(q.x, q.y), clampf((d - (_dist - CAM_BACK)) / FAR, 0.0, 1.0))
 			if d <= _dist:
-				pts_lit.append(Vector2(q.x, q.y))
+				pts_lit.append(at)
 			else:
 				if pts_ahead.is_empty() and not pts_lit.is_empty():
 					pts_ahead.append(pts_lit[pts_lit.size() - 1])
-				pts_ahead.append(Vector2(q.x, q.y))
+				pts_ahead.append(at)
 		d += 0.25
-	var show := 1.0 - smoothstep(0.2, 0.6, _fall_k())
+	var show := 1.0 - smoothstep(0.35, 0.7, _fall_k())
 	if pts_ahead.size() > 1:
 		_top.draw_polyline(pts_ahead, Color(LINE, 0.55 * show), 1.5, true)
 	if pts_lit.size() > 1:

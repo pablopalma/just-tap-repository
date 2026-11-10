@@ -16,6 +16,11 @@ uniform vec2 screen;
 uniform float horizon = 0.16;
 uniform float far_span = 52.0;
 uniform float pull = 7.0;    // the black hole's pull: far off, the floor sinks away towards it
+// The hole's lens on the screen: a vertex seen through it moves out from the hole's centre to the
+// outer image of a point lens, (b + sqrt(b*b + 4 te*te)) / 2. te 0: no bending.
+uniform vec2 hole_px;
+uniform float hole_r_px = 100.0;
+uniform float mesh_te = 0.0;
 uniform vec4 ink : source_color;
 uniform vec4 blue : source_color;
 
@@ -44,6 +49,14 @@ void vertex() {
 	float dz = max(p.y - cam.y, 0.5);
 	float s = focal * (screen.y / 720.0) / dz;
 	VERTEX = vec2(screen.x * 0.5 + (p.x - cam.x) * s, screen.y * horizon + (cam_h - h) * s);
+	if (mesh_te > 0.0) {
+		vec2 d = (VERTEX - hole_px) / hole_r_px;
+		float b = length(d) + 0.0001;
+		// only what is far off, behind the hole's plane, is seen through it
+		float behind = smoothstep(0.2, 0.7, clamp((p.y - cam.y) / far_span, 0.0, 1.0));
+		float th = (b + sqrt(b * b + 4.0 * mesh_te * mesh_te)) * 0.5;
+		VERTEX = hole_px + d / b * mix(b, th, behind) * hole_r_px;
+	}
 	sink = clamp(-h / depth, 0.0, 1.0);
 	far_k = clamp((p.y - cam.y) / far_span, 0.0, 1.0);
 }

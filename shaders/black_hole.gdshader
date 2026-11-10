@@ -14,6 +14,10 @@ uniform vec4 warm : source_color = vec4(0.89, 0.71, 0.35, 1.0);
 uniform float spin = 0.0;               // the gas's turn so far (time)
 // The way through (tools/spacetime.gd's cinematic): inside the hole, the light of every star it
 // swallowed streams past, outwards from the centre ahead, twisting; a white light grows there at the end.
+// Gravitational lensing: light from behind the hole bends round it. A point of the sky seen at
+// distance r (shadow radii) from the centre comes from r - te*te/r: stars and the galaxy's band stretch
+// into arcs round the hole, and an Einstein ring of te gathers their light. It grows as you come near.
+uniform float te = 1.2;                 // the Einstein ring's radius, in shadow radii
 uniform float fall = 0.0;               // the fall into it (0..1): the disk sweeps past and is gone
 uniform float inside = 0.0;             // 0 the sky as above, 1 the way through
 uniform float travel = 0.0;             // seconds inside
@@ -36,32 +40,76 @@ float gas(float r, float ang) {
 	return 0.55 + 0.45 * noise(vec2(a * 6.0, r * 9.0)) * (0.6 + 0.4 * noise(vec2(a * 17.0, r * 31.0)));
 }
 
-// Inside: streaks of light in a tunnel. Each angle cell is a star's trail; the depth coordinate
-// (1/r) runs on with travel, so the dashes rush outwards, faster and longer near the edges.
+// Inside (12/11/2026, after the player's references): dark and quiet, deep teal. Walls of smeared,
+// dim light turn round the way through; a few thin star trails rush out; now and then a small nebula
+// drifts past in colour; and ahead a sphere of bent space, like a glass ball, holds a whole starfield
+// turned round inside it, with a bright rim.
+float stars(vec2 p, float density) {
+	vec2 c = floor(p);
+	float h = hash(c);
+	vec2 f = fract(p) - 0.5 - (vec2(hash(c + 3.1), hash(c + 7.7)) - 0.5) * 0.6;
+	return step(1.0 - density, h) * smoothstep(0.12, 0.0, length(f)) * (0.4 + 0.6 * hash(c + 1.3));
+}
+
+float wall(float wa, float z) {
+	return noise(vec2(wa * 9.0, z * 0.35)) * noise(vec2(wa * 23.0 + 4.0, z * 0.9));
+}
+
 vec3 tunnel(vec2 uv) {
 	vec2 d = vec2((uv.x - 0.5) * aspect, uv.y - 0.5);
 	float r = length(d) + 0.0001;
-	float speed = 1.6 + travel * 0.18;
-	float z = 0.35 / r + travel * speed;
-	float a = atan(d.y, d.x) / 6.28318 + 0.5 + 0.025 / (r + 0.15) + travel * 0.01;   // a slight twist
-	vec3 col = vec3(0.0);
-	for (int layer = 0; layer < 3; layer++) {
-		float cells = 140.0 + 90.0 * float(layer);
+	float a = atan(d.y, d.x) / 6.28318 + 0.5;
+	float z = 0.3 / r + travel * (1.1 + travel * 0.05);    // depth: what is at the edges rushes past
+	vec3 deep = vec3(0.012, 0.03, 0.035);
+	vec3 col = deep;
+	// the walls: long smears of dim light along the way, turning slowly
+	float wa = fract(a + travel * 0.015 + 0.04 / (r + 0.2));
+	// blended across the wrap of the angle, so there is no seam where it comes round
+	float smear = mix(wall(wa, z), wall(wa - 1.0, z), smoothstep(0.85, 1.0, wa));
+	smear = smoothstep(0.25, 0.75, smear) * smoothstep(0.15, 0.55, r);
+	col += mix(vec3(0.16, 0.26, 0.27), vec3(0.75, 0.68, 0.55), smoothstep(0.55, 0.95, smear)) * smear * 0.55;
+	// thin star trails, few, rushing outwards
+	for (int layer = 0; layer < 2; layer++) {
+		float cells = 220.0 + 160.0 * float(layer);
 		float cell = mod(floor(a * cells), cells);
-		float h = hash(vec2(cell, float(layer) * 7.3));
-		float lane = fract(a * cells) - 0.5;
-		float thin = smoothstep(0.5, 0.0, abs(lane));
-		float along = fract(z * (0.5 + 0.4 * h) + h * 13.0);
-		float dash = smoothstep(0.0, 0.03, along) * smoothstep(0.22 + 0.25 * h, 0.03, along);
-		float on = step(0.35, h);
-		vec3 c = mix(vec3(0.75, 0.85, 1.0), hot.rgb, step(0.7, hash(vec2(cell, 3.1 + float(layer)))));
-		col += c * dash * thin * thin * on * (0.5 + 0.5 * h) * smoothstep(0.02, 0.35, r);
+		float h = hash(vec2(cell, 11.0 + float(layer)));
+		float lane = abs(fract(a * cells) - 0.5);
+		float along = fract(z * (0.6 + 0.5 * h) + h * 17.0);
+		float dash = smoothstep(0.0, 0.02, along) * smoothstep(0.12, 0.02, along);
+		float on = step(0.82, h);
+		vec3 c = mix(vec3(0.6, 0.85, 0.85), vec3(1.0, 0.9, 0.75), step(0.5, hash(vec2(cell, 2.0))));
+		col += c * dash * smoothstep(0.35, 0.0, lane) * on * smoothstep(0.08, 0.4, r) * 0.9;
 	}
-	// bands of the disk's light the hole bent round, rushing past as rings
-	float ring = pow(0.5 + 0.5 * sin(z * 2.2), 8.0);
-	col += warm.rgb * ring * 0.35 * smoothstep(0.05, 0.5, r);
-	// the light ahead, at the centre
-	col += hot.rgb * (exp(-r * 9.0) * (0.6 + 2.5 * white) + exp(-r * 2.5) * 0.12);
+	// still, far stars between them
+	col += vec3(0.75, 0.82, 0.85) * stars(vec2(a * 260.0, z * 3.0), 0.04) * 0.6 * smoothstep(0.1, 0.3, r);
+	// a nebula drifting past now and then: a soft cloud of colour on its way out
+	for (int k = 0; k < 3; k++) {
+		float fk = float(k);
+		float life = fract(travel * 0.09 + fk * 0.37);
+		float ang = 6.28318 * hash(vec2(floor(travel * 0.09 + fk * 0.37), fk));
+		vec2 at = vec2(cos(ang), sin(ang)) * mix(0.05, 1.1, life * life);
+		float size = mix(0.02, 0.22, life);
+		vec2 e = (d - at) / size;
+		float cloud = exp(-dot(e, e) * 1.5) * (0.5 + 0.5 * noise(e * 3.0 + fk));
+		vec3 tint = mix(vec3(0.85, 0.42, 0.3), vec3(0.35, 0.5, 0.85), hash(vec2(fk, 5.0)));
+		col += tint * cloud * 0.5 * smoothstep(0.0, 0.2, life) * (1.0 - smoothstep(0.75, 1.0, life));
+	}
+	// ahead: the sphere of bent space, a starfield turned round inside it
+	float R = 0.1 + 0.06 * smoothstep(0.0, 14.0, travel);
+	if (r < R) {
+		vec2 in_p = d / R;
+		float k = sqrt(max(1.0 - dot(in_p, in_p), 0.0));
+		vec2 bent = -in_p / (k + 0.35) * 2.2 + travel * 0.05;     // seen through it, upside down
+		vec3 inside_col = vec3(0.03, 0.06, 0.07) + vec3(0.95, 0.92, 0.85) * stars(bent * 14.0, 0.2) * 1.4;
+		inside_col += vec3(0.55, 0.45, 0.4) * noise(bent * 2.0 + 3.0) * 0.18;             // a nebula far inside
+		inside_col += vec3(0.5, 0.6, 0.62) * smoothstep(0.55, 1.0, 1.0 - k) * 0.3;
+		col = mix(col, inside_col, smoothstep(R, R * 0.96, r));
+	}
+	// its rim: a thin glint, catching the light only here and there
+	float glint = smoothstep(0.45, 0.9, noise(vec2(a * 14.0 + travel * 0.2, 2.0)));
+	col += vec3(0.75, 0.88, 0.88) * exp(-pow((r - R) * 320.0, 2.0)) * (0.12 + 0.6 * glint);
+	// the white light ahead, at the very end
+	col += hot.rgb * exp(-r * 7.0) * 2.5 * white;
 	return col;
 }
 
@@ -74,13 +122,25 @@ void fragment() {
 	vec2 q = vec2((UV.x - center.x) * aspect, UV.y - center.y) / radius;   // in shadow radii, y down
 	float r = length(q);
 	vec3 col = space.rgb;
-	// stars, a few, twinkling faintly
-	vec2 cell = floor(UV * vec2(aspect, 1.0) * 140.0);
+	// where this point's light really comes from (the lens), and how much brighter it is for it
+	vec2 s = q * (1.0 - te * te / max(r * r, 0.0001));
+	vec2 src = center + vec2(s.x * radius / aspect, s.y * radius);
+	float mag = clamp(1.0 / max(abs(1.0 - pow(te / max(r, 0.0001), 4.0)), 0.001), 1.0, 5.0);
+	// stars, a few, twinkling faintly (drawn where their light comes from: near the ring, arcs)
+	vec2 cell = floor(src * vec2(aspect, 1.0) * 140.0);
 	float st = hash(cell);
 	if (st > 0.985) {
-		vec2 f = fract(UV * vec2(aspect, 1.0) * 140.0) - 0.5;
-		col += vec3(0.8, 0.85, 1.0) * smoothstep(0.25, 0.0, length(f)) * (st - 0.985) * 50.0;
+		vec2 f = fract(src * vec2(aspect, 1.0) * 140.0) - 0.5;
+		col += vec3(0.8, 0.85, 1.0) * smoothstep(0.25, 0.0, length(f)) * (st - 0.985) * 50.0 * mag;
 	}
+	// the galaxy's band, far behind: a faint dusty river of light across the sky, bent by the hole
+	vec2 g = (src - vec2(0.5, 0.1)) * vec2(aspect, 1.0);   // it passes just above the hole: arcs, not a full ring
+	float across = dot(g, normalize(vec2(-0.35, 1.0)));
+	float dust = noise(src * vec2(aspect, 1.0) * 7.0) * 0.6 + noise(src * vec2(aspect, 1.0) * 23.0) * 0.4;
+	float galaxy = exp(-across * across / 0.018) * (0.35 + 0.65 * dust);
+	col += mix(vec3(0.35, 0.42, 0.65), vec3(0.8, 0.68, 0.58), dust) * galaxy * 0.09 * min(mag, 2.5);
+	// the Einstein ring itself: a thin gathering of all that light
+	col += vec3(0.85, 0.88, 1.0) * exp(-pow((r - te) * 14.0, 2.0)) * 0.22 * smoothstep(1.05, 1.4, te);
 	// a wide soft glow of the hole's light on the space around it
 	col += warm.rgb * 0.18 * exp(-max(r - 1.0, 0.0) * 0.55);
 	// the far side of the disk, bent over the top of the shadow (and a thinner image under it)
