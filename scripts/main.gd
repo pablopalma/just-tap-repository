@@ -94,6 +94,14 @@ var warmup: Warmup
 var prologue: Prologue
 ## Every barrier a musical phrase (BuildFlags.PHRASES).
 var phrase_line: PhraseLine
+## The black hole's chapter (Estrella): its view covers the world while its barriers are played, the
+## hole drawing nearer with each one; breaking the last, the fall (scripts/world/spacetime_view.gd).
+const HOLE_ZONE := 10
+const HOLE_LAYER := 3       # over the world, under the colour waves, the dive and the HUD
+const HOLE_FADE := 2.5
+var hole: SpacetimeView
+var _hole_fall := false
+var _hole_colour := -1      # the colour that comes back at the chapter's end waits for the white
 const NOW_START := 1.6  # seconds of bars and silence before the first hit
 var depth: DepthBackground
 var bird: GiantBird
@@ -218,7 +226,9 @@ func _build() -> void:
 				warmup.lesson_done(phrase_line._hits >= phrase_line._need))
 		phrase_line.note_played.connect(func(deg: int) -> void:
 			cymatics.note(deg)
-			paint_trail.bloom())
+			paint_trail.bloom()
+			if hole:
+				hole.tap(true))
 	spark.tip = tip
 	spark.visible = false
 	spark.landed.connect(_on_spark_landed)
@@ -368,6 +378,8 @@ func _press() -> void:
 	elif warmup:
 		warmup.tap()
 	elif phrase_line and phrase_line.active:
+		if hole:
+			hole.tap(false)   # a note caught makes it a strong one (note_played)
 		phrase_line.tap()
 	elif BuildFlags.PHRASES:
 		return   # between phrases (a cinematic, the dive): taps wait
@@ -616,7 +628,8 @@ func _process(delta: float) -> void:
 			and (warmup == null or warmup.phase == 1) and prologue == null and _pano <= 0.0
 		phrase_line.lesson = warmup != null and warmup.phase == 1
 		phrase_line.owns_air = warmup == null and prologue == null and not BuildFlags.is_dark(GameState.stage) \
-			and not GameState.finished
+			and not GameState.finished and not _hole_fall   # falling in, the hole has the theme
+	_tend_hole(delta)
 	inline_tree.active = not BuildFlags.PHRASES and tree_inline and GameState.running and not GameState.finished \
 		and mode == Mode.PLAY and not _cine and not _now and _pano <= 0.0 and not droste.is_playing() \
 		and not _story
@@ -803,6 +816,76 @@ func _on_story_done(_told: bool, z: int) -> void:
 	_after_zone(z)
 
 
+# --- The black hole (chapter 10) ---------------------------------------------
+
+## The hole's view comes in once the dive into its chapter is over and goes when the game leaves it
+## (a jump); while it is there the hole draws nearer with the chapter's barriers and their notes.
+func _tend_hole(delta: float) -> void:
+	if _hole_fall:
+		return
+	var want: bool = Zones.of(GameState.stage) == HOLE_ZONE and GameState.running and not GameState.finished 		and not droste.is_playing() and mode != Mode.INTRO
+	if want and hole == null:
+		hole = SpacetimeView.new()
+		hole.sky_layer = HOLE_LAYER
+		hole.shown = 0.0
+		hole.near_to = _hole_near()
+		hole.through_done.connect(_on_hole_through)
+		if phrase_line:
+			hole.notes = phrase_line.upcoming
+			phrase_line.voice = hole.play
+		add_child(hole)
+	if hole == null:
+		return
+	hole.shown = move_toward(hole.shown, 1.0 if want else 0.0, delta / HOLE_FADE)
+	if want:
+		hole.near_to = _hole_near()
+	elif hole.shown <= 0.0:
+		_drop_hole()
+
+
+## How near the hole is: the chapter's barriers broken, and the notes of this one's phrase.
+func _hole_near() -> float:
+	var k := float(GameState.stage - (HOLE_ZONE - 1) * 10 - 1)
+	if phrase_line and phrase_line._need > 0 and phrase_line._stage == GameState.stage:
+		k += float(phrase_line._hits) / phrase_line._need
+	return 0.97 * clampf(k / 10.0, 0.0, 1.0)
+
+
+## The chapter's last barrier broken: the fall. The game waits; the voice and the HUD step back.
+func _fall_into_hole() -> void:
+	_hole_fall = true
+	GameState.cinematic = true
+	hole.shown = 1.0
+	hole.near_to = maxf(hole.near_to, 0.97)
+	hole.begin_fall()
+	create_tween().tween_property(hud, "modulate:a", 0.0, 2.0)
+
+
+## Through the hole, into the white: the white stays a moment over the world, and the chapter's end
+## goes on (the dive into Alba).
+func _on_hole_through() -> void:
+	_flash(1.0, 3.5)
+	_drop_hole()
+	_hole_fall = false
+	GameState.cinematic = false
+	create_tween().tween_property(hud, "modulate:a", 1.0, 2.0).set_delay(2.0)
+	_after_zone(HOLE_ZONE)
+	if _hole_colour >= 0:
+		var idx := _hole_colour
+		_hole_colour = -1
+		get_tree().create_timer(2.5).timeout.connect(func() -> void:
+			_event_center = tip.position
+			_on_chapter_unlocked(idx))
+
+
+func _drop_hole() -> void:
+	if phrase_line:
+		phrase_line.voice = Callable()
+	if hole:
+		hole.queue_free()
+		hole = null
+
+
 ## Debug builds only: what this zone's end is still missing (Zones.PENDING), over its last barrier.
 func _mark_pending(z: int) -> void:
 	if not OS.is_debug_build() or not cinematics_enabled or not Zones.PENDING.has(z):
@@ -929,10 +1012,15 @@ func _on_gate_broken(n: int) -> void:
 			Palette.chapter_color(Palette.chapter_of(n)).darkened(0.2), 20, 1.8)
 	hud.pulse()
 	landscape.build_piece(n)
+	if hole and Zones.of(n) == HOLE_ZONE:
+		hole.tap(true)
 
 
 ## The camera pulls back to take in the zone's ten barriers.
 func _on_zone_completed(z: int) -> void:
+	if z == HOLE_ZONE and hole and cinematics_enabled:
+		_fall_into_hole()
+		return
 	if z == STORY_AFTER_ZONE and cinematics_enabled and not GameState.cinemas.has(STORY_KEY):
 		_offer_story(z)
 		return
@@ -969,6 +1057,9 @@ func _after_zone(z: int) -> void:
 
 
 func _on_chapter_unlocked(idx: int) -> void:
+	if _hole_fall:
+		_hole_colour = idx
+		return
 	var col := Palette.chapter_color(idx)
 	zone_title.show_title(Loc.t("colour_back"), Loc.chapter_name(idx), col.darkened(0.1))
 	washes.bloom(_event_center, col, 1400.0)
@@ -1122,6 +1213,11 @@ func _set_tree_inline(on: bool) -> void:
 func _dev_jump(n: int) -> void:
 	if intro != null:
 		_start()
+	if _hole_fall:
+		_hole_fall = false
+		GameState.cinematic = false
+	_hole_colour = -1
+	_drop_hole()
 	_stop_cinematic(true)
 	if prologue:   # jumping somewhere skips the prologue and the warm-up
 		prologue.queue_free()

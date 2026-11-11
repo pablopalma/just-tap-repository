@@ -4,7 +4,7 @@ extends Node
 ## is: its name, colour chapter, direction, theme and tempo. At the last one, the ending must start.
 ## godot --headless --path . --fixed-fps 30 res://tools/skeleton_test.tscn
 
-const WAIT := 40.0   # seconds of game time for each zone's end
+const WAIT := 80.0   # seconds of game time for each zone's end (the black hole's fall takes about 40)
 
 var _main: Node
 var _z := 0

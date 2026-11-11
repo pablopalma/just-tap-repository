@@ -101,6 +101,9 @@ var active := false
 ## Main says when the theme is its to open (not under the prologue or the warm-up, not in the dark).
 var owns_air := false
 
+## Optional: the notes sound through this voice, (midi, db), instead of the theme's instruments (the
+## black hole's chapter, SpacetimeView.play).
+var voice: Callable
 var _stage := -1
 var _phrase: Array = []
 var _start := 0.0           # beat the current pass starts on
@@ -383,6 +386,13 @@ func _play_note(i: int, n: Array) -> void:
 	var midi := Music.chord_note(deg, Music.tonic() + 12) + shift
 	while midi > Music.BRIGHT_CEILING:
 		midi -= 12
+	if voice.is_valid():
+		midi = Music.chord_note(deg, Music.tonic())
+		voice.call(midi, -15.0 if on_bar else -17.0)
+		_hold_midi = midi
+		_hold_ring = 0.0
+		note_played.emit(deg)
+		return
 	Music._schedule(Music._time, "note", inst, midi, 0.1 * gain)
 	if n[1] == "h" or on_bar:
 		Music._schedule(Music._time, "note", "harp", Music.chord_note(deg - 2, Music.tonic()), 0.045)
@@ -398,6 +408,9 @@ func _sustain(delta: float) -> void:
 	if _hold_ring >= every:
 		_hold_ring -= every
 		var odd := int(_t / every) % 2 == 1
+		if voice.is_valid():
+			voice.call(_hold_midi + (12 if odd else 0), -24.0)
+			return
 		Music._schedule(Music._time, "note", "glass" if odd else "celesta", _hold_midi + (12 if odd else 0), 0.05)
 
 
@@ -416,6 +429,28 @@ func _open_song(delta: float) -> void:
 	var lp := AudioServer.get_bus_effect(bus, 0) as AudioEffectLowPassFilter
 	if lp:
 		lp.cutoff_hz = exp(lerpf(log(maxf(lp.cutoff_hz, 1.0)), log(cut), a))
+
+
+## The notes on their way, for a view that draws them its own way (SpacetimeView): {ahead (beats from
+## now), len (beats a long note is held, 0 a short one), state (0 coming, 1 missed, 2 held)}.
+func upcoming() -> Array:
+	var out: Array = []
+	if not active:
+		return out
+	var now := _now()
+	var m := _m()
+	for pass_from in [_start, _start + _length()]:
+		for n in _notes(pass_from):
+			var ahead: float = n[0] - now
+			if ahead > m.ahead + 1.0 or ahead < -0.5:
+				continue
+			var caught: Variant = _caught.get(n[0], null) if pass_from == _start else null
+			var held: bool = n[1] == "h" and _holding >= 0.0 and absf(_holding - n[0]) < 0.01
+			if caught == true and not held:
+				continue
+			out.append({"ahead": ahead, "len": _held_len(n) if n[1] == "h" else 0.0,
+				"state": 2 if held else (1 if caught == false else 0)})
+	return out
 
 
 ## A point `d` px back along the line from the tip (and straight on below the line's start).

@@ -119,7 +119,7 @@ Colores: gris (1–2), rojo (3–4), verde (5–6), azul (7–8), **tinta** (9),
 | 7 | **Bosque** | 61–70 | azul · luz | tristeza | **la marea**: líneas que ondulan y respiran 📝 | tema azul 💡 | la marea baja y deja ver algo enterrado 💡 | la tristeza viene en olas |
 | 8 | **Cielo** | 71–80 | azul · luz | soltar | barreras que se disuelven si las dejas 📝; **la malla del espacio-tiempo** que se hunde bajo el peso de la luz, sin agujero, bajo el cielo azul 🧪 | tema azul (reutilizado) | **soltar**: la barrera que solo cae si no la tocas 📝 | no todo se pelea; se respira |
 | 9 | **Noche** | 81–90 | **tinta · oscuro** | miedo, quiebre | grietas, apagón, la sombra 📝 | *Light After the Dark* (variación) | **el ave sanada** vuelve a volar en dorado 📝 + **historia 3** 💡 | caerse está permitido; lo roto también guarda luz |
-| 10 | **Estrella** | 91–100 | noche estrellada → oro · **oscuro lindo** | rendirse a la luz | **el agujero negro**: la malla con un agujero colosal que se acerca 🧪; **la espiral hacia abajo**, tramo de ritmo 🧪 | *Before the Vastness* ✅ | **la caída al agujero** hasta la luz blanca 🧪, donde **el ave de estrellas despierta** y te lleva 💡 | dejarse llevar |
+| 10 | **Estrella** | 91–100 | noche estrellada → oro · **oscuro lindo** | rendirse a la luz | **el agujero negro**: la malla con un agujero colosal que se acerca ✅; **la espiral hacia abajo**, tramo de ritmo 🧪 | *Before the Vastness* ✅ | **la caída al agujero** hasta la luz blanca ✅, donde **el ave de estrellas despierta** y te lleva 💡 | dejarse llevar |
 | 11 | **Alba** | 101–110 | amarillo · luz | renacer | **los saltos**: subir de barrera en barrera tocando en el pulso 💡; líneas espejadas, al revés 💡 | tema final (primera parte) | el sol sale 💡 + **historia 4** 💡 | levantarse otra vez |
 | 12 | **Luz** | 111–120 | amarillo · luz | calidez, volver a casa | **la convergencia**: todas las formas juntas 💡; el coloso (120) 📝 | tema final 💡 + la carta ✅ | **el puntito vuelve al Padre**, al todo 💡 | estás en casa |
 
@@ -134,7 +134,8 @@ Los dos son la misma familia de experiencia: la luz se mueve sola con la música
   - **Desenlace (7–9):** la espiral hacia abajo, ya cayendo. Cada nota acertada dibuja el ave de estrellas.
   - **Barrera 100:** la caída al agujero, con el temblor y las estrellas pasando, hasta la luz blanca. Adentro, entre las estelas, el ave de estrellas despierta y te lleva a la luz, de donde sale el alba del capítulo 11.
   - El recorrido de color es el del capítulo: espacio oscuro con estrellas, el disco dorado, el blanco.
-  - Prototipo: `tools/spacetime.tscn` (F1, "El agujero negro").
+  - **En el juego (11/11/2026):** `scripts/world/spacetime_view.gd` (`SpacetimeView`). Al entrar al capítulo 10, la vista cubre el mundo; las frases de cada barrera bajan por la línea de la malla hacia la luz y suenan con la voz espacial del agujero, y cada barrera acerca el agujero un décimo del camino. Al romper la 100, la caída (unos 40 s); la luz blanca deja paso a la zambullida en Alba, y recién ahí vuelve el amarillo. El prototipo de F1 (`tools/spacetime.tscn`) usa la misma vista; `tools/hole_test.tscn` juega el capítulo solo y lo graba.
+  - **Falta:** la espiral en 97–99 (hoy esas barreras siguen sobre la malla), el ave de estrellas adentro, y la duración: con frases de 4–7 notas, el capítulo se pasa en poco más de un minuto si se toca todo bien. El acercamiento debería durar lo que el tema (4 min) o más.
 - **Capítulo 11, Alba: los saltos hacia arriba.** Del fondo de la espiral, la luz sale y sube: un toque a tiempo la impulsa a la barrera siguiente; si no, se frena ahí hasta acertar. De costado, de abajo hacia arriba, en zigzag. Es levantarse. 💡
 
 **Bajar para después subir:** el punto más hondo del viaje queda en el medio, y los dos tramos se responden. Además, como se tocan en el pulso, son de lo más **distinto** del juego: rompen la rutina justo antes del final, cuando más hace falta.
@@ -157,7 +158,7 @@ El brief pide que cada capítulo se sienta como un **"flash" visual y sonoro**: 
 | Bucle | un anillo de segmentos que hay que romper | 📝 | 3 |
 | Líneas que ondulan | la línea fluye como agua, con la marea | 📝 | 7 |
 | **Malla del espacio-tiempo** | una malla se hunde bajo el "peso" de la luz al pasar (solo visual) | 🧪 | 8 |
-| **Agujero negro** | la malla con un agujero colosal que se acerca, su lente y la caída hasta la luz blanca | 🧪 | 10 |
+| **Agujero negro** | la malla con un agujero colosal que se acerca, su lente y la caída hasta la luz blanca | ✅ | 10 |
 | Grietas, apagón, la sombra | partes oscuras para trabajar lo interno | 📝 | 9 |
 | Espiral hacia abajo | un pozo con escalera caracol hacia la luz | 🧪 | 10 |
 | **Saltos (subida)** | un toque a tiempo impulsa la luz a la barrera siguiente | 💡 | 11 |
@@ -297,7 +298,7 @@ Fuentes: [Benchmarks](https://howtomarketagame.com/benchmarks/) · [El plan de 1
 ## 12. Próximos pasos sugeridos
 
 0. ~~Armar el esqueleto de los 12 capítulos~~ ✅ (11/11/2026, §3).
-1. Llevar el capítulo 10 (el agujero negro y la espiral) del prototipo al juego.
+1. ~~Llevar el agujero negro del capítulo 10 al juego~~ ✅ (11/11/2026, §6). Falta la espiral en 97–99, el ave de estrellas y alargar el capítulo.
 2. Diseñar la forma de cada capítulo que falta (bucle, marea, malla, grietas, saltos, convergencia) y prototipar las nuevas como se hizo con la espiral.
 3. Activar la oscuridad 41–45 en el juego completo.
 4. Pedir los 3 temas nuevos (verde, azul, final) con prompts como los de la demo.
