@@ -26,7 +26,6 @@ const PENDING := {
 	7: "la marea baja y deja ver algo enterrado",
 	8: "soltar: la barrera que solo cae si no la tocas",
 	9: "el ave sanada vuelve a volar · historia 3",
-	10: "el ave de estrellas te lleva a la luz · la espiral (97–99)",
 	11: "el sol sale · historia 4",
 	12: "el puntito vuelve al Padre",
 }

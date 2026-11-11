@@ -48,6 +48,28 @@ const SETS := {
 		[[0.5, "n"], [0.5, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "n"], [1, "n"], [1, "r"]],
 		[[1, "n"], [1, "n"], [0.5, "n"], [0.5, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "r"]],
 	],
+	# The black hole (Estrella, 11/11/2026): long, slow phrases over Before the Vastness, so the
+	# approach lasts about the theme (four bars each at first, five, then six in the spiral): long
+	# notes held like breaths, runs of beats between them.
+	10: [
+		[[2, "h"], [1, "n"], [1, "n"], [2, "h"], [2, "r"], [1, "n"], [1, "n"], [2, "h"], [4, "h"]],
+		[[1, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "r"], [1, "n"], [1, "n"], [4, "h"]],
+		[[2, "h"], [2, "h"], [1, "n"], [0.5, "n"], [0.5, "n"], [2, "h"], [1, "n"], [1, "n"], [1, "n"], [1, "r"], [4, "h"]],
+		[[1, "n"], [1, "r"], [1, "n"], [1, "n"], [2, "h"], [2, "r"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [2, "h"],
+			[2, "h"]],
+		[[2, "h"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [2, "h"], [1, "n"], [0.5, "n"], [0.5, "n"], [2, "h"], [2, "h"],
+			[1, "n"], [1, "r"], [4, "h"]],
+		[[1, "n"], [1, "n"], [1, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "n"], [4, "h"], [1, "n"], [1, "r"], [1, "n"],
+			[1, "n"], [4, "h"]],
+		[[1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "n"], [1, "n"], [1, "n"],
+			[1, "n"], [1, "n"], [2, "h"], [4, "h"]],
+		[[1, "n"], [0.5, "n"], [0.5, "n"], [2, "h"], [1, "n"], [0.5, "n"], [0.5, "n"], [2, "h"], [1, "n"], [1, "n"],
+			[1, "n"], [1, "n"], [2, "h"], [2, "r"], [1, "n"], [0.5, "n"], [0.5, "n"], [1, "n"], [1, "n"], [4, "h"]],
+		[[1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [2, "h"], [2, "h"], [1, "n"],
+			[0.5, "n"], [0.5, "n"], [1, "n"], [1, "n"], [2, "h"], [2, "r"], [4, "h"]],
+		[[2, "h"], [1, "n"], [1, "n"], [2, "h"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [1, "n"], [0.5, "n"],
+			[0.5, "n"], [1, "n"], [1, "n"], [1, "n"], [2, "h"], [2, "h"], [4, "h"]],
+	],
 }
 ## The arrangement written for each phrase of SETS, note by note (rests left out), in degrees of the
 ## theme's pentatonic counted up from its tonic an octave up: 5 per octave, 0 the tonic, 2 the third,
@@ -153,8 +175,7 @@ func _set_phrase() -> void:
 	_stage = GameState.stage
 	_was_lesson = lesson
 	_passes = 0
-	var zone := clampi(Zones.of(_stage), 1, SETS.size())
-	var set: Array = SETS[zone]
+	var set: Array = SETS.get(Zones.of(_stage), SETS[2])   # zones with none of their own play zone 2's
 	_phrase = LESSON if lesson else set[(_stage - 1) % set.size()]
 	_misses = 0
 	_hits = 0   # each barrier starts its own count

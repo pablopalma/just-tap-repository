@@ -74,6 +74,10 @@ var shown := 1.0
 ## 1 missed, 2 held)}.
 var notes: Callable
 var near_to := 0.0
+## The orbit (barriers 97–100): 1 turns the view to look down the spiral well into the hole
+## (SpiralWell, on a layer of its own over the mesh); `spiral_depth` 0..1 how far down it.
+var spiral := 0.0
+var spiral_depth := 0.0
 var _t := 0.0
 var _dist := 0.0            # how far along its line the light is
 var _surge := 0.0
@@ -87,6 +91,9 @@ var _hit := 0.0             # a note caught: its ring at the light, easing out
 var _done := false
 var _fg: CanvasLayer
 var _root: Node2D
+var _well_layer: CanvasLayer
+var _spiral_well: SpiralWell
+var _spiral_k := 0.0
 var _fall := -1.0           # seconds into the fall, -1 before it
 var _through := -1.0        # seconds inside, -1 before
 var _voice: AudioStreamWAV
@@ -114,6 +121,11 @@ func _ready() -> void:
 	_build_sky()
 	_build_mesh()
 	_build_voice()
+	_well_layer = CanvasLayer.new()
+	_well_layer.layer = sky_layer + 2
+	add_child(_well_layer)
+	_spiral_well = SpiralWell.new()
+	_well_layer.add_child(_spiral_well)
 	get_viewport().msaa_2d = Viewport.MSAA_4X   # the mesh's lines are one pixel wide
 
 
@@ -121,6 +133,26 @@ func _ready() -> void:
 func set_near(k: float) -> void:
 	near_to = k
 	_near = k
+
+
+## The spiral well over the mesh: in as the orbit begins; in the fall the well goes and its bird, whole
+## (or as whole as it got), flies down into the hole and carries the light through the inside.
+func _tend_well(delta: float) -> void:
+	_spiral_k = move_toward(_spiral_k, spiral, delta / 2.5)
+	_spiral_well.notes = notes
+	_spiral_well.depth = spiral_depth
+	var fk := _fall_k()
+	# the well stays until the sky's hole has come to the middle and grown over it, so the fall goes
+	# on from the hole at the bottom of the well, not back to the disk
+	_spiral_well.shown = _spiral_k * shown * (1.0 - smoothstep(0.5, 0.8, fk))
+	var bird := _spiral_k * shown
+	if _fall >= 0.0:
+		_spiral_well.fall = smoothstep(0.0, 0.5, fk)
+		bird = maxf(bird, _spiral_well.bird_done())   # the bird whole by now, if you lit most of it
+	if _through >= 0.0:
+		_spiral_well.carry = clampf(_through / THROUGH, 0.0, 1.0)
+		bird *= 1.0 - smoothstep(THROUGH - 3.0, THROUGH, _through)
+	_spiral_well.bird_shown = bird
 
 
 func falling() -> bool:
@@ -145,6 +177,7 @@ func _process(delta: float) -> void:
 		begin_fall()
 	_sky.modulate.a = shown
 	_root.modulate.a = shown
+	_tend_well(delta)
 	if _fall >= 0.0:
 		_fall += delta
 		_surge = 1.0 + 2.0 * _fall_k()   # the light speeds on, drawn in
@@ -302,6 +335,8 @@ func tap(strong: bool) -> void:
 		_weight = 1.0
 		_surge = 1.0
 		_hit = 1.0
+		if _spiral_k > 0.5:
+			_spiral_well.hit()
 		_ripples.append({"at": _line(_dist), "t": 0.0, "k": 1.0})
 	else:
 		_weight = maxf(_weight, 0.35)

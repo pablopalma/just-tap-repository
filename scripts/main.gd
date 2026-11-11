@@ -99,6 +99,7 @@ var phrase_line: PhraseLine
 const HOLE_ZONE := 10
 const HOLE_LAYER := 3       # over the world, under the colour waves, the dive and the HUD
 const HOLE_FADE := 2.5
+const SPIRAL_FROM := 7      # the chapter's 7th barrier on is the orbit, down the spiral well
 var hole: SpacetimeView
 var _hole_fall := false
 var _hole_colour := -1      # the colour that comes back at the chapter's end waits for the white
@@ -839,6 +840,14 @@ func _tend_hole(delta: float) -> void:
 	hole.shown = move_toward(hole.shown, 1.0 if want else 0.0, delta / HOLE_FADE)
 	if want:
 		hole.near_to = _hole_near()
+		# the orbit: the spiral well from SPIRAL_FROM to the chapter's end
+		var into := GameState.stage - (HOLE_ZONE - 1) * 10 - SPIRAL_FROM
+		hole.spiral = 1.0 if into >= 0 else 0.0
+		if into >= 0:
+			var k := float(into)
+			if phrase_line and phrase_line._need > 0 and phrase_line._stage == GameState.stage:
+				k += float(phrase_line._hits) / phrase_line._need
+			hole.spiral_depth = clampf(k / float(11 - SPIRAL_FROM), 0.0, 1.0)
 	elif hole.shown <= 0.0:
 		_drop_hole()
 
