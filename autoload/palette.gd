@@ -16,9 +16,9 @@ const CHAPTERS := [
 ]
 
 
-## Chapter index (0..4) of zone z (1..10).
+## Chapter index (0..4) of zone z (1..Zones.COUNT).
 func chapter_of_zone(z: int) -> int:
-	return clampi(int((z - 1) / 2.0), 0, CHAPTERS.size() - 1)
+	return Zones.CHAPTER[clampi(z, 1, Zones.COUNT) - 1]
 
 
 func chapter_of(n: int) -> int:
@@ -41,9 +41,9 @@ func line_col(n: int) -> Color:
 	return chapter_color(c).darkened(0.08)
 
 
-## Watercolour colour for piece j of zone z. Zone 10 mixes every chapter.
+## Watercolour colour for piece j of zone z. The last zone mixes every chapter.
 func paint_col(z: int, j: int) -> Color:
-	if z >= 10:
+	if z >= Zones.COUNT:
 		return chapter_color(1 + j % 4)
 	var c := chapter_of_zone(z)
 	if c == 0:

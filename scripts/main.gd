@@ -742,11 +742,11 @@ func _base_zoom() -> float:
 
 ## Which way zone z's line runs on screen (radians, the camera's angle). The line does not always
 ## climb: inside the last zone, the next one runs its own way, like thoughts do. 0 is up, -PI/2 to
-## the right, PI/2 to the left, PI down. The dark (zone 5) and the last zone climb again, so the
-## endings look at the city upright.
+## the right, PI/2 to the left, PI down. The dark (zone 5) and the last two climb again, so the
+## endings look at the city upright. Estrella (10) goes down, towards the light at the bottom.
 ## Zone 3 is the spiral (PathData.SPIRAL_ZONE): it turns every way on its own, so it is seen upright.
 const ZONE_ANGLE := {1: 0.0, 2: -PI / 2.0, 3: 0.0, 4: PI / 2.0, 5: 0.0, 6: PI, 7: PI / 4.0,
-	8: -PI / 2.0, 9: -3.0 * PI / 4.0, 10: 0.0}
+	8: -PI / 2.0, 9: -3.0 * PI / 4.0, 10: PI, 11: 0.0, 12: 0.0}
 ## A director (the trailer) keeps the view upright, so its shots stay as they were framed.
 var turn_zones := true
 var _turn_tween: Tween
@@ -801,6 +801,14 @@ func _on_story_done(_told: bool, z: int) -> void:
 	Narrator.hold = false
 	create_tween().tween_property(hud, "modulate:a", 1.0, 1.2)
 	_after_zone(z)
+
+
+## Debug builds only: what this zone's end is still missing (Zones.PENDING), over its last barrier.
+func _mark_pending(z: int) -> void:
+	if not OS.is_debug_build() or not cinematics_enabled or not Zones.PENDING.has(z):
+		return
+	fx.float_text(path.gate_pos(z * 10) + View.screen(Vector2(0, -60)), "falta: " + str(Zones.PENDING[z]),
+		Palette.INK, 22, 4.0)
 
 
 ## Each zone is the line inside the last one: fall into the tip and come out in the next zone.
@@ -863,7 +871,7 @@ func _on_droste_done() -> void:
 	var z := _droste_zone
 	var last := path.gate_pos(z * 10)
 	_summon_bird()
-	if not z in [2, 4, 6, 8]:
+	if not z in Zones.COLOUR_AFTER:
 		colour_wave.pass_wave(tip.position, Palette.chapter_color(maxi(1, Palette.chapter_of(z * 10))))
 		zone_title.show_title(Loc.t("zone_done") % Zones.ROMAN[z - 1], Loc.zone_name(z), Palette.INK)
 	fx.ring(last, Palette.INK, 220.0, 2.4)
@@ -933,6 +941,7 @@ func _on_zone_completed(z: int) -> void:
 
 ## A zone's end: the dive into the next, or (into the dark, or a director's cut) the pull back.
 func _after_zone(z: int) -> void:
+	_mark_pending(z)
 	if BuildFlags.DROSTE and cinematics_enabled and not BuildFlags.is_dark(z * 10 + 1):
 		_begin_droste(z)
 		return
@@ -954,7 +963,7 @@ func _after_zone(z: int) -> void:
 	camera.punch(0.06)
 	_flash(0.3, 1.2)
 	_summon_bird()
-	if not z in [2, 4, 6, 8]:
+	if not z in Zones.COLOUR_AFTER:
 		colour_wave.pass_wave(last, Palette.chapter_color(maxi(1, Palette.chapter_of(z * 10))))
 		zone_title.show_title(Loc.t("zone_done") % Zones.ROMAN[z - 1], Loc.zone_name(z), Palette.INK)
 
@@ -1044,7 +1053,7 @@ func _begin_grand() -> void:
 		return
 	landscape.set_grand(true)
 	colour_wave.pass_wave(path.gate_pos(PathData.FINAL), Palette.GOLD)
-	colour_wave.pass_wave(path.gate_pos(50), Palette.GOLD, 1.5)
+	colour_wave.pass_wave(path.gate_pos(PathData.FINAL / 2), Palette.GOLD, 1.5)
 	colour_wave.pass_wave(path.gate_pos(1), Palette.GOLD, 3.0)
 	Music.choir_swell()
 	Music.build_piece(9, 0.0, 6.0)

@@ -192,7 +192,9 @@ const TRACKS := {
 			5, 5, 5, 5, 0, 0, 5, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 10, 5, 5, 5, 5, 5, 5],
 	},
 }
-const ZONE_TRACKS := {1: "z1", 2: "z2", 3: "z3", 4: "z4"}
+## Zone 10, Estrella, is the black hole's chapter (tools/spacetime.tscn). Zones 5–9, 11 and 12 have no
+## theme yet and play the generated music (docs/brief-juego-completo.md §8).
+const ZONE_TRACKS := {1: "z1", 2: "z2", 3: "z3", 4: "z4", 10: "spacetime"}
 
 
 static func zone_track(zone: int) -> String:

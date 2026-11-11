@@ -85,8 +85,8 @@ const DEMO_LETTER := {
 }
 
 const ZONES := {
-	"es": ["semilla", "raíz", "tallo", "hoja", "flor", "fruto", "bosque", "cielo", "estrella", "luz"],
-	"en": ["seed", "root", "stem", "leaf", "flower", "fruit", "forest", "sky", "star", "light"],
+	"es": ["semilla", "raíz", "tallo", "hoja", "flor", "fruto", "bosque", "cielo", "noche", "estrella", "alba", "luz"],
+	"en": ["seed", "root", "stem", "leaf", "flower", "fruit", "forest", "sky", "night", "star", "dawn", "light"],
 }
 
 const CHAPTERS := {

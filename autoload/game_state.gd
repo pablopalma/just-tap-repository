@@ -33,7 +33,7 @@ const STAR_HP := 0.35
 const FORK_FROM := 41
 const FORK_THREE := 51
 const FORK_TO := 60
-const FINAL := 100
+const FINAL := Zones.FINAL
 const GAP := 150.0
 const COMBO_MAX := 30.0
 const COMBO_WINDOW := 0.45
@@ -144,7 +144,7 @@ func lv(id: String) -> int:
 
 ## Early barriers get extra life so the first zone lasts a couple of minutes instead of seconds;
 ## the boost fades out by barrier EARLY_UNTIL. Each chapter can then be scaled on its own
-## (the single curve of the design doc does not hold for 100 barriers).
+## (the single curve of the design doc does not hold for the whole game).
 const EARLY_BOOST := 5.0
 const EARLY_UNTIL := 18
 const INTRO_START := 0.2
@@ -400,8 +400,8 @@ func _break_gate() -> void:
 	if n % 10 == 0:
 		var z := int(n / 10.0)
 		zone_completed.emit(z)
-		if z in [2, 4, 6, 8]:
-			chapter_unlocked.emit(int(z / 2.0))
+		if z in Zones.COLOUR_AFTER:
+			chapter_unlocked.emit(Zones.COLOUR_AFTER.find(z) + 1)
 	# Exactly the last one: the dev menu can still jump past it to test the full game's ending.
 	if BuildFlags.DEMO and n == BuildFlags.DEMO_LAST:
 		finished = true

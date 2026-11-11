@@ -97,6 +97,10 @@ func _process(delta: float) -> void:
 					_seen["story_t"] = _t + 2.0
 				elif _t > float(_seen["story_t"]):
 					c._tell()
+			# the story ends on "continue" (0.20.2): press it once it shows
+			if c.has_method("_offer_continue") and c._continue and c._continue.is_visible_in_tree():
+				_once("story_continue", true, "historia: continuar")
+				c._continue.pressed.emit()
 	# leave the letter as a player would
 	for c in _main.hud.get_parent().get_children():
 		if c is Screens.Letter and c._ready_to_leave:

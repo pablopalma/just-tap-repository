@@ -60,6 +60,24 @@ Se atraviesan barreras que se rompen haciendo el daño suficiente, y el daño cr
 | La espiral hacia abajo, como tramo de ritmo, con el ave de estrellas | `tools/spiral_rhythm.tscn` | 🧪 |
 | La carta del creador | final | ✅ |
 
+### El esqueleto de los 12 capítulos (11/11/2026)
+
+El juego completo ya corre de la barrera 1 a la **120**, con los 12 capítulos de §5. Lo que falta de cada uno está provisorio y marcado, para poder jugar el viaje entero y medirlo antes de rellenarlo.
+
+| Pieza | Dónde | Hoy |
+|---|---|---|
+| 12 capítulos, nombres y números romanos | `data/zones.gd` (`COUNT`, `FINAL`), `scripts/loc.gd` | ✅ Noche (9) y Alba (11) nuevos; Estrella pasa al 10 y Luz al 12 |
+| El color que vuelve | `Zones.COLOUR_AFTER`, `Zones.CHAPTER` | rojo tras el 2, verde tras el 4, azul tras el 6, amarillo tras el 10. **Provisorio:** la tinta (9) y la noche estrellada (10) todavía son azules |
+| Hacia dónde corre la línea | `Main.ZONE_ANGLE` | Estrella baja (180°), Alba y Luz suben |
+| Tono, tempo y acordes | `data/zones.gd` | Noche en menor (i VI iv v), Alba en mayor (I V vi IV) |
+| Los temas | `Songs.ZONE_TRACKS` | caps. 1–4 con su tema; **cap. 10 con *Before the Vastness***; el resto, la música generada hasta que lleguen los temas verde, azul y final |
+| Lo que falta al final de cada capítulo | `Zones.PENDING` | en las builds de desarrollo, un "falta: …" sobre la última barrera (la historia 2, el ave sanada, la caída al agujero…) |
+| Recorrer los 12 de una | `tools/skeleton_test.tscn` | salta al final de cada capítulo, lo rompe y anota cómo queda el siguiente; termina en el final del juego |
+
+- Las formas de línea nuevas (bucle, marea, malla, grietas, agujero, saltos, convergencia) todavía no están: los capítulos 6–12 usan la línea normal con sus estrellas y ramas.
+- `audio/music/before_the_vastness.ogg` está excluido del export (`export_presets.cfg`) porque la demo no lo usa: el build del juego completo tiene que incluirlo.
+- La curva de dificultad sigue siendo la de 100 barreras estirada: las 101–120 usan el multiplicador del último tramo. Falta rehacerla (§12).
+
 ---
 
 ## 4. Cómo se arma cada capítulo
@@ -278,8 +296,10 @@ Fuentes: [Benchmarks](https://howtomarketagame.com/benchmarks/) · [El plan de 1
 
 ## 12. Próximos pasos sugeridos
 
-1. Diseñar la forma de cada capítulo que falta (bucle, marea, malla, grietas, saltos, convergencia) y prototipar las nuevas como se hizo con la espiral.
-2. Activar la oscuridad 41–45 en el juego completo.
-3. Pedir los 3 temas nuevos (verde, azul, final) con prompts como los de la demo.
-4. Escribir las historias 2, 3 y 4 (recuerdos reales).
-5. Rehacer la curva de dificultad por capítulo y simularla junto con el tiempo de cada experiencia.
+0. ~~Armar el esqueleto de los 12 capítulos~~ ✅ (11/11/2026, §3).
+1. Llevar el capítulo 10 (el agujero negro y la espiral) del prototipo al juego.
+2. Diseñar la forma de cada capítulo que falta (bucle, marea, malla, grietas, saltos, convergencia) y prototipar las nuevas como se hizo con la espiral.
+3. Activar la oscuridad 41–45 en el juego completo.
+4. Pedir los 3 temas nuevos (verde, azul, final) con prompts como los de la demo.
+5. Escribir las historias 2, 3 y 4 (recuerdos reales).
+6. Rehacer la curva de dificultad por capítulo para 120 barreras y simularla junto con el tiempo de cada experiencia.

@@ -2,7 +2,7 @@ class_name PathData
 extends RefCounted
 ## Deterministic path (design doc §6.1). The world is y-down, so the line climbs toward negative y.
 
-const FINAL := 100
+const FINAL := Zones.FINAL
 const GAP := 150.0
 const START_Y := 520.0
 ## Zone SPIRAL_ZONE's line is a double spiral: it winds in to a centre and back out along the arm in

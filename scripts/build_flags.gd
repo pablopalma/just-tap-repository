@@ -1,7 +1,7 @@
 class_name BuildFlags
 extends RefCounted
 ## What kind of build this is. The demo ends at DEMO_LAST with its own ending (docs/juego-completo.md §2);
-## the full game goes on to barrier 100. Change DEMO before exporting.
+## the full game goes on to Zones.FINAL. Change DEMO before exporting.
 
 const DEMO := true
 const DEMO_LAST := 45
@@ -50,4 +50,4 @@ static func now_from() -> int:
 
 
 static func last_barrier() -> int:
-	return DEMO_LAST if DEMO else 100
+	return DEMO_LAST if DEMO else Zones.FINAL

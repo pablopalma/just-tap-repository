@@ -116,7 +116,7 @@ func _init() -> void:
 	_title(box, "Final")
 	if BuildFlags.DEMO:
 		_button(box, "Final de la demo (b.%d)" % BuildFlags.DEMO_LAST, "edge", BuildFlags.DEMO_LAST)
-	_button(box, "Romper la barrera 100 (final entero)", "edge", 100)
+	_button(box, "Romper la barrera %d (final entero)" % Zones.FINAL, "edge", Zones.FINAL)
 	_button(box, "Ciudad: \"You made all of this\"", "grand", 0)
 	_button(box, "Solo la carta", "letter", 0)
 	_button(box, "Pantalla de cierre (renacer)", "end", 0)
