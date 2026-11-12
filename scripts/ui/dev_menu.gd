@@ -12,6 +12,7 @@ const PROTOS := [
 	["Frases: cada barrera, una frase musical", "res://tools/phrases.tscn", []],
 	["Cimática en pintura: las notas forman figuras", "res://tools/cymatics.tscn", []],
 	["El agujero negro (capítulo 10)", "res://tools/spacetime.tscn", []],
+	["Los aros del pulso, entre acuarelas", "res://tools/rings.tscn", []],
 	["El monumento: la Madre", "res://tools/monument.tscn", []],
 	["El monumento, desde la cima", "res://tools/monument.tscn", ["end"]],
 	["La espiral de ritmo (ave de estrellas)", "res://tools/spiral_rhythm.tscn", []],

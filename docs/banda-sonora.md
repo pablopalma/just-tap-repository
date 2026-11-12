@@ -29,6 +29,7 @@ Nota del 2/11/2026. Idea: cada escena o capítulo del juego tiene **un tema prin
 | 9 | **Who I Am** (el prólogo) | el prólogo de la primera partida: la luz cae en el blanco y habla con el Padre | la mayor · sin pulso, ambiental | ✅ grabado (`who_i_am.ogg`, 6/11/2026) |
 | 10 | **What Breaks, Returns** (la Madre) | el monumento del juego completo (`tools/monument.tscn`) | re menor → re mayor · 80 BPM | ✅ grabado (`what_breaks_returns.ogg`, fuera de la demo exportada) |
 | 11 | **Before the Vastness** (la malla del espacio-tiempo) | capítulo 10, Estrella (`tools/spacetime.tscn`): un agujero negro colosal en el horizonte y la caída | re menor (se pidió la menor) · 70 BPM · 4:00 | ✅ grabado (`before_the_vastness.ogg`, 11/11/2026, fuera de la demo exportada) |
+| 12 | **Where the Colour Breathes** (los aros del pulso) | prototipo `tools/rings.tscn`: volar entre aros gigantes y manchas de acuarela en la niebla | sol mayor · 80 BPM · 3:30 | 💡 por grabar (prompt abajo) |
 | 10+ | Flor, Fruto, Bosque, Cielo, Estrella, Luz | zonas 5 a 10 | ver `data/zones.gd` | para el juego completo |
 | — | Capítulos del juego completo | Gris, Rojo, Verde, Azul, **Tinta**, Amarillo (`docs/juego-completo.md` §3) | — | un tema por capítulo, o agrupar las zonas de cada uno |
 
@@ -104,6 +105,17 @@ Vast, cosmic, awe-struck. Begins almost empty: the soft ticking, and a church pi
 ```
 
 Secciones: *Empty space* 0:00–0:40 · *The build* 0:40–1:40 · *The weight* 1:40–2:10 · *Tiny light* 2:10–2:45.
+
+## Prompt de ElevenLabs · Where the Colour Breathes (los aros del pulso)
+
+Referencia de estilo, que no se pone en el prompt: la música de *GRIS* y de *Journey* en sus momentos de vuelo. Se vuela entre niebla blanca y manchas de acuarela que se abren; cada dos pulsos llega un aro gigante, y al atravesarlo suena una nota del jugador. El pulso tiene que estar claro sin batería: un latido suave de arpa y piano en cada tiempo y una respiración (un crescendo corto de cuerdas) cada dos tiempos, que es cuando llega el aro. Deja aire arriba para las notas del jugador.
+
+```
+Instrumental, 80 BPM, 4/4, key of G major, gentle pentatonic melodies. No vocals, no drums, no percussion.
+Airy, weightless, tender, like flying slowly through white mist while soft watercolour clouds bloom around you. A clear, steady pulse made only of instruments: a soft harp and a felt piano play a light repeated note on every beat, and every two beats the strings breathe in with a short, soft swell, like passing through a giant ring. Begins sparse and misty: the harp and piano pulse with a high, airy string pad and a distant wordless choir. Slowly the colour comes in: warm cellos join with long notes, a solo flute and then a celesta play a simple, singing pentatonic melody in long phrases, leaving space between them. In the middle it opens up into a wide, luminous swell with the full strings and the choir, still floating, never heavy, while the pulse keeps going. Then it thins back to the harp, piano and the pad, soft and bright. Reverb-rich, spacious, dreamy, hand-made feel, no fast notes, no build to a big climax. Seamless and loopable, no big ending.
+```
+
+Secciones: *Into the mist* 0:00–0:40 · *Colour comes* 0:40–1:50 · *Open sky* 1:50–2:40 · *Breathing* 2:40–3:30.
 
 ## Pendiente de decidir
 
